@@ -8,6 +8,7 @@
 #include "core/Window.h"
 #include "core/AssetManager.h"
 #include "scene/Scene.h"
+#include "scene/CameraController.h"
 #include "renderer/Geometry.h"
 #include "renderer/Renderer.h"
 #include "ui/DebugConsole.h"
@@ -57,14 +58,20 @@ int main() {
     scene.camera.position = {0.f, 1.f, 5.f};
     scene.camera.target   = {0.f, 0.f, 0.f};
 
-    Renderer     renderer;
-    DebugConsole console;
-    RenderStats  stats;
+    Renderer         renderer;
+    CameraController camCtrl;
+    DebugConsole     console;
+    RenderStats      stats;
 
     Log::info("Engine ready");
+    Log::info("F1 — toggle camera control | F2 — reload shaders");
 
     double prevTime = glfwGetTime();
     float  fps      = 0.f;
+
+    // Edge-trigger state for toggle keys
+    bool prevF1 = false;
+    bool prevF2 = false;
 
     while (!window.shouldClose()) {
         window.pollEvents();
@@ -73,6 +80,23 @@ int main() {
         float  dt  = static_cast<float>(now - prevTime);
         prevTime   = now;
         fps        = dt > 0.f ? 1.f / dt : 0.f;
+
+        // F1 — toggle camera control
+        bool f1 = glfwGetKey(window.handle(), GLFW_KEY_F1) == GLFW_PRESS;
+        if (f1 && !prevF1) {
+            camCtrl.setEnabled(window.handle(), !camCtrl.enabled);
+            Log::info(camCtrl.enabled ? "Camera control ON" : "Camera control OFF");
+        }
+        prevF1 = f1;
+
+        // F2 — hot-reload shaders from disk
+        bool f2 = glfwGetKey(window.handle(), GLFW_KEY_F2) == GLFW_PRESS;
+        if (f2 && !prevF2)
+            renderer.reloadShaders();
+        prevF2 = f2;
+
+        // ZQSD camera movement
+        camCtrl.update(scene.camera, window.handle(), dt);
 
         int w, h;
         window.getSize(w, h);

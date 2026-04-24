@@ -1,50 +1,98 @@
 #include "renderer/Shader.h"
 #include <glm/gtc/type_ptr.hpp>
+#include <fstream>
+#include <sstream>
 #include <stdexcept>
+#include <utility>
 
-Shader::Shader(const char* vertSrc, const char* fragSrc) {
-    GLuint vert = compile(GL_VERTEX_SHADER,   vertSrc);
-    GLuint frag = compile(GL_FRAGMENT_SHADER, fragSrc);
+// ---------------------------------------------------------------------------
+// Construction / destruction
+// ---------------------------------------------------------------------------
 
-    m_id = glCreateProgram();
-    glAttachShader(m_id, vert);
-    glAttachShader(m_id, frag);
-    glLinkProgram(m_id);
+Shader::Shader(const char* vertSrc, const char* fragSrc,
+               const char* geomSrc, const char* tescSrc, const char* teseSrc)
+    : Shader(buildRasterProgram(vertSrc, fragSrc, geomSrc, tescSrc, teseSrc)) {}
 
-    GLint ok;
-    glGetProgramiv(m_id, GL_LINK_STATUS, &ok);
-    if (!ok) {
-        char log[512];
-        glGetProgramInfoLog(m_id, 512, nullptr, log);
+Shader Shader::compute(const char* compSrc) {
+    return Shader(buildComputeProgram(compSrc));
+}
+
+Shader Shader::fromFiles(const std::string& vertPath, const std::string& fragPath,
+                         const std::string& geomPath, const std::string& tescPath,
+                         const std::string& tesePath) {
+    std::string vert = readFile(vertPath);
+    std::string frag = readFile(fragPath);
+    std::string geom = geomPath.empty() ? std::string{} : readFile(geomPath);
+    std::string tesc = tescPath.empty() ? std::string{} : readFile(tescPath);
+    std::string tese = tesePath.empty() ? std::string{} : readFile(tesePath);
+    return Shader(vert.c_str(), frag.c_str(),
+                  geom.empty() ? nullptr : geom.c_str(),
+                  tesc.empty() ? nullptr : tesc.c_str(),
+                  tese.empty() ? nullptr : tese.c_str());
+}
+
+Shader Shader::computeFile(const std::string& compPath) {
+    std::string src = readFile(compPath);
+    return Shader::compute(src.c_str());
+}
+
+Shader::Shader(Shader&& other) noexcept : m_id(std::exchange(other.m_id, 0)) {}
+
+Shader& Shader::operator=(Shader&& other) noexcept {
+    if (this != &other) {
         glDeleteProgram(m_id);
-        throw std::runtime_error(std::string("Shader link error: ") + log);
+        m_id = std::exchange(other.m_id, 0);
     }
-
-    glDeleteShader(vert);
-    glDeleteShader(frag);
+    return *this;
 }
 
-Shader::~Shader() {
-    glDeleteProgram(m_id);
-}
+Shader::~Shader() { glDeleteProgram(m_id); }
+
+// ---------------------------------------------------------------------------
+// Bind / unbind
+// ---------------------------------------------------------------------------
 
 void Shader::bind()   const { glUseProgram(m_id); }
 void Shader::unbind() const { glUseProgram(0); }
 
-void Shader::setMat4(const char* name, const glm::mat4& v) const {
+// ---------------------------------------------------------------------------
+// Uniform setters
+// ---------------------------------------------------------------------------
+
+void Shader::set(const char* name, const glm::mat4& v) const {
     glUniformMatrix4fv(loc(name), 1, GL_FALSE, glm::value_ptr(v));
 }
-
-void Shader::setVec3(const char* name, const glm::vec3& v) const {
+void Shader::set(const char* name, const glm::mat3& v) const {
+    glUniformMatrix3fv(loc(name), 1, GL_FALSE, glm::value_ptr(v));
+}
+void Shader::set(const char* name, const glm::vec4& v) const {
+    glUniform4fv(loc(name), 1, glm::value_ptr(v));
+}
+void Shader::set(const char* name, const glm::vec3& v) const {
     glUniform3fv(loc(name), 1, glm::value_ptr(v));
 }
-
-void Shader::setFloat(const char* name, float v) const {
-    glUniform1f(loc(name), v);
+void Shader::set(const char* name, const glm::vec2& v) const {
+    glUniform2fv(loc(name), 1, glm::value_ptr(v));
 }
+void Shader::set(const char* name, float v) const { glUniform1f(loc(name), v); }
+void Shader::set(const char* name, int   v) const { glUniform1i(loc(name), v); }
+void Shader::set(const char* name, bool  v) const { glUniform1i(loc(name), static_cast<int>(v)); }
+
+// ---------------------------------------------------------------------------
+// Private helpers
+// ---------------------------------------------------------------------------
 
 GLint Shader::loc(const char* name) const {
     return glGetUniformLocation(m_id, name);
+}
+
+std::string Shader::readFile(const std::string& path) {
+    std::ifstream f(path);
+    if (!f.is_open())
+        throw std::runtime_error("Shader: cannot open '" + path + "'");
+    std::ostringstream ss;
+    ss << f.rdbuf();
+    return ss.str();
 }
 
 GLuint Shader::compile(GLenum type, const char* src) {
@@ -61,4 +109,60 @@ GLuint Shader::compile(GLenum type, const char* src) {
         throw std::runtime_error(std::string("Shader compile error: ") + log);
     }
     return shader;
+}
+
+GLuint Shader::buildRasterProgram(const char* vertSrc, const char* fragSrc,
+                                   const char* geomSrc, const char* tescSrc,
+                                   const char* teseSrc) {
+    // Compile all requested stages; on exception, already-compiled shaders
+    // are cleaned up via the catch block below.
+    GLuint stages[5] = {0, 0, 0, 0, 0};
+    try {
+        stages[0] = compile(GL_VERTEX_SHADER,          vertSrc);
+        stages[1] = compile(GL_FRAGMENT_SHADER,        fragSrc);
+        if (geomSrc) stages[2] = compile(GL_GEOMETRY_SHADER,        geomSrc);
+        if (tescSrc) stages[3] = compile(GL_TESS_CONTROL_SHADER,    tescSrc);
+        if (teseSrc) stages[4] = compile(GL_TESS_EVALUATION_SHADER, teseSrc);
+    } catch (...) {
+        for (GLuint s : stages) if (s) glDeleteShader(s);
+        throw;
+    }
+
+    GLuint prog = glCreateProgram();
+    for (GLuint s : stages) if (s) glAttachShader(prog, s);
+    glLinkProgram(prog);
+
+    GLint ok;
+    glGetProgramiv(prog, GL_LINK_STATUS, &ok);
+    if (!ok) {
+        char log[512];
+        glGetProgramInfoLog(prog, 512, nullptr, log);
+        glDeleteProgram(prog);
+        for (GLuint s : stages) if (s) glDeleteShader(s);
+        throw std::runtime_error(std::string("Shader link error: ") + log);
+    }
+
+    for (GLuint s : stages) if (s) glDeleteShader(s);
+    return prog;
+}
+
+GLuint Shader::buildComputeProgram(const char* compSrc) {
+    GLuint comp = compile(GL_COMPUTE_SHADER, compSrc);
+
+    GLuint prog = glCreateProgram();
+    glAttachShader(prog, comp);
+    glLinkProgram(prog);
+
+    GLint ok;
+    glGetProgramiv(prog, GL_LINK_STATUS, &ok);
+    if (!ok) {
+        char log[512];
+        glGetProgramInfoLog(prog, 512, nullptr, log);
+        glDeleteProgram(prog);
+        glDeleteShader(comp);
+        throw std::runtime_error(std::string("Shader link error: ") + log);
+    }
+
+    glDeleteShader(comp);
+    return prog;
 }

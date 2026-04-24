@@ -45,6 +45,7 @@ set(sources
     ${SOURCE_DIR}/core/AssetManager.cpp
     ${SOURCE_DIR}/scene/Transform.cpp
     ${SOURCE_DIR}/scene/Camera.cpp
+    ${SOURCE_DIR}/scene/CameraController.cpp
     ${SOURCE_DIR}/renderer/Mesh.cpp
     ${SOURCE_DIR}/renderer/Shader.cpp
     ${SOURCE_DIR}/renderer/Geometry.cpp
@@ -80,6 +81,13 @@ endif()
 
 include(${CMAKE_DIR}/LinkGLM.cmake)
 LinkGLM(stylize-animation PRIVATE)
+
+# Copy shaders to the output directory so the executable can find them at runtime
+add_custom_command(TARGET stylize-animation POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/shaders
+        $<TARGET_FILE_DIR:stylize-animation>/shaders
+    COMMENT "Copying shaders to output directory")
 
 # Enable C++17
 set_target_properties(stylize-animation PROPERTIES
