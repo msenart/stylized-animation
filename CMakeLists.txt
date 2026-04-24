@@ -10,6 +10,7 @@ project(stylize-animation CXX)
 # See: https://github.com/Hoshiningen/OpenGL-Template/issues
 
 set(ENABLE_ASSIMP   ON CACHE BOOL "Add Open Asset Import Library (assimp) to the project" FORCE)
+set(ENABLE_IMGUI    ON CACHE BOOL "Add Dear ImGui to the project" FORCE)
 
 #===========================================================================================
 # GLAD CONFIGURATION
@@ -55,6 +56,11 @@ target_link_libraries(stylize-animation PRIVATE OpenGL::GL)
 if (${ENABLE_ASSIMP})
     include(${CMAKE_DIR}/LinkASSIMP.cmake)
     LinkASSIMP(stylize-animation PRIVATE)
+endif()
+
+if (${ENABLE_IMGUI})
+    include(${CMAKE_DIR}/LinkImGui.cmake)
+    LinkImGui(stylize-animation PRIVATE)
 endif()
 
 # Enable C++17
