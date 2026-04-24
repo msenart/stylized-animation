@@ -38,9 +38,24 @@ set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
-set(sources ${SOURCE_DIR}/main.cpp)
+set(sources
+    ${SOURCE_DIR}/main.cpp
+    ${SOURCE_DIR}/core/Log.cpp
+    ${SOURCE_DIR}/core/Window.cpp
+    ${SOURCE_DIR}/core/AssetManager.cpp
+    ${SOURCE_DIR}/scene/Transform.cpp
+    ${SOURCE_DIR}/scene/Camera.cpp
+    ${SOURCE_DIR}/renderer/Mesh.cpp
+    ${SOURCE_DIR}/renderer/Shader.cpp
+    ${SOURCE_DIR}/renderer/Geometry.cpp
+    ${SOURCE_DIR}/renderer/Renderer.cpp
+    ${SOURCE_DIR}/ui/DebugConsole.cpp
+    ${SOURCE_DIR}/ui/RenderStats.cpp
+)
 
 add_executable(stylize-animation ${sources}) # ${includes}
+
+target_include_directories(stylize-animation PRIVATE ${SOURCE_DIR})
 
 # Perform dependency linkage
 include(${CMAKE_DIR}/LinkGLFW.cmake)
@@ -62,6 +77,9 @@ if (${ENABLE_IMGUI})
     include(${CMAKE_DIR}/LinkImGui.cmake)
     LinkImGui(stylize-animation PRIVATE)
 endif()
+
+include(${CMAKE_DIR}/LinkGLM.cmake)
+LinkGLM(stylize-animation PRIVATE)
 
 # Enable C++17
 set_target_properties(stylize-animation PROPERTIES
