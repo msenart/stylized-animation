@@ -43,14 +43,20 @@ int main() {
     MeshHandle cubeHandle = assets.add(
         std::make_unique<Mesh>(cubeData.vertices, cubeData.indices));
 
+    auto fileMeshData = Geometry::loadMeshFromFile( "assets/meshes/stanford-bunny.obj");
+    // Log::info("how many meshes loaded from the scene ? " + std::to_string(fileMeshData.size()));
+    MeshHandle fileMeshHandle = assets.add(std::make_unique<Mesh>(fileMeshData[0].vertices, fileMeshData[0].indices));
+
     Scene scene;
 
     Object obj;
-    obj.meshHandle     = cubeHandle;
+    obj.meshHandle     = fileMeshHandle;
     obj.material.color = {0.8f, 0.3f, 0.2f};
     scene.objects.push_back(obj);
+    obj.transform.scale = glm::vec3(100.0f);
 
     Light light;
+
     light.position  = {3.f, 5.f, 3.f};
     light.intensity = 1.f;
     scene.lights.push_back(light);
@@ -64,7 +70,7 @@ int main() {
     RenderStats      stats;
 
     Log::info("Engine ready");
-    Log::info("F1 — toggle camera control | F2 — reload shaders");
+    Log::info("F1 -> toggle camera control | F2 -> reload shaders");
 
     double prevTime = glfwGetTime();
     float  fps      = 0.f;

@@ -5,6 +5,8 @@
 #include <stdexcept>
 #include <utility>
 
+#include "core/Log.h"
+
 // ---------------------------------------------------------------------------
 // Construction / destruction
 // ---------------------------------------------------------------------------
@@ -92,6 +94,7 @@ std::string Shader::readFile(const std::string& path) {
         throw std::runtime_error("Shader: cannot open '" + path + "'");
     std::ostringstream ss;
     ss << f.rdbuf();
+    Log::info(ss.str());
     return ss.str();
 }
 
@@ -108,6 +111,7 @@ GLuint Shader::compile(GLenum type, const char* src) {
         glDeleteShader(shader);
         throw std::runtime_error(std::string("Shader compile error: ") + log);
     }
+
     return shader;
 }
 
