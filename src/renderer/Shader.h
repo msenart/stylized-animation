@@ -6,6 +6,7 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <string>
+#include <set>
 
 /**
  * @brief Compiles and links a GLSL shader program.
@@ -87,11 +88,11 @@ private:
     explicit Shader(GLuint id) : m_id(id) {}
 
     GLint  loc(const char* name) const;
-
     static std::string readFile(const std::string& path);
     static GLuint compile(GLenum type, const char* src);
     static GLuint buildRasterProgram(const char* vertSrc, const char* fragSrc,
                                      const char* geomSrc, const char* tescSrc,
                                      const char* teseSrc);
     static GLuint buildComputeProgram(const char* compSrc);
+    static std::string readRecursive(const std::string& path, std::set<std::string>& visited, int& counter);
 };

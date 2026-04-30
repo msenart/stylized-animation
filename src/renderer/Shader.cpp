@@ -1,11 +1,13 @@
 #include "renderer/Shader.h"
 #include <glm/gtc/type_ptr.hpp>
 #include <fstream>
+#include <iostream>
 #include <sstream>
 #include <stdexcept>
 #include <utility>
+#include <regex>
 
-#include "core/Log.h"
+static const std::string SHADER_FOLDER_PATH = "./shaders/";
 
 // ---------------------------------------------------------------------------
 // Construction / destruction
@@ -89,13 +91,54 @@ GLint Shader::loc(const char* name) const {
 }
 
 std::string Shader::readFile(const std::string& path) {
-    std::ifstream f(path);
+    std::string content;
+    std::set<std::string> visited{};
+    int counter = 0;
+    content+=readRecursive(path,visited,counter);
+    std::cout << content << std::endl;
+    return content;
+}
+
+std::string Shader::readRecursive(const std::string& path, std::set<std::string>& visited, int& counter){
+    std::string total_path = SHADER_FOLDER_PATH + path;
+    auto cur_id = counter;
+    std::string content;
+    if (visited.count(total_path) > 0) {
+        return "\n";
+    }
+    visited.insert(total_path);
+    // read file
+    std::ifstream f(total_path);
     if (!f.is_open())
-        throw std::runtime_error("Shader: cannot open '" + path + "'");
-    std::ostringstream ss;
-    ss << f.rdbuf();
-    Log::info(ss.str());
-    return ss.str();
+        throw std::runtime_error("Shader: cannot open '" + total_path + "'");
+    std::stringstream input_ss;
+    std::stringstream output_ss;
+    input_ss << f.rdbuf();
+
+    std::regex regex = std::regex(R"(#include\s*[<"](.+)[>"])");
+    std::smatch m;
+    std::string line;
+    int line_counter = 1;
+    while (std::getline(input_ss, line)) {
+        // deal with version directive
+        if (line.find("#version") != std::string::npos && counter != 0) {
+            continue;
+        }
+        // deal with include directive
+        else if (std::regex_search(line, m, regex)) {
+            auto next_path = m[1].str();
+            ++counter;
+            output_ss << "#line " << 1 << " " << counter << "\n";
+            output_ss << readRecursive(next_path, visited,counter) << '\n';
+            output_ss << "#line " << (line_counter + 1) << " " << cur_id << "\n";
+        }
+        else {
+            output_ss << line << '\n';
+        }
+        line_counter++;
+    }
+    content+=output_ss.str();
+    return content;
 }
 
 GLuint Shader::compile(GLenum type, const char* src) {

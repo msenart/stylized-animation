@@ -3,8 +3,8 @@
 #include <glad/glad.h>
 
 Renderer::Renderer()
-    : m_shader(Shader::fromFiles("shaders/blinn_phong.vert",
-                                 "shaders/blinn_phong.frag")) {
+    : m_shader(Shader::fromFiles("blinn_phong.vert",
+                                 "blinn_phong.frag")) {
     glEnable(GL_DEPTH_TEST);
 }
 
@@ -38,8 +38,8 @@ int Renderer::drawCalls() const {
 
 void Renderer::reloadShaders() {
     try {
-        m_shader = Shader::fromFiles("shaders/blinn_phong.vert",
-                                     "shaders/blinn_phong.frag");
+        m_shader = Shader::fromFiles("blinn_phong.vert",
+                                     "blinn_phong.frag");
         Log::info("Shaders reloaded");
     } catch (const std::exception& e) {
         Log::error(std::string("Shader reload failed: ") + e.what());
