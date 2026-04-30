@@ -95,7 +95,6 @@ std::string Shader::readFile(const std::string& path) {
     std::set<std::string> visited{};
     int counter = 0;
     content+=readRecursive(path,visited,counter);
-    std::cout << content << std::endl;
     return content;
 }
 

@@ -50,6 +50,7 @@ set(sources
     ${SOURCE_DIR}/renderer/Shader.cpp
     ${SOURCE_DIR}/renderer/Geometry.cpp
     ${SOURCE_DIR}/renderer/Renderer.cpp
+    ${SOURCE_DIR}/renderer/ShaderManager.cpp
     ${SOURCE_DIR}/ui/DebugConsole.cpp
     ${SOURCE_DIR}/ui/RenderStats.cpp
 )

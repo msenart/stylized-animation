@@ -11,6 +11,7 @@
 #include "scene/CameraController.h"
 #include "renderer/Geometry.h"
 #include "renderer/Renderer.h"
+#include "renderer/ShaderManager.h"
 #include "ui/DebugConsole.h"
 #include "ui/RenderStats.h"
 
@@ -70,7 +71,7 @@ int main() {
     RenderStats      stats;
 
     Log::info("Engine ready");
-    Log::info("F1 -> toggle camera control | F2 -> reload shaders");
+    Log::info("F1 -> toggle camera control | F2 -> reload all shaders");
 
     double prevTime = glfwGetTime();
     float  fps      = 0.f;
@@ -95,10 +96,10 @@ int main() {
         }
         prevF1 = f1;
 
-        // F2 — hot-reload shaders from disk
+        // F2 — hot-reload all shaders from disk
         bool f2 = glfwGetKey(window.handle(), GLFW_KEY_F2) == GLFW_PRESS;
         if (f2 && !prevF2)
-            renderer.reloadShaders();
+            ShaderManager::reloadAll();
         prevF2 = f2;
 
         // ZQSD camera movement
@@ -117,6 +118,7 @@ int main() {
 
         console.draw();
         stats.draw(scene, renderer.drawCalls(), assets.meshCount(), fps);
+        ShaderManager::drawUI();
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -124,6 +126,7 @@ int main() {
         window.swapBuffers();
     }
 
+    ShaderManager::shutdown();
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
