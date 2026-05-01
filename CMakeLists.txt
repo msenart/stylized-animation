@@ -48,11 +48,13 @@ set(sources
     ${SOURCE_DIR}/scene/CameraController.cpp
     ${SOURCE_DIR}/renderer/Mesh.cpp
     ${SOURCE_DIR}/renderer/Shader.cpp
+    ${SOURCE_DIR}/renderer/StaticMesh.cpp
     ${SOURCE_DIR}/renderer/Geometry.cpp
     ${SOURCE_DIR}/renderer/Renderer.cpp
     ${SOURCE_DIR}/renderer/ShaderManager.cpp
     ${SOURCE_DIR}/ui/DebugConsole.cpp
     ${SOURCE_DIR}/ui/RenderStats.cpp
+    ${SOURCE_DIR}/renderer/AnimatedMesh.cpp
 )
 
 add_executable(stylize-animation ${sources}) # ${includes}

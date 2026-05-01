@@ -5,8 +5,14 @@
 #pragma once
 #include <vector>
 #include <cstdint>
-#include "renderer/Mesh.h"
+#include "renderer/StaticMesh.h"
 #include <string>
+#include "core/Log.h"
+
+struct StaticMeshData {
+    std::vector<StaticVertex> vertices;
+    std::vector<uint32_t> indices;
+};
 
 /**
  * @brief Factory functions that return raw vertex/index data ready for Mesh upload.
@@ -14,21 +20,12 @@
 namespace Geometry {
 
     /**
-     * @brief CPU-side mesh data: vertices and triangle indices.
-     */
-    struct MeshData {
-        std::vector<Vertex> vertices;
-        std::vector<uint32_t> indices;
-    };
-
-    /**
      * @brief Generates a unit cube centred at the origin.
      *
      * 24 vertices (4 per face for correct per-face normals) and 36 indices.
      * @return MeshData ready to be passed to the Mesh constructor.
      */
-    MeshData makeCube();
+    StaticMeshData makeCube();
 
-    std::vector<MeshData> loadMeshFromFile( const std::string& pFile);
-
+    std::vector<StaticMeshData> loadStaticMeshFromFile( const std::string& pFile);
 } // namespace Geometry

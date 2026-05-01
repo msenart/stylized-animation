@@ -7,6 +7,7 @@
 #include "core/Log.h"
 #include "core/Window.h"
 #include "core/AssetManager.h"
+#include "renderer/AnimatedMesh.h"
 #include "scene/Scene.h"
 #include "scene/CameraController.h"
 #include "renderer/Geometry.h"
@@ -40,21 +41,24 @@ int main() {
 
     AssetManager assets;
 
-    auto cubeData = Geometry::makeCube();
-    MeshHandle cubeHandle = assets.add(
-        std::make_unique<Mesh>(cubeData.vertices, cubeData.indices));
+    // auto cubeData = Geometry::makeCube();
+    // MeshHandle cubeHandle = assets.add(
+    //     std::make_unique<Mesh>(cubeData.vertices, cubeData.indices));
 
-    auto fileMeshData = Geometry::loadMeshFromFile( "assets/meshes/stanford-bunny.obj");
+    // auto fileMeshData = Geometry::loadStaticMeshFromFile( "assets/meshes/Praying.fbx");
     // Log::info("how many meshes loaded from the scene ? " + std::to_string(fileMeshData.size()));
-    MeshHandle fileMeshHandle = assets.add(std::make_unique<Mesh>(fileMeshData[0].vertices, fileMeshData[0].indices));
+    // MeshHandle fileMeshHandle = assets.add(std::make_unique<StaticMesh>(fileMeshData[0].vertices, fileMeshData[0].indices));
 
+    MeshHandle animatedMeshHandle = assets.add(std::make_unique<AnimatedMesh>("assets/meshes/example4.fbx"));
     Scene scene;
 
     Object obj;
-    obj.meshHandle     = fileMeshHandle;
+    obj.meshHandle = animatedMeshHandle;
     obj.material.color = {0.8f, 0.3f, 0.2f};
+    float angle = glm::radians(90.0f);
+    glm::vec3 axis(0.0f, 0.0f, 1.0f);
+    obj.transform.rotation = glm::angleAxis(angle, axis);
     scene.objects.push_back(obj);
-    obj.transform.scale = glm::vec3(100.0f);
 
     Light light;
 

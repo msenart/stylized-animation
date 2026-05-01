@@ -1,20 +1,15 @@
 #pragma once
-#include "renderer/ShaderManager.h"
 #include "scene/Scene.h"
 #include "core/AssetManager.h"
 
 /**
  * @brief Issues OpenGL draw calls for every Object in a Scene.
  *
- * Registers its shader with ShaderManager on construction. Use
- * ShaderManager::reloadAll() to hot-reload shaders from disk.
+ * Each mesh selects its own shader; the renderer binds it and dispatches
+ * uploadUniforms + draw per object.
  */
 class Renderer {
 public:
-    /**
-     * @brief Registers the Blinn-Phong shader and enables depth testing.
-     * @throws std::runtime_error if shader compilation fails.
-     */
     Renderer();
 
     /**
@@ -29,6 +24,5 @@ public:
     int drawCalls() const;
 
 private:
-    ShaderHandle m_shaderHandle;
-    int          m_drawCalls = 0;
+    int m_drawCalls = 0;
 };
