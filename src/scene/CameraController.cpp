@@ -46,10 +46,12 @@ void CameraController::update(Camera& camera, GLFWwindow* window, float dt) {
     glm::vec3 right = glm::normalize(glm::cross(forward, camera.up));
     glm::vec3 move  = glm::vec3(0.f);
 
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) move += forward;
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) move -= forward;
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) move += forward - camera.up*glm::dot(forward, camera.up);
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) move -= forward - camera.up*glm::dot(forward, camera.up);
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) move -= right;
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) move += right;
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) move -= camera.up;
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) move += camera.up;
 
     if (glm::dot(move, move) > 0.f) {
         move = glm::normalize(move) * speed * dt;
