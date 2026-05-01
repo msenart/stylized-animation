@@ -16,7 +16,7 @@ void main() {
     vec3 halfDir  = normalize(lightDir + viewDir);
 
     float ambient = 0.15;
-    float diff    = max(dot(norm, lightDir), 0.0);
+    float diff    = max(dot(norm, lightDir), 0.3);
     float spec    = pow(max(dot(norm, halfDir), 0.0), 32.0);
 
     vec3 result = (ambient + diff + 0.5 * spec) * lightColor * objectColor;

@@ -10,11 +10,11 @@ AnimatedMesh::AnimatedMesh(const std::string& path) {
 
     Assimp::Importer importer;
     m_scene = importer.ReadFile(path,
-        aiProcess_CalcTangentSpace      |
-        aiProcess_Triangulate           |
-        aiProcess_JoinIdenticalVertices |
-        aiProcess_SortByPType           |
-        aiProcess_GenNormals);
+            aiProcess_CalcTangentSpace|
+            aiProcess_Triangulate           |
+            aiProcess_JoinIdenticalVertices |
+            aiProcess_SortByPType           |
+            aiProcess_GenNormals);
 
     if (!m_scene) {
         Log::error(importer.GetErrorString());
@@ -56,6 +56,7 @@ int AnimatedMesh::getBoneID(const aiBone* bone) {
 }
 
 void AnimatedMesh::parseMeshes() {
+    unsigned int baseVertex = 0; // Le décalage magique
     Log::info("scene " + (std::string(m_scene->mName.data).size() > 0 ? std::string(m_scene->mName.data) : "Untitled") + " : ");
     for (unsigned int i = 0; i < m_scene->mNumMeshes; i++) {
         const aiMesh* mesh = m_scene->mMeshes[i];
@@ -81,8 +82,8 @@ void AnimatedMesh::parseMeshes() {
                 const aiBone* bone = mesh->mBones[b];
                 int boneID = getBoneID(bone);
                 for (unsigned int w = 0; w < bone->mNumWeights; w++) {
-                    unsigned int vertexID = bone->mWeights[w].mVertexId;
-                    m_vertices[vertexID].addBoneData(boneID, bone->mWeights[w].mWeight);
+                    unsigned int globalVertexID = baseVertex + bone->mWeights[w].mVertexId;
+                    m_vertices[globalVertexID].addBoneData(boneID, bone->mWeights[w].mWeight);
                 }
                 Log::info("   - bone " + std::to_string(boneID) + " influences " + std::to_string(mesh->mNumVertices) + " vertices");
             }
@@ -96,21 +97,21 @@ void AnimatedMesh::parseMeshes() {
             for (unsigned int j = 0; j < mesh->mNumFaces; j++) {
                 const aiFace& face = mesh->mFaces[j];
                 assert(face.mNumIndices == 3);
-                m_indices.push_back(face.mIndices[0]);
-                m_indices.push_back(face.mIndices[1]);
-                m_indices.push_back(face.mIndices[2]);
+                m_indices.push_back(baseVertex + face.mIndices[0]);
+                m_indices.push_back(baseVertex + face.mIndices[1]);
+                m_indices.push_back(baseVertex + face.mIndices[2]);
             }
         }
         else {
             Log::info(" - no faces");
         }
+        baseVertex += mesh->mNumVertices;
     }
 
     m_indexCount = static_cast<GLsizei>(m_indices.size());
 }
 
 void AnimatedMesh::populateBuffers() {
-    static_assert(sizeof(AnimatedVertex) == (3 + 3 + MAX_NUM_BONES_PER_VERTEX + MAX_NUM_BONES_PER_VERTEX) * 4, "Struct size mismatch!");
 
     glCreateVertexArrays(1, &m_vao);
     glCreateBuffers(1, &m_vbo);
@@ -130,11 +131,25 @@ void AnimatedMesh::populateBuffers() {
     glVertexArrayAttribFormat (m_vao,NORMAL_LOCATION,3,GL_FLOAT,GL_FALSE,offsetof(AnimatedVertex, normal));
     glVertexArrayAttribBinding(m_vao,NORMAL_LOCATION,0);
 
-    glEnableVertexArrayAttrib (m_vao,BONE_ID_LOCATION);
-    glVertexArrayAttribIFormat(m_vao,BONE_ID_LOCATION,MAX_NUM_BONES_PER_VERTEX,GL_UNSIGNED_INT,offsetof(AnimatedVertex,bonesIDs));
-    glVertexArrayAttribBinding(m_vao,BONE_ID_LOCATION, 0);
+    struct alignas(16) VertexBoneData {
+        unsigned int ids[MAX_NUM_BONES_PER_VERTEX];
+        float weights[MAX_NUM_BONES_PER_VERTEX];
+    };
 
-    glEnableVertexArrayAttrib (m_vao,WEIGHTS_LOCATION);
-    glVertexArrayAttribFormat (m_vao,WEIGHTS_LOCATION,MAX_NUM_BONES_PER_VERTEX,GL_FLOAT,GL_FALSE,offsetof(AnimatedVertex,weights));
-    glVertexArrayAttribBinding(m_vao,WEIGHTS_LOCATION,0);
+    auto allBones = std::vector<VertexBoneData>(m_vertices.size(),VertexBoneData());
+
+    for (int i = 0 ; i < m_vertices.size(); i++) {
+        // fill boneIDs
+        auto bone = VertexBoneData{};
+        for (int j = 0; j < MAX_NUM_BONES_PER_VERTEX; j++) {
+            bone.ids[j] = m_vertices[i].bonesIDs[j];
+            bone.weights[j] = m_vertices[i].weights[j];
+        }
+        allBones[i] = bone;
+    }
+
+    glCreateBuffers(1, &bones_data_ssbo);
+    glNamedBufferData(bones_data_ssbo, allBones.size() * sizeof(VertexBoneData), allBones.data(), GL_STATIC_DRAW);
+
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, bones_data_ssbo);
 }

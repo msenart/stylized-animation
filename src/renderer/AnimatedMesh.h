@@ -10,7 +10,7 @@
 #include <glad/glad.h>
 #include "renderer/Mesh.h"
 
-static constexpr unsigned int MAX_NUM_BONES_PER_VERTEX = 4;
+static constexpr unsigned int MAX_NUM_BONES_PER_VERTEX = 16;
 static constexpr unsigned int MAX_NUM_BONES = 1024;
 
 static constexpr unsigned int POSITION_LOCATION = 0;
@@ -24,7 +24,6 @@ struct AnimatedVertex {
     glm::vec3 normal{0};
     std::array<unsigned int,MAX_NUM_BONES_PER_VERTEX> bonesIDs = {0,0,0,0};
     std::array<float, MAX_NUM_BONES_PER_VERTEX> weights = {0,0,0,0};
-
     void addBoneData(unsigned int boneID, float weight) {
         for (unsigned int i = 0; i < MAX_NUM_BONES_PER_VERTEX; i++) {
             if (weights[i] == 0.0f) {
@@ -55,6 +54,7 @@ private:
     std::vector<AnimatedVertex> m_vertices = {};
     std::vector<uint32_t> m_indices = {};
     GLuint m_vao = 0, m_vbo = 0, m_ebo = 0;
+    GLuint bones_data_ssbo = 0;
     GLsizei m_indexCount = 0;
 
     std::map<std::string, int> m_boneNameToIndexMap;

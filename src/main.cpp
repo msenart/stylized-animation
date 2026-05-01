@@ -42,22 +42,22 @@ int main() {
     AssetManager assets;
 
     // auto cubeData = Geometry::makeCube();
-    // MeshHandle cubeHandle = assets.add(
+    // MeshHandle meshHandle = assets.add(
     //     std::make_unique<Mesh>(cubeData.vertices, cubeData.indices));
 
     // auto fileMeshData = Geometry::loadStaticMeshFromFile( "assets/meshes/Praying.fbx");
-    // Log::info("how many meshes loaded from the scene ? " + std::to_string(fileMeshData.size()));
-    // MeshHandle fileMeshHandle = assets.add(std::make_unique<StaticMesh>(fileMeshData[0].vertices, fileMeshData[0].indices));
+    // MeshHandle meshHandle = assets.add(std::make_unique<StaticMesh>(fileMeshData[0].vertices, fileMeshData[0].indices));
 
-    MeshHandle animatedMeshHandle = assets.add(std::make_unique<AnimatedMesh>("assets/meshes/example4.fbx"));
+    MeshHandle meshHandle = assets.add(std::make_unique<AnimatedMesh>("assets/meshes/Praying.fbx"));
     Scene scene;
 
     Object obj;
-    obj.meshHandle = animatedMeshHandle;
+    obj.meshHandle =meshHandle;
     obj.material.color = {0.8f, 0.3f, 0.2f};
     float angle = glm::radians(90.0f);
     glm::vec3 axis(0.0f, 0.0f, 1.0f);
     obj.transform.rotation = glm::angleAxis(angle, axis);
+    obj.transform.scale = glm::vec3(0.05f);
     scene.objects.push_back(obj);
 
     Light light;
