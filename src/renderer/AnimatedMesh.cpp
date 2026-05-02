@@ -1,15 +1,19 @@
+#include "AnimatedMesh.h"
+#include "AnimatedMesh.h"
+#include "AnimatedMesh.h"
+#include "AnimatedMesh.h"
 #include "renderer/AnimatedMesh.h"
 #include "renderer/Shader.h"
 #include "renderer/ShaderManager.h"
 #include "core/Log.h"
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
+#include <glm/gtx/quaternion.hpp>
 
 AnimatedMesh::AnimatedMesh(const std::string& path) {
     shaderHandle = ShaderManager::load("animated_mesh.vert", "animated_mesh.frag");
 
-    Assimp::Importer importer;
-    m_scene = importer.ReadFile(path,
+    m_scene = m_importer.ReadFile(path,
             aiProcess_CalcTangentSpace|
             aiProcess_Triangulate           |
             aiProcess_JoinIdenticalVertices |
@@ -17,7 +21,7 @@ AnimatedMesh::AnimatedMesh(const std::string& path) {
             aiProcess_GenNormals);
 
     if (!m_scene) {
-        Log::error(importer.GetErrorString());
+        Log::error(m_importer.GetErrorString());
         return;
     }
     if (!m_scene->HasMeshes()) {
@@ -42,6 +46,11 @@ void AnimatedMesh::draw() const {
 
 void AnimatedMesh::uploadUniforms(const Shader& shader, const RenderContext& ctx) const {
     Mesh::uploadUniforms(shader,ctx);
+    std::vector<glm::mat4> transforms;
+    getBoneTransforms(transforms);
+    for (int i = 0 ; i < m_bonesInfo.size(); ++i) {
+        shader.set(("gBones["+std::to_string(i)+"]").c_str(), transforms[i]);
+    }
 }
 
 int AnimatedMesh::getBoneID(const aiBone* bone) {
@@ -55,9 +64,150 @@ int AnimatedMesh::getBoneID(const aiBone* bone) {
     return it->second;
 }
 
+glm::mat4 AnimatedMesh::calculateInterpolatedRotation(const double& animationTicks, const aiNodeAnim* animationNode) {
+    if (animationNode->mNumRotationKeys == 1) {
+        glm::quat out = glm::make_quat(&animationNode->mRotationKeys[0].mValue.x);
+        out = normalize(out);
+        return glm::toMat4(out);
+    }
+    int rotation_index = 0;
+    for (unsigned int j = 0; j < animationNode->mNumRotationKeys - 1; ++j) {
+        double t = animationNode->mRotationKeys[j + 1].mTime;
+        if (animationTicks < t) {
+            rotation_index = j;
+            break;
+        }
+    }
+    int next_rotation_index = rotation_index + 1;
+    assert(next_rotation_index < animationNode->mNumRotationKeys);
+    double t1 = animationNode->mRotationKeys[rotation_index].mTime;
+    double t2 = animationNode->mRotationKeys[next_rotation_index].mTime;
+    double delta_time = t2 - t1;
+    double factor = (animationTicks-t1) / delta_time;
+    const aiQuaternion& start = animationNode->mRotationKeys[rotation_index].mValue;
+    const aiQuaternion& end = animationNode->mRotationKeys[next_rotation_index].mValue;
+    aiQuaternion out;
+    aiQuaternion::Interpolate(out,start,end,static_cast<float>(factor));
+    out.Normalize();
+    return glm::toMat4(glm::quat(out.w, out.x, out.y, out.z));
+}
+glm::mat4 AnimatedMesh::calculateInterpolatedPosition(const double& animationTicks, const aiNodeAnim* animationNode) {
+    if (animationNode->mNumPositionKeys == 1) {
+        glm::vec3 out = glm::make_vec3(&animationNode->mPositionKeys[0].mValue.x);
+        return glm::translate(glm::mat4(1.0f), out);
+    }
+    int position_index = 0;
+    for (unsigned int j = 0; j < animationNode->mNumPositionKeys - 1; ++j) {
+        double t = animationNode->mPositionKeys[j + 1].mTime;
+        if (animationTicks < t) {
+            position_index = j;
+            break;
+        }
+    }
+    int next_position_index = position_index + 1;
+    assert(next_position_index < animationNode->mNumPositionKeys);
+    double t1 = animationNode->mPositionKeys[position_index].mTime;
+    double t2 = animationNode->mPositionKeys[next_position_index].mTime;
+    double delta_time = t2 - t1;
+    double factor = (animationTicks-t1) / delta_time;
+    const aiVector3D& start = animationNode->mPositionKeys[position_index].mValue;
+    const aiVector3D& end = animationNode->mPositionKeys[next_position_index].mValue;
+    aiVector3D delta = end - start;
+    glm::vec3 out = glm::make_vec3(&start.x) + ((float)factor)*glm::make_vec3(&delta.x);
+    return glm::translate(glm::mat4(1.0f), out);
+}
+glm::mat4 AnimatedMesh::calculateInterpolatedScale(const double& animationTicks, const aiNodeAnim* animationNode) {
+
+    if (animationNode->mNumScalingKeys == 1) {
+        glm::vec3 out = glm::make_vec3(&animationNode->mScalingKeys[0].mValue.x);
+        return glm::scale(glm::mat4(1.0f), out);
+    }
+    int scale_index = 0;
+    for (unsigned int j = 0; j < animationNode->mNumScalingKeys - 1; ++j) {
+        double t = animationNode->mScalingKeys[j + 1].mTime;
+        if (animationTicks < t) {
+            scale_index = j;
+            break;
+        }
+    }
+    int next_scale_index = scale_index + 1;
+    assert(next_scale_index < animationNode->mNumScalingKeys);
+    double t1 = animationNode->mScalingKeys[scale_index].mTime;
+    double t2 = animationNode->mScalingKeys[next_scale_index].mTime;
+    double delta_time = t2 - t1;
+    double factor = (animationTicks-t1) / delta_time;
+    const aiVector3D& start = animationNode->mScalingKeys[scale_index].mValue;
+    const aiVector3D& end = animationNode->mScalingKeys[next_scale_index].mValue;
+    aiVector3D delta = end - start;
+    glm::vec3 out = glm::make_vec3(&start.x) + ((float)factor)*glm::make_vec3(&delta.x);
+    return glm::scale(glm::mat4(1.0f), out);
+}
+
+void AnimatedMesh::readNodeHierarchy(const double& animationTicks, const aiNode *node, const glm::mat4 &parentTransformation) const {
+    glm::mat4 node_transformation = aiMat4ToGlmMat4(node->mTransformation);
+    std::string nodeName = node->mName.data;
+
+    const aiAnimation* animation = m_scene->mAnimations[0];
+    const aiNodeAnim* animation_node = nullptr;
+    for (unsigned int i = 0; i < animation->mNumChannels; i++) {
+        const aiNodeAnim* animation_node_i = animation->mChannels[i];
+        if (std::string(animation_node_i->mNodeName.data) == nodeName) {
+            animation_node = animation_node_i;
+            break;
+        }
+    }
+
+    if (animation_node) {
+        glm::mat4 translation = calculateInterpolatedPosition(animationTicks, animation_node);
+        glm::mat4 rotation = calculateInterpolatedRotation(animationTicks, animation_node);
+        glm::mat4 scale = calculateInterpolatedScale(animationTicks, animation_node);
+        node_transformation=translation*rotation*scale;
+    }
+
+    glm::mat4 globalTransformation = parentTransformation*node_transformation;
+
+    if (m_boneNameToIndexMap.count(nodeName) != 0) {
+        auto idx = m_boneNameToIndexMap[nodeName];
+        auto& bone = m_bonesInfo[idx];
+        bone.finalTransformationMatrix = m_globalInverseTransform*globalTransformation*bone.offsetMatrix;
+    }
+    for (unsigned int i = 0; i < node->mNumChildren; i++) {
+        readNodeHierarchy(animationTicks,node->mChildren[i], globalTransformation);
+    }
+}
+
+void AnimatedMesh::getBoneTransforms(std::vector<glm::mat4> &transforms) const {
+    if (m_scene->HasAnimations()) {
+        double time = timer.getCurrentValue();
+        double ticks_per_second = m_scene->mAnimations[0]->mTicksPerSecond != 0 ? m_scene->mAnimations[0]->mTicksPerSecond : 25.0f;
+        double ticks = fmod(time*ticks_per_second,m_scene->mAnimations[0]->mDuration);
+        transforms.resize(m_bonesInfo.size());
+
+        auto identity = glm::identity<glm::mat4>();
+
+        readNodeHierarchy(ticks, m_scene->mRootNode, identity);
+        for (unsigned int i = 0; i < m_bonesInfo.size(); i++) {
+            transforms[i] = m_bonesInfo[i].finalTransformationMatrix;
+        }
+    }
+    else {
+        transforms.resize(m_bonesInfo.size());
+
+        auto identity = glm::identity<glm::mat4>();
+
+        readNodeHierarchy(0, m_scene->mRootNode, identity);
+        for (unsigned int i = 0; i < m_bonesInfo.size(); i++) {
+            transforms[i] = m_bonesInfo[i].finalTransformationMatrix;
+        }
+    }
+
+
+}
+
 void AnimatedMesh::parseMeshes() {
-    unsigned int baseVertex = 0; // Le décalage magique
-    Log::info("scene " + (std::string(m_scene->mName.data).size() > 0 ? std::string(m_scene->mName.data) : "Untitled") + " : ");
+    m_globalInverseTransform = glm::inverse(aiMat4ToGlmMat4(m_scene->mRootNode->mTransformation));
+    unsigned int baseVertex = 0;
+    Log::info("scene " + (!std::string(m_scene->mName.data).empty() ? std::string(m_scene->mName.data) : "Untitled") + " : ");
     for (unsigned int i = 0; i < m_scene->mNumMeshes; i++) {
         const aiMesh* mesh = m_scene->mMeshes[i];
         Log::info("mesh " + std::string(mesh->mName.data) + " : ");
@@ -81,6 +231,10 @@ void AnimatedMesh::parseMeshes() {
             for (unsigned int b = 0; b < mesh->mNumBones; b++) {
                 const aiBone* bone = mesh->mBones[b];
                 int boneID = getBoneID(bone);
+                if (boneID == m_bonesInfo.size()) {
+                    BoneInfo bi{aiMat4ToGlmMat4(bone->mOffsetMatrix)};
+                    m_bonesInfo.push_back(bi);
+                }
                 for (unsigned int w = 0; w < bone->mNumWeights; w++) {
                     unsigned int globalVertexID = baseVertex + bone->mWeights[w].mVertexId;
                     m_vertices[globalVertexID].addBoneData(boneID, bone->mWeights[w].mWeight);
@@ -152,4 +306,10 @@ void AnimatedMesh::populateBuffers() {
     glNamedBufferData(bones_data_ssbo, allBones.size() * sizeof(VertexBoneData), allBones.data(), GL_STATIC_DRAW);
 
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, bones_data_ssbo);
+
+    timer.start();
+}
+
+void AnimatedMesh::setTimer(const double& minTime, const double& maxTime) {
+    this->timer = Timer(minTime,maxTime);
 }

@@ -54,9 +54,9 @@ int main() {
     Object obj;
     obj.meshHandle =meshHandle;
     obj.material.color = {0.8f, 0.3f, 0.2f};
-    float angle = glm::radians(90.0f);
-    glm::vec3 axis(0.0f, 0.0f, 1.0f);
-    obj.transform.rotation = glm::angleAxis(angle, axis);
+    // float angle = glm::radians(90.0f);
+    // glm::vec3 axis(0.0f, 0.0f, 1.0f);
+    // obj.transform.rotation = glm::angleAxis(angle, axis);
     obj.transform.scale = glm::vec3(0.05f);
     scene.objects.push_back(obj);
 
