@@ -79,11 +79,11 @@ int main() {
 
     double prevTime = glfwGetTime();
     float  fps      = 0.f;
-
+    bool paused = false;
     // Edge-trigger state for toggle keys
     bool prevF1 = false;
     bool prevF2 = false;
-
+    bool prevF3 = false;
     while (!window.shouldClose()) {
         window.pollEvents();
 
@@ -92,7 +92,7 @@ int main() {
         prevTime   = now;
         fps        = dt > 0.f ? 1.f / dt : 0.f;
 
-        // F1 — toggle camera control
+        // F1 - toggle camera control
         bool f1 = glfwGetKey(window.handle(), GLFW_KEY_F1) == GLFW_PRESS;
         if (f1 && !prevF1) {
             camCtrl.setEnabled(window.handle(), !camCtrl.enabled);
@@ -100,11 +100,27 @@ int main() {
         }
         prevF1 = f1;
 
-        // F2 — hot-reload all shaders from disk
+        // F2 - hot-reload all shaders from disk
         bool f2 = glfwGetKey(window.handle(), GLFW_KEY_F2) == GLFW_PRESS;
-        if (f2 && !prevF2)
+        if (f2 && !prevF2) {
             ShaderManager::reloadAll();
+        }
         prevF2 = f2;
+
+        // F3 - Pause animation
+        bool f3 = glfwGetKey(window.handle(), GLFW_KEY_F3) == GLFW_PRESS;
+        if (f3 && !prevF3) {
+            auto& animated_mesh = dynamic_cast<AnimatedMesh&>(assets.get(meshHandle));
+            auto timer = animated_mesh.getTimer();
+            paused = !paused;
+            if (paused) {
+                timer->pause();
+            }
+            else {
+                timer->start();
+            }
+        }
+        prevF3 = f3;
 
         // ZQSD camera movement
         camCtrl.update(scene.camera, window.handle(), dt);

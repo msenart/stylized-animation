@@ -26,10 +26,10 @@ public:
     /**
      * @brief Returns a const reference to the mesh for a given handle.
      * @param handle A handle previously returned by add().
-     * @return Const reference to the mesh.
+     * @return reference to the mesh.
      * @throws std::runtime_error if the handle is unknown.
      */
-    const Mesh& get(MeshHandle handle) const;
+    Mesh& get(MeshHandle handle) const;
 
     /// @brief Returns the total number of meshes currently stored.
     std::size_t meshCount() const;

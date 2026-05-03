@@ -72,7 +72,7 @@ public:
     /// Unbinds any active shader program.
     void unbind() const;
 
-    // Uniform setters — the correct GL call is selected automatically by type.
+    // Uniform setters - the correct GL call is selected automatically by type.
     void set(const char* name, const glm::mat4& v) const;
     void set(const char* name, const glm::mat3& v) const;
     void set(const char* name, const glm::vec4& v) const;

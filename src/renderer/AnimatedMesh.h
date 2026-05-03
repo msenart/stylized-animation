@@ -67,6 +67,7 @@ public:
     Timer* getTimer() {
         return &timer;
     }
+
 private:
     const aiScene* m_scene = nullptr;
     Assimp::Importer m_importer;
