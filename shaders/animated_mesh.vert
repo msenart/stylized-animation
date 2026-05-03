@@ -34,7 +34,7 @@ void main() {
     }
     vec4 localPos = boneTransform*vec4(position,1.0);
     gl_Position = projection*view*model*localPos;
-    normalO = normal;
+    normalO = vec3(transpose(inverse(boneTransform))*vec4(normal,0.0));
     localPosO = position;
     vertexID = gl_VertexID;
 }

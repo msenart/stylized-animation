@@ -48,7 +48,7 @@ int main() {
     // auto fileMeshData = Geometry::loadStaticMeshFromFile( "assets/meshes/Praying.fbx");
     // MeshHandle meshHandle = assets.add(std::make_unique<StaticMesh>(fileMeshData[0].vertices, fileMeshData[0].indices));
 
-    MeshHandle meshHandle = assets.add(std::make_unique<AnimatedMesh>("assets/meshes/Praying.fbx"));
+    MeshHandle meshHandle = assets.add(std::make_unique<AnimatedMesh>("assets/meshes/Standing Death Left 01.fbx"));
     Scene scene;
 
     Object obj;
