@@ -1,5 +1,7 @@
 #version 460 core
 
+//#define TOON_SHADING
+
 in vec3 normalO;
 in vec3 localPosO;
 flat in uint vertexID;
@@ -33,5 +35,15 @@ void main() {
     }
 
     FragColor = mix(not_influenced_vertex_color, influenced_vertex_color, weight);
-    FragColor *= max(dot(normalO,vec3(1,1,1)),0.3);
+    float diffuse_coeff = dot(normalO,vec3(1,1,1));
+    
+    #ifdef TOON_SHADING 
+    float diffuse_threshold = 0.4;
+    if(diffuse_coeff < diffuse_threshold){
+        FragColor *= 0.3;
+    }
+    #else
+    FragColor *= max(diffuse_coeff, 0.3);
+    #endif
+    
 }
