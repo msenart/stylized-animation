@@ -94,6 +94,11 @@ add_custom_command(TARGET stylize-animation POST_BUILD
         $<TARGET_FILE_DIR:stylize-animation>/shaders
     COMMENT "Copying shaders to output directory")
 
+#copy target to root
+add_custom_command(TARGET ${PROJECT_NAME}
+  POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${PROJECT_NAME}> ${CMAKE_CURRENT_SOURCE_DIR})
+
 # Enable C++17
 set_target_properties(stylize-animation PROPERTIES
     CXX_STANDARD 17
