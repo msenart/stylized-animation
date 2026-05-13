@@ -66,9 +66,9 @@ int AnimatedMesh::getBoneID(const aiBone* bone) {
 
 glm::mat4 AnimatedMesh::calculateInterpolatedRotation(const double& animationTicks, const aiNodeAnim* animationNode) {
     if (animationNode->mNumRotationKeys == 1) {
-        glm::quat out = glm::make_quat(&animationNode->mRotationKeys[0].mValue.x);
-        out = normalize(out);
-        return glm::toMat4(out);
+        const auto& q = animationNode->mRotationKeys[0].mValue;
+        glm::quat out = glm::quat(q.w, q.x, q.y, q.z);
+        return glm::toMat4(glm::normalize(out));
     }
     int rotation_index = 0;
     for (unsigned int j = 0; j < animationNode->mNumRotationKeys - 1; ++j) {
@@ -91,6 +91,7 @@ glm::mat4 AnimatedMesh::calculateInterpolatedRotation(const double& animationTic
     out.Normalize();
     return glm::toMat4(glm::quat(out.w, out.x, out.y, out.z));
 }
+
 glm::mat4 AnimatedMesh::calculateInterpolatedPosition(const double& animationTicks, const aiNodeAnim* animationNode) {
     if (animationNode->mNumPositionKeys == 1) {
         glm::vec3 out = glm::make_vec3(&animationNode->mPositionKeys[0].mValue.x);
@@ -200,8 +201,6 @@ void AnimatedMesh::getBoneTransforms(std::vector<glm::mat4> &transforms) const {
             transforms[i] = m_bonesInfo[i].finalTransformationMatrix;
         }
     }
-
-
 }
 
 void AnimatedMesh::parseMeshes() {
