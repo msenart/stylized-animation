@@ -55,8 +55,12 @@ set(sources
     ${SOURCE_DIR}/ui/DebugConsole.cpp
     ${SOURCE_DIR}/ui/RenderStats.cpp
     ${SOURCE_DIR}/renderer/AnimatedMesh.cpp
-        src/core/Timer.cpp
-        src/core/Timer.h
+    ${SOURCE_DIR}/core/Timer.cpp
+    ${SOURCE_DIR}/core/Timer.h
+        src/ui/SelectionManager.cpp
+        src/ui/SelectionManager.h
+        src/renderer/RenderPipeline.cpp
+        src/renderer/RenderPipeline.h
 )
 
 add_executable(stylize-animation ${sources}) # ${includes}
