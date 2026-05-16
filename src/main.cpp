@@ -84,6 +84,14 @@ int main() {
     bool prevF1 = false;
     bool prevF2 = false;
     bool prevF3 = false;
+
+    int vid_w = 1280;
+    int vid_h = 720;
+    const char* cmd = "ffmpeg -r 60 -f rawvideo -pix_fmt rgba -s 1280x720 -i - "
+        "-threads 0 -preset fast -y -pix_fmt yuv420p -crf 21 -vf vflip output.mp4";
+    FILE* ffmpeg = popen(cmd, "w");
+    int* vid_buffer = new int[vid_w * vid_h];
+
     while (!window.shouldClose()) {
         window.pollEvents();
 
@@ -143,6 +151,9 @@ int main() {
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
+        glReadPixels(0, 0, vid_w, vid_h, GL_RGBA, GL_UNSIGNED_BYTE, vid_buffer);
+        fwrite(vid_buffer, sizeof(int) * vid_w * vid_h, 1, ffmpeg);
+
         window.swapBuffers();
     }
 
@@ -150,6 +161,7 @@ int main() {
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
+    pclose(ffmpeg);
 
     return 0;
 }
