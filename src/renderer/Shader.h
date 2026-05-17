@@ -7,6 +7,8 @@
 #include <glm/glm.hpp>
 #include <string>
 #include <set>
+#include <vector>
+
 
 /**
  * @brief Compiles and links a GLSL shader program.
@@ -41,25 +43,28 @@ public:
 
     /**
      * @brief Loads a rasterization shader program from .glsl files on disk.
-     * @param vertPath  Path to the vertex shader file (required).
-     * @param fragPath  Path to the fragment shader file (required).
-     * @param geomPath  Path to the geometry shader file (empty string = skip).
-     * @param tescPath  Path to the tessellation control shader file (empty = skip).
-     * @param tesePath  Path to the tessellation evaluation shader file (empty = skip).
+     * @param vertPath Path to the vertex shader file (required).
+     * @param fragPath Path to the fragment shader file (required).
+     * @param geomPath Path to the geometry shader file (empty string = skip).
+     * @param tescPath Path to the tessellation control shader file (empty = skip).
+     * @param tesePath Path to the tessellation evaluation shader file (empty = skip).
+     * @param defines All defines macros needed to compile the shader the right way
      * @throws std::runtime_error if a file cannot be opened or compilation fails.
      */
     static Shader fromFiles(const std::string& vertPath,
                             const std::string& fragPath,
                             const std::string& geomPath = {},
                             const std::string& tescPath = {},
-                            const std::string& tesePath = {});
+                            const std::string& tesePath = {},
+                            const std::set<std::string>& defines = {});
 
     /**
      * @brief Loads a compute shader program from a .glsl file on disk.
      * @param compPath  Path to the compute shader file.
+     * @param defines All defines macros needed to compile the shader the right way
      * @throws std::runtime_error if the file cannot be opened or compilation fails.
      */
-    static Shader computeFile(const std::string& compPath);
+    static Shader computeFile(const std::string& compPath, const std::set<std::string>& defines = {});
 
     ~Shader();
     Shader(Shader&& other) noexcept;
@@ -88,11 +93,13 @@ private:
     explicit Shader(GLuint id) : m_id(id) {}
 
     GLint  loc(const char* name) const;
-    static std::string readFile(const std::string& path);
+
+    static std::string readFile(const std::string &path, const std::set<std::string> &defines);
+
     static GLuint compile(GLenum type, const char* src);
     static GLuint buildRasterProgram(const char* vertSrc, const char* fragSrc,
                                      const char* geomSrc, const char* tescSrc,
                                      const char* teseSrc);
     static GLuint buildComputeProgram(const char* compSrc);
-    static std::string readRecursive(const std::string& path, std::set<std::string>& visited, int& counter);
+    static std::string readRecursive(const std::string& path, const std::set<std::string>& defines, std::set<std::string>& visited, int& counter);
 };

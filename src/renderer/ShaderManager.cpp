@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 // ---------------------------------------------------------------------------
@@ -13,24 +14,6 @@
 // ---------------------------------------------------------------------------
 
 namespace {
-
-struct ShaderKey {
-    std::string vert, frag, geom, tesc, tese;
-
-    std::string getDescription() const {
-        return "/"  + (vert.size() > 0 ? (vert + "/") : "")
-                    + (geom.size() > 0 ? (geom + "/") : "")
-                    + (tesc.size() > 0 ? (tesc + "/") : "")
-                    + (tese.size() > 0 ? (tese + "/") : "")
-                    + (frag.size() > 0 ? (frag + "/") : "");
-    }
-
-    bool operator==(const ShaderKey& o) const {
-        return vert == o.vert && frag == o.frag && geom == o.geom
-            && tesc == o.tesc && tese == o.tese;
-    }
-};
-
 struct ShaderKeyHash {
     static void combine(std::size_t& seed, const std::string& s) {
         seed ^= std::hash<std::string>{}(s) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
@@ -42,6 +25,9 @@ struct ShaderKeyHash {
         combine(h, k.geom);
         combine(h, k.tesc);
         combine(h, k.tese);
+        for (const auto& define : k.defines) {
+            combine(h, define);
+        }
         return h;
     }
 };
@@ -56,9 +42,9 @@ struct ShaderEntry {
 // Static storage
 // ---------------------------------------------------------------------------
 
-std::unordered_map<ShaderHandle, ShaderEntry>           g_entries;
+std::unordered_map<ShaderHandle, ShaderEntry> g_entries;
 std::unordered_map<ShaderKey, ShaderHandle, ShaderKeyHash> g_keyToHandle;
-ShaderHandle                                            g_next = 1;
+ShaderHandle g_next = 1;
 
 } // namespace
 
@@ -68,18 +54,30 @@ ShaderHandle                                            g_next = 1;
 
 ShaderHandle ShaderManager::load(const std::string& vert, const std::string& frag,
                                   const std::string& geom, const std::string& tesc,
-                                  const std::string& tese) {
-    ShaderKey key{vert, frag, geom, tesc, tese};
+                                  const std::string& tese, std::set<std::string> defines) {
+    ShaderKey key{vert, frag, geom, tesc, tese, std::move(defines)};
 
     auto it = g_keyToHandle.find(key);
     if (it != g_keyToHandle.end())
         return it->second;
 
     ShaderHandle handle = g_next++;
-    ShaderEntry& entry = g_entries[handle];
-    entry.key    = key;
-    entry.shader = std::make_unique<Shader>(Shader::fromFiles(vert, frag, geom, tesc, tese));
-    entry.valid  = true;
+    ShaderEntry entry = ShaderEntry{key, std::make_unique<Shader>(Shader::fromFiles(vert, frag, geom, tesc, tese)), false};
+    g_entries[handle] = std::move(entry);
+
+    g_keyToHandle[key] = handle;
+    Log::info("ShaderManager: loaded '" + entry.key.getDescription() +  "' -> handle " + std::to_string(handle));
+    return handle;
+}
+
+ShaderHandle ShaderManager::load(const ShaderKey& key) {
+    auto it = g_keyToHandle.find(key);
+    if (it != g_keyToHandle.end())
+        return it->second;
+
+    ShaderHandle handle = g_next++;
+    ShaderEntry entry = ShaderEntry{key, std::make_unique<Shader>(Shader::fromFiles(vert, frag, geom, tesc, tese)), false};
+    g_entries[handle] = std::move(entry);
 
     g_keyToHandle[key] = handle;
     Log::info("ShaderManager: loaded '" + entry.key.getDescription() +  "' -> handle " + std::to_string(handle));

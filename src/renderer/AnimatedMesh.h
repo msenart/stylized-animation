@@ -10,6 +10,7 @@
 #include <glad/glad.h>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "RenderPipeline.h"
 #include "core/Timer.h"
 #include "assimp/Importer.hpp"
 #include "renderer/Mesh.h"
@@ -61,14 +62,22 @@ public:
 
     AnimatedMesh(const AnimatedMesh&)            = delete;
     AnimatedMesh& operator=(const AnimatedMesh&) = delete;
-
-    void draw() const override;
     void uploadUniforms(const Shader& shader, const RenderContext& ctx) const override;
+    void draw() const override;
     Timer* getTimer() {
         return &timer;
     }
 
 private:
+    const std::map<PassTag, ShaderKey> shaderKeysMap() const override {
+        std::map<PassTag, ShaderKey> key_map = {
+            {PassTag::Renderable, ShaderKey{"./shaders/animated_mesh.vert","./shaders/animated_mesh.frag"}},
+            {PassTag::Selectable, ShaderKey{"./shaders/animated_mesh.vert","./shaders/animated_mesh.frag"}}
+        };
+        return key_map;
+    }
+    // const static std::map<MeshPassTag, ShaderKey> SHADER_KEYS_MAP;
+
     const aiScene* m_scene = nullptr;
     Assimp::Importer m_importer;
     std::vector<AnimatedVertex> m_vertices = {};

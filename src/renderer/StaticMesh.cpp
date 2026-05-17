@@ -1,4 +1,6 @@
 #include "renderer/StaticMesh.h"
+
+#include "RenderPipeline.h"
 #include "renderer/Shader.h"
 #include "renderer/ShaderManager.h"
 

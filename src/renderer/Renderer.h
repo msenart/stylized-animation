@@ -1,6 +1,19 @@
 #pragma once
 #include "scene/Scene.h"
 #include "core/AssetManager.h"
+#include "core/Window.h"
+
+
+/**
+ * @brief It is a bag containing the necessary information about how the scene has to be rendered.
+ */
+struct RenderContext {
+    Camera* camera;
+    Scene* scene;
+    Window* window;
+    PassTag passTag;
+    float deltaTime;
+};
 
 /**
  * @brief Issues OpenGL draw calls for every Object in a Scene.
@@ -18,7 +31,7 @@ public:
      * @param assets  Read-only asset manager resolving MeshHandles.
      * @param aspect  Viewport width / height for the projection matrix.
      */
-    void render(const Scene& scene, const AssetManager& assets, float aspect);
+    void render(Scene* scene, Window* window, const AssetManager& assets, float aspect);
 
     /// @brief Returns the number of draw calls issued during the last render().
     int drawCalls() const;

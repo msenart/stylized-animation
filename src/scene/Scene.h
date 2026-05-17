@@ -3,13 +3,14 @@
  * @brief Scene container: camera, lights, and all renderable objects.
  */
 #pragma once
+#include <utility>
 #include <vector>
 #include <glm/glm.hpp>
 #include "scene/Camera.h"
 #include "scene/Light.h"
 #include "scene/Transform.h"
 #include "core/Types.h"
-
+#include <map>
 /**
  * @brief Surface appearance properties for an object.
  */
@@ -18,6 +19,9 @@ struct Material {
     float     roughness = 0.5f;
 };
 
+enum class PassTag;
+struct ShaderKey;
+using ShaderHandle = uint32_t;
 /**
  * @brief A mesh instance in the scene with its own transform and material.
  */
@@ -25,6 +29,9 @@ struct Object {
     MeshHandle meshHandle = 0; ///< Reference to geometry in the AssetManager.
     Transform  transform;
     Material   material;
+    std::map<PassTag, ShaderKey> passTagShaderSpecifications;
+    std::map<PassTag, ShaderHandle> passTagShaderHandle;
+    explicit Object(const std::map<PassTag, ShaderKey>& passTagSpecifications) : passTagShaderSpecifications(passTagSpecifications) {}
 };
 
 /**
@@ -33,7 +40,7 @@ struct Object {
  * The Renderer reads from the Scene; it never writes to it.
  */
 struct Scene {
-    Camera              camera;
+    Camera main_camera;
     std::vector<Light>  lights;
     std::vector<Object> objects;
 };

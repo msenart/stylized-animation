@@ -3,7 +3,13 @@
 #include <glm/glm.hpp>
 #include <vector>
 #include <cstdint>
+#include <map>
+
+#include "RenderPipeline.h"
 #include "renderer/Mesh.h"
+#include "scene/Scene.h"
+
+enum class PassTag;
 
 struct StaticVertex {
     glm::vec3 position;
@@ -23,7 +29,15 @@ public:
 
     GLsizei indexCount() const;
 
+    [[nodiscard]] const std::map<PassTag, ShaderKey> shaderKeysMap() const override{
+        std::map<PassTag, ShaderKey> key_map ={
+            {PassTag::Renderable , ShaderKey{"./shaders/blinn_phong.vert","./shaders/blinn_phong.frag"}},
+        {PassTag::Selectable , ShaderKey{"./shaders/blinn_phong.vert","./shaders/blinn_phong.frag"}}
+        };
+        return key_map;
+    }
 private:
+    // const static std::map<MeshPassTag,ShaderKey> SHADER_KEYS_MAP; Must define SHADER_KEYS_MAP ! Don't forget !
     GLuint  m_vao = 0, m_vbo = 0, m_ebo = 0;
     GLsizei m_indexCount = 0;
 };

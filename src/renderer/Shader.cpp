@@ -23,20 +23,20 @@ Shader Shader::compute(const char* compSrc) {
 
 Shader Shader::fromFiles(const std::string& vertPath, const std::string& fragPath,
                          const std::string& geomPath, const std::string& tescPath,
-                         const std::string& tesePath) {
-    std::string vert = readFile(vertPath);
-    std::string frag = readFile(fragPath);
-    std::string geom = geomPath.empty() ? std::string{} : readFile(geomPath);
-    std::string tesc = tescPath.empty() ? std::string{} : readFile(tescPath);
-    std::string tese = tesePath.empty() ? std::string{} : readFile(tesePath);
+                         const std::string& tesePath, const std::set<std::string>& defines) {
+    std::string vert = readFile(vertPath, defines);
+    std::string frag = readFile(fragPath, defines);
+    std::string geom = geomPath.empty() ? std::string{} : readFile(geomPath, defines);
+    std::string tesc = tescPath.empty() ? std::string{} : readFile(tescPath, defines);
+    std::string tese = tesePath.empty() ? std::string{} : readFile(tesePath, defines);
     return Shader(vert.c_str(), frag.c_str(),
                   geom.empty() ? nullptr : geom.c_str(),
                   tesc.empty() ? nullptr : tesc.c_str(),
                   tese.empty() ? nullptr : tese.c_str());
 }
 
-Shader Shader::computeFile(const std::string& compPath) {
-    std::string src = readFile(compPath);
+Shader Shader::computeFile(const std::string& compPath, const std::set<std::string>& defines) {
+    std::string src = readFile(compPath, defines);
     return Shader::compute(src.c_str());
 }
 
@@ -90,15 +90,20 @@ GLint Shader::loc(const char* name) const {
     return glGetUniformLocation(m_id, name);
 }
 
-std::string Shader::readFile(const std::string& path) {
+std::string Shader::readFile(const std::string& path, const std::set<std::string>& defines) {
     std::string content;
     std::set<std::string> visited{};
     int counter = 0;
-    content+=readRecursive(path,visited,counter);
+    // add define macros before atually reading the shader
+    for (const auto& define : defines) {
+        content += "#define " + define;
+    }
+    // read the whole shader program
+    content+=readRecursive(path,defines,visited,counter);
     return content;
 }
 
-std::string Shader::readRecursive(const std::string& path, std::set<std::string>& visited, int& counter){
+std::string Shader::readRecursive(const std::string& path, const std::set<std::string>& defines, std::set<std::string>& visited, int& counter){
     std::string total_path = SHADER_FOLDER_PATH + path;
     auto cur_id = counter;
     std::string content;
@@ -128,7 +133,7 @@ std::string Shader::readRecursive(const std::string& path, std::set<std::string>
             auto next_path = m[1].str();
             ++counter;
             output_ss << "#line " << 1 << " " << counter << "\n";
-            output_ss << readRecursive(next_path, visited,counter) << '\n';
+            output_ss << readRecursive(next_path, defines, visited,counter) << '\n';
             output_ss << "#line " << (line_counter + 1) << " " << cur_id << "\n";
         }
         else {

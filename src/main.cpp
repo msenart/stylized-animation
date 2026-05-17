@@ -12,6 +12,7 @@
 #include "scene/CameraController.h"
 #include "renderer/Geometry.h"
 #include "renderer/Renderer.h"
+#include "renderer/Shader.h"
 #include "renderer/ShaderManager.h"
 #include "ui/DebugConsole.h"
 #include "ui/RenderStats.h"
@@ -38,9 +39,13 @@ int main() {
     ImGui::StyleColorsDark();
     ImGui_ImplGlfw_InitForOpenGL(window.handle(), true);
     ImGui_ImplOpenGL3_Init("#version 460");
-
+    // creating the assets manager (to not have two meshes duplicated in memory)
     AssetManager assets;
 
+    // creating the scene
+    Scene scene;
+
+    // creating the elements composing the scene
     // auto cubeData = Geometry::makeCube();
     // MeshHandle meshHandle = assets.add(
     //     std::make_unique<Mesh>(cubeData.vertices, cubeData.indices));
@@ -49,14 +54,9 @@ int main() {
     // MeshHandle meshHandle = assets.add(std::make_unique<StaticMesh>(fileMeshData[0].vertices, fileMeshData[0].indices));
 
     MeshHandle meshHandle = assets.add(std::make_unique<AnimatedMesh>("assets/meshes/Standing Death Left 01.fbx"));
-    Scene scene;
-
-    Object obj;
+    Object obj = Object{assets.get(meshHandle).shaderKeysMap()};
     obj.meshHandle =meshHandle;
     obj.material.color = {0.8f, 0.3f, 0.2f};
-    // float angle = glm::radians(90.0f);
-    // glm::vec3 axis(0.0f, 0.0f, 1.0f);
-    // obj.transform.rotation = glm::angleAxis(angle, axis);
     obj.transform.scale = glm::vec3(0.05f);
     scene.objects.push_back(obj);
 
@@ -66,13 +66,23 @@ int main() {
     light.intensity = 1.f;
     scene.lights.push_back(light);
 
-    scene.camera.position = {0.f, 1.f, 5.f};
-    scene.camera.target   = {0.f, 0.f, 0.f};
+    scene.main_camera.position = {0.f, 1.f, 5.f};
+    scene.main_camera.target   = {0.f, 0.f, 0.f};
 
+    // instancing the necessary elements to render the scene
     Renderer         renderer;
     CameraController camCtrl;
     DebugConsole     console;
     RenderStats      stats;
+
+    // Compiling shaders
+    for (auto& object : scene.objects) {
+        for (auto& pair : object.passTagShaderSpecifications) {
+            auto render_pass = pair.first;
+            auto shader_key = pair.second;
+            object.passTagShaderHandle[render_pass] = ShaderManager::load(shader_key);
+        }
+    }
 
     Log::info("Engine ready");
     Log::info("F1 -> toggle camera control | F2 -> reload all shaders");
@@ -131,14 +141,14 @@ int main() {
         prevF3 = f3;
 
         // ZQSD camera movement
-        camCtrl.update(scene.camera, window.handle(), dt);
+        camCtrl.update(scene.main_camera, window.handle(), dt);
 
         int w, h;
         window.getSize(w, h);
         glViewport(0, 0, w, h);
 
         float aspect = (h > 0) ? static_cast<float>(w) / static_cast<float>(h) : 1.f;
-        renderer.render(scene, assets, aspect);
+        renderer.render(scene, window, assets);
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();

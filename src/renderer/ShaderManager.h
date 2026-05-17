@@ -1,10 +1,46 @@
 #pragma once
 #include <cstdint>
+#include <set>
 #include <string>
-
+#include <vector>
 class Shader;
 
 using ShaderHandle = uint32_t;
+
+/**
+ * Contains all the information about a shader program : what path to shader it uses, and the shader variants (#define macros)
+ */
+struct ShaderKey {
+    std::string vert, frag, geom, tesc, tese;
+    std::set<std::string> defines;
+
+    ShaderKey() = default;
+
+    ShaderKey(std::string  vert,
+        std::string  frag,
+        std::string  geom = "",
+        std::string  tesc = "",
+        std::string  tese = "",
+        std::set<std::string> defines = {}) : vert(std::move(vert)), frag(std::move(frag)), geom(std::move(geom)), tesc(std::move(tesc)), tese(std::move(tese)), defines(std::move(defines)) {}
+
+    [[nodiscard]] std::string getDescription() const {
+        std::string desc;
+        for (const auto& define : defines) {
+            desc+=define;
+        }
+        desc += "/"  + (vert.size() > 0 ? (vert + "/") : "")
+                    + (geom.size() > 0 ? (geom + "/") : "")
+                    + (tesc.size() > 0 ? (tesc + "/") : "")
+                    + (tese.size() > 0 ? (tese + "/") : "")
+                    + (frag.size() > 0 ? (frag + "/") : "");
+        return desc;
+    }
+
+    bool operator==(const ShaderKey& o) const {
+        return vert == o.vert && frag == o.frag && geom == o.geom
+            && tesc == o.tesc && tese == o.tese && defines == o.defines;
+    }
+};
 
 /**
  * @brief Static registry for compiled GLSL shader programs.
@@ -19,7 +55,6 @@ public:
     ShaderManager()                              = delete;
     ShaderManager(const ShaderManager&)          = delete;
     ShaderManager& operator=(const ShaderManager&) = delete;
-
     /**
      * @brief Compiles and registers a rasterization shader program.
      *
@@ -31,6 +66,7 @@ public:
      * @param geom  Geometry shader filename (empty = skip).
      * @param tesc  Tessellation control shader filename (empty = skip).
      * @param tese  Tessellation evaluation shader filename (empty = skip).
+     * @param defines All the macro modifiers to compile a specific shader.
      * @return Stable handle valid until shutdown().
      * @throws std::runtime_error if compilation or linking fails.
      */
@@ -38,7 +74,15 @@ public:
                              const std::string& frag,
                              const std::string& geom = {},
                              const std::string& tesc = {},
-                             const std::string& tese = {});
+                             const std::string& tese = {},
+                             std::set<std::string> defines = {});
+
+    /**
+     *
+     * @param key shader key to load the shader (cf. ShaderKey)
+     * @return shader handle, stable until shutdown().
+     */
+    static ShaderHandle load(const ShaderKey& key);
 
     /**
      * @brief Returns the compiled program for a given handle.

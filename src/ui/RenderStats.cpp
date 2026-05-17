@@ -17,7 +17,7 @@ void RenderStats::draw(const Scene& scene, int drawCalls, std::size_t meshCount,
 
     ImGui::Separator();
 
-    const Camera& cam = scene.camera;
+    const Camera& cam = scene.main_camera;
     ImGui::Text("Camera");
     ImGui::Text("  Position  (%.2f, %.2f, %.2f)",
                 cam.position.x, cam.position.y, cam.position.z);

@@ -10,6 +10,8 @@
 #include <assimp/postprocess.h>
 #include <glm/gtx/quaternion.hpp>
 
+#include "RenderPipeline.h"
+
 AnimatedMesh::AnimatedMesh(const std::string& path) {
     shaderHandle = ShaderManager::load("animated_mesh.vert", "animated_mesh.frag");
 
