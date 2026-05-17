@@ -8,8 +8,6 @@ class Shader;
 
 class Mesh {
 public:
-    ShaderHandle shaderHandle = 0;
-
     virtual const std::map<PassTag, ShaderKey> shaderKeysMap() const = 0;
 
     virtual void draw() const = 0;

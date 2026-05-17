@@ -27,14 +27,13 @@ class RenderPass {
 
     virtual void setup(unsigned int window_w, unsigned int window_h) = 0;
     virtual void execute() = 0;
-    virtual std::set<std::string> getShaderDefines() = 0;
     virtual void clear() = 0;
     virtual void onResize(unsigned int window_w, unsigned int window_h) {
         setup(window_w, window_h);
     }
 public:
     virtual ~RenderPass() = default;
-    std::string name;
+    std::string name = "GenericRenderPass";
 };
 
 /**
@@ -43,14 +42,12 @@ public:
 class MeshIDRenderPass final : public RenderPass {
     unsigned int fbo = 0;
     unsigned int fboTex = 0;
-    const static std::set<std::string> SHADER_DEFINES;
-
+    MeshIDRenderPass() : RenderPass() {
+        name = "MeshIDRenderPass";
+    };
     void setup(unsigned int window_w, unsigned int window_h) override;
     void execute() override;
     ~MeshIDRenderPass() override = default;
-    std::set<std::string> getShaderDefines() override {
-        return SHADER_DEFINES;
-    }
     void clear() override;
 };
 

@@ -1,4 +1,5 @@
 #include "core/AssetManager.h"
+#include "renderer/Mesh.h"
 #include <stdexcept>
 
 MeshHandle AssetManager::add(std::unique_ptr<Mesh> mesh) {

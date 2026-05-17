@@ -62,7 +62,8 @@ ShaderHandle ShaderManager::load(const std::string& vert, const std::string& fra
         return it->second;
 
     ShaderHandle handle = g_next++;
-    ShaderEntry entry = ShaderEntry{key, std::make_unique<Shader>(Shader::fromFiles(vert, frag, geom, tesc, tese)), false};
+    ShaderEntry entry = ShaderEntry{key, std::make_unique<Shader>(Shader::fromFiles(vert, frag, geom, tesc, tese)), true};
+
     g_entries[handle] = std::move(entry);
 
     g_keyToHandle[key] = handle;
@@ -74,11 +75,10 @@ ShaderHandle ShaderManager::load(const ShaderKey& key) {
     auto it = g_keyToHandle.find(key);
     if (it != g_keyToHandle.end())
         return it->second;
-
+    auto [vert, frag, geom, tesc, tese,defines] = key;
     ShaderHandle handle = g_next++;
-    ShaderEntry entry = ShaderEntry{key, std::make_unique<Shader>(Shader::fromFiles(vert, frag, geom, tesc, tese)), false};
+    ShaderEntry entry = ShaderEntry{key, std::make_unique<Shader>(Shader::fromFiles(vert, frag, geom, tesc, tese, defines)), true};
     g_entries[handle] = std::move(entry);
-
     g_keyToHandle[key] = handle;
     Log::info("ShaderManager: loaded '" + entry.key.getDescription() +  "' -> handle " + std::to_string(handle));
     return handle;

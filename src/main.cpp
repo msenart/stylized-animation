@@ -148,7 +148,7 @@ int main() {
         glViewport(0, 0, w, h);
 
         float aspect = (h > 0) ? static_cast<float>(w) / static_cast<float>(h) : 1.f;
-        renderer.render(scene, window, assets);
+        renderer.render(&scene, &window, assets, aspect);
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();

@@ -11,6 +11,8 @@
 #include "scene/Transform.h"
 #include "core/Types.h"
 #include <map>
+#include "renderer/ShaderManager.h"
+
 /**
  * @brief Surface appearance properties for an object.
  */
@@ -20,7 +22,6 @@ struct Material {
 };
 
 enum class PassTag;
-struct ShaderKey;
 using ShaderHandle = uint32_t;
 /**
  * @brief A mesh instance in the scene with its own transform and material.

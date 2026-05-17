@@ -6,8 +6,8 @@
 #include <memory>
 #include <unordered_map>
 #include "core/Types.h"
-#include "renderer/Mesh.h"
 
+class Mesh;
 /**
  * @brief Owns all Mesh objects and provides access via MeshHandle.
  *

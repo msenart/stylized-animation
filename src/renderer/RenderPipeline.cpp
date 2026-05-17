@@ -7,8 +7,6 @@
 #include "core/Log.h"
 #include "glad/glad.h"
 
-const std::set<std::string> SHADER_DEFINES = {"MESH_ID_PASS"};
-
 void MeshIDRenderPass::setup(unsigned int window_h, unsigned int window_w) {
     // creating frame buffer
     glGenFramebuffers(1, &fbo);

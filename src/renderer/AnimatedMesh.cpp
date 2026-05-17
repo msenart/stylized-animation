@@ -13,8 +13,6 @@
 #include "RenderPipeline.h"
 
 AnimatedMesh::AnimatedMesh(const std::string& path) {
-    shaderHandle = ShaderManager::load("animated_mesh.vert", "animated_mesh.frag");
-
     m_scene = m_importer.ReadFile(path,
             aiProcess_CalcTangentSpace|
             aiProcess_Triangulate           |

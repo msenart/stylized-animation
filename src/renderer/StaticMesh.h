@@ -31,8 +31,8 @@ public:
 
     [[nodiscard]] const std::map<PassTag, ShaderKey> shaderKeysMap() const override{
         std::map<PassTag, ShaderKey> key_map ={
-            {PassTag::Renderable , ShaderKey{"./shaders/blinn_phong.vert","./shaders/blinn_phong.frag"}},
-        {PassTag::Selectable , ShaderKey{"./shaders/blinn_phong.vert","./shaders/blinn_phong.frag"}}
+            {PassTag::Renderable , ShaderKey{"blinn_phong.vert","blinn_phong.frag"}},
+        {PassTag::Selectable , ShaderKey{"blinn_phong.vert","blinn_phong.frag"}}
         };
         return key_map;
     }

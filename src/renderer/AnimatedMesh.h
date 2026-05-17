@@ -71,8 +71,8 @@ public:
 private:
     const std::map<PassTag, ShaderKey> shaderKeysMap() const override {
         std::map<PassTag, ShaderKey> key_map = {
-            {PassTag::Renderable, ShaderKey{"./shaders/animated_mesh.vert","./shaders/animated_mesh.frag"}},
-            {PassTag::Selectable, ShaderKey{"./shaders/animated_mesh.vert","./shaders/animated_mesh.frag"}}
+            {PassTag::Renderable, ShaderKey{"animated_mesh.vert","animated_mesh.frag"}},
+            {PassTag::Selectable, ShaderKey{"animated_mesh.vert","animated_mesh.frag"}}
         };
         return key_map;
     }

@@ -10,8 +10,6 @@ static constexpr unsigned int NORMAL_LOCATION   = 1;
 StaticMesh::StaticMesh(const std::vector<StaticVertex>& vertices, const std::vector<uint32_t>& indices)
     : m_indexCount(static_cast<GLsizei>(indices.size()))
 {
-    shaderHandle = ShaderManager::load("blinn_phong.vert", "blinn_phong.frag");
-
     glCreateVertexArrays(1, &m_vao);
     glCreateBuffers(1, &m_vbo);
     glCreateBuffers(1, &m_ebo);
@@ -44,10 +42,6 @@ void StaticMesh::draw() const {
 
 void StaticMesh::uploadUniforms(const Shader& shader, const RenderContext& ctx) const {
     Mesh::uploadUniforms(shader, ctx);
-    shader.set("objectColor", ctx.objectColor);
-    shader.set("lightPos",    ctx.lightPos);
-    shader.set("lightColor",  ctx.lightColor);
-    shader.set("viewPos",     ctx.viewPos);
 }
 
 GLsizei StaticMesh::indexCount() const {
