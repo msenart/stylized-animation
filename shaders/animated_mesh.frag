@@ -1,11 +1,14 @@
 #version 460 core
 
-//#define TOON_SHADING
+#define TOON_SHADING
+#define CONTOURS
 
 in vec3 normalO;
 in vec3 localPosO;
+in vec3 fragPos;
 flat in uint vertexID;
 
+uniform vec3 viewPos;
 uniform uint activationBoneID =7;
 
 out vec4 FragColor;
@@ -21,7 +24,7 @@ layout(std430, binding = 2) readonly buffer BoneBuffer {
     VertexBoneData allVertexBoneData[];
 };
 
-uniform vec4 not_influenced_vertex_color = vec4(0.0, 0.0, 1.0, 1.0);
+uniform vec4 not_influenced_vertex_color = vec4(1.0, 1.0, 1.0, 1.0);
 uniform vec4 influenced_vertex_color = vec4(1.0, 0.0, 0.0, 1.0);
 
 void main() {
@@ -45,5 +48,11 @@ void main() {
     #else
     FragColor *= max(diffuse_coeff, 0.3);
     #endif
-    
+
+    #ifdef CONTOURS
+    float epsilon = 0.3;
+    if (dot(normalize(normalO),normalize(viewPos-fragPos)) < epsilon){
+        FragColor = vec4(0);
+    }
+    #endif
 }

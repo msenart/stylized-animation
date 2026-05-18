@@ -5,6 +5,7 @@ layout(location = 1) in vec3 normal;
 
 out vec3 normalO;
 out vec3 localPosO;
+out vec3 fragPos;
 flat out uint vertexID;
 
 const uint MAX_NUM_BONES_PER_VERTEX = 16;
@@ -33,7 +34,8 @@ void main() {
         boneTransform+=gBones[bone_id]*weight;
     }
     vec4 localPos = boneTransform*vec4(position,1.0);
-    gl_Position = projection*view*model*localPos;
+    fragPos = vec3(model*localPos);
+    gl_Position = projection*view*vec4(fragPos,1.0);
     normalO = vec3(transpose(inverse(boneTransform))*vec4(normal,0.0));
     localPosO = position;
     vertexID = gl_VertexID;

@@ -67,6 +67,7 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
         const Shader& shader = ShaderManager::get(handle);
         shader.bind();
         shader.set("model",obj.transform.matrix());
+        shader.set("viewPos",scene->main_camera.position);
         shader.set("view",scene->main_camera.view());
         shader.set("projection",scene->main_camera.projection(aspect));
         shader.set("objectColor",obj.material.color);
