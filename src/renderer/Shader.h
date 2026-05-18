@@ -83,10 +83,10 @@ public:
     void set(const char* name, const glm::vec4& v) const;
     void set(const char* name, const glm::vec3& v) const;
     void set(const char* name, const glm::vec2& v) const;
-    void set(const char* name, float v)             const;
-    void set(const char* name, int v)               const;
-    void set(const char* name, bool v)              const;
-
+    void set(const char* name, float v) const;
+    void set(const char* name, int v) const;
+    void set(const char* name, bool v) const;
+    void set(const char* name, unsigned int v) const;
 private:
     GLuint m_id = 0;
 

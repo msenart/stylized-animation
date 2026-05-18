@@ -81,6 +81,7 @@ void Shader::set(const char* name, const glm::vec2& v) const {
 void Shader::set(const char* name, float v) const { glUniform1f(loc(name), v); }
 void Shader::set(const char* name, int   v) const { glUniform1i(loc(name), v); }
 void Shader::set(const char* name, bool  v) const { glUniform1i(loc(name), static_cast<int>(v)); }
+void Shader::set(const char* name, unsigned int v) const { glUniform1ui(loc(name), v); }
 
 // ---------------------------------------------------------------------------
 // Private helpers

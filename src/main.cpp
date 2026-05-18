@@ -90,6 +90,18 @@ int main() {
     auto aspect = h > 0 ? static_cast<float>(w)/static_cast<float>(h) : 0;
     renderer.setup(&scene,&window,assets,aspect);
 
+    // Set up fram buffer callback
+
+    glfwSetWindowUserPointer(window.handle(), &renderer);
+
+    glfwSetFramebufferSizeCallback(window.handle(), [](GLFWwindow* window, int width, int height) {
+        glViewport(0, 0, width, height);
+
+        if (auto* renderer = static_cast<Renderer*>(glfwGetWindowUserPointer(window))) {
+            renderer->onResize(width,height);
+        }
+    });
+
     Log::info("Engine ready");
     Log::info("F1 -> toggle camera control | F2 -> reload all shaders");
 
@@ -104,10 +116,10 @@ int main() {
     // Record animation
     int vid_w = 1280;
     int vid_h = 720;
-    const char* cmd = "ffmpeg -r 60 -f rawvideo -pix_fmt rgba -s 1280x720 -i - "
-        "-threads 0 -preset fast -y -pix_fmt yuv420p -crf 21 -vf vflip output.mp4";
-    FILE* ffmpeg = popen(cmd, "w");
-    int* vid_buffer = new int[vid_w * vid_h];
+    // const char* cmd = "ffmpeg -r 60 -f rawvideo -pix_fmt rgba -s 1280x720 -i - "
+    //     "-threads 0 -preset fast -y -pix_fmt yuv420p -crf 21 -vf vflip output.mp4";
+    // FILE* ffmpeg = popen(cmd, "w");
+    // int* vid_buffer = new int[vid_w * vid_h];
 
     while (!window.shouldClose()) {
         window.pollEvents();
@@ -152,7 +164,6 @@ int main() {
 
         int w, h;
         window.getSize(w, h);
-        glViewport(0, 0, w, h);
 
         float aspect = (h > 0) ? static_cast<float>(w) / static_cast<float>(h) : 1.f;
         renderer.render(&scene, &window, assets, aspect);
@@ -168,8 +179,8 @@ int main() {
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-        glReadPixels(0, 0, vid_w, vid_h, GL_RGBA, GL_UNSIGNED_BYTE, vid_buffer);
-        fwrite(vid_buffer, sizeof(int) * vid_w * vid_h, 1, ffmpeg);
+        // glReadPixels(0, 0, vid_w, vid_h, GL_RGBA, GL_UNSIGNED_BYTE, vid_buffer);
+        // fwrite(vid_buffer, sizeof(int) * vid_w * vid_h, 1, ffmpeg);
 
         window.swapBuffers();
     }
@@ -178,7 +189,7 @@ int main() {
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
-    pclose(ffmpeg);
+    // pclose(ffmpeg);
 
     return 0;
 }

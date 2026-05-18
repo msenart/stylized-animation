@@ -11,7 +11,7 @@
 
 // MeshIDRenderPass implementation
 
-void MeshIDRenderPass::setup(unsigned int window_h, unsigned int window_w) {
+void MeshIDRenderPass::setup(unsigned int window_w, unsigned int window_h) {
     // creating frame buffer
     glGenFramebuffers(1, &m_fbo);
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
@@ -19,7 +19,7 @@ void MeshIDRenderPass::setup(unsigned int window_h, unsigned int window_w) {
     // creating texture for the frame buffer
     glGenTextures(1, &m_fboTex);
     glBindTexture(GL_TEXTURE_2D, m_fboTex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_R32UI, window_w, window_h, 0, GL_RED_INTEGER, GL_UNSIGNED_BYTE, nullptr);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R32UI, window_w, window_h, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, nullptr);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);

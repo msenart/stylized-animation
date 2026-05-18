@@ -23,9 +23,6 @@ void Renderer::setup(Scene *scene, const Window *window, const AssetManager &ass
 }
 
 void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, float aspect) {
-    glClearColor(0.08f, 0.08f, 0.08f, 1.f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
     RenderContext ctx{};
     ctx.camera = &scene->main_camera;
     ctx.scene = scene;
@@ -33,6 +30,7 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
 
     m_drawCalls = 0;
     // Mesh ID pass
+    m_render_pipeline.clear("MeshIDRenderPass");
     m_render_pipeline.execute("MeshIDRenderPass");
     for (unsigned int i = 0; i < scene->objects.size(); i++) {
         auto obj = scene->objects[i];
@@ -48,34 +46,14 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
         shader.set("model",obj.transform.matrix());
         shader.set("view",scene->main_camera.view());
         shader.set("projection",scene->main_camera.projection(aspect));
-        shader.set("meshID",static_cast<int>(i));
+        shader.set("meshID",static_cast<unsigned int>(1));
         mesh.uploadUniforms(shader, ctx);
         mesh.draw();
         ++m_drawCalls;
     }
-    // glReadBuffer(GL_COLOR_ATTACHMENT0);
-    glPixelStorei(GL_PACK_ALIGNMENT, 1);
 
-    // On lit 1 pixel (1x1) aux coordonnées (x, y)
-    int w,h;
-    window->getSize(w,h);
-    std::vector<int> pixels(w * h);
-    glReadPixels(
-        0, 0, w,h,
-        GL_RED_INTEGER, // TRÈS IMPORTANT : le suffixe _INTEGER
-        GL_INT,         // Ou GL_UNSIGNED_INT si ton FBO est en unsigned
-        pixels.data()
-    );
-
-    long long sum = 0;
-    for (int val : pixels) {
-        sum += val;
-    }
-
-    Log::info("La somme totale est : " + std::to_string(sum));
-
-    m_render_pipeline.clear("MeshIDRenderPass");
     // Screen pass
+    m_render_pipeline.clear("FinalRenderPass");
     m_render_pipeline.execute("FinalRenderPass");
     for (const Object& obj : scene->objects) {
         auto it = obj.passTagShaderHandle.find(PassTag::FinalRenderPass);
@@ -96,7 +74,11 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
         mesh.draw();
         ++m_drawCalls;
     }
-    m_render_pipeline.clear("FinalRenderPass");
+
+}
+
+void Renderer::onResize(int width, int height) {
+    m_render_pipeline.onResize(width, height);
 }
 
 int Renderer::drawCalls() const {

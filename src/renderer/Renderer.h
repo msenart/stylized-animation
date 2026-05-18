@@ -38,6 +38,8 @@ public:
      */
     void render(Scene* scene, Window* window, const AssetManager& assets, float aspect);
 
+    void onResize(int width, int height);
+
     /// @brief Returns the number of draw calls issued during the last render().
     int drawCalls() const;
 
