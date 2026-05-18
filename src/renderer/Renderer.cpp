@@ -11,20 +11,74 @@ Renderer::Renderer() {
     glEnable(GL_DEPTH_TEST);
 }
 
+void Renderer::setup(Scene *scene, const Window *window, const AssetManager &assets, float aspect) {
+    // Creating the rendering pipeline and the renderer
+    m_render_pipeline = RenderPipeline();
+    m_render_pipeline.addPass(std::make_shared<MeshIDRenderPass>());
+    m_render_pipeline.addPass(std::make_shared<FinalRenderPass>());
+    // Setting up the rendering pipeline and the renderer
+    int w, h;
+    window->getSize(w,h);
+    m_render_pipeline.setup(w,h);
+}
+
 void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, float aspect) {
     glClearColor(0.08f, 0.08f, 0.08f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    RenderContext ctx;
+    RenderContext ctx{};
     ctx.camera = &scene->main_camera;
     ctx.scene = scene;
     ctx.window = window;
 
     m_drawCalls = 0;
     // Mesh ID pass
+    m_render_pipeline.execute("MeshIDRenderPass");
+    for (unsigned int i = 0; i < scene->objects.size(); i++) {
+        auto obj = scene->objects[i];
+        auto it = obj.passTagShaderHandle.find(PassTag::MeshIDRenderPass);
+        if (it == obj.passTagShaderHandle.end()) {continue;}
+        ShaderHandle handle = it->second;
+        if (handle == 0) {continue;}
+
+        const Mesh& mesh = assets.get(obj.meshHandle);
+
+        const Shader& shader = ShaderManager::get(handle);
+        shader.bind();
+        shader.set("model",obj.transform.matrix());
+        shader.set("view",scene->main_camera.view());
+        shader.set("projection",scene->main_camera.projection(aspect));
+        shader.set("meshID",static_cast<int>(i));
+        mesh.uploadUniforms(shader, ctx);
+        mesh.draw();
+        ++m_drawCalls;
+    }
+    // glReadBuffer(GL_COLOR_ATTACHMENT0);
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+
+    // On lit 1 pixel (1x1) aux coordonnées (x, y)
+    int w,h;
+    window->getSize(w,h);
+    std::vector<int> pixels(w * h);
+    glReadPixels(
+        0, 0, w,h,
+        GL_RED_INTEGER, // TRÈS IMPORTANT : le suffixe _INTEGER
+        GL_INT,         // Ou GL_UNSIGNED_INT si ton FBO est en unsigned
+        pixels.data()
+    );
+
+    long long sum = 0;
+    for (int val : pixels) {
+        sum += val;
+    }
+
+    Log::info("La somme totale est : " + std::to_string(sum));
+
+    m_render_pipeline.clear("MeshIDRenderPass");
     // Screen pass
+    m_render_pipeline.execute("FinalRenderPass");
     for (const Object& obj : scene->objects) {
-        auto it = obj.passTagShaderHandle.find(PassTag::Renderable);
+        auto it = obj.passTagShaderHandle.find(PassTag::FinalRenderPass);
         if (it == obj.passTagShaderHandle.end()) continue;
 
         ShaderHandle handle = it->second;
@@ -42,6 +96,7 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
         mesh.draw();
         ++m_drawCalls;
     }
+    m_render_pipeline.clear("FinalRenderPass");
 }
 
 int Renderer::drawCalls() const {

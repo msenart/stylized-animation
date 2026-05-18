@@ -1,4 +1,5 @@
 #pragma once
+#include "RenderPipeline.h"
 #include "scene/Scene.h"
 #include "core/AssetManager.h"
 #include "core/Window.h"
@@ -25,11 +26,15 @@ class Renderer {
 public:
     Renderer();
 
+    /// @brief Initialize the object members (essentially renderPipeline)
+    void setup(Scene* scene, const Window* window, const AssetManager& assets, float aspect);
+
     /**
      * @brief Clears the framebuffer and draws every object in the scene.
-     * @param scene   Read-only scene providing camera, lights, and objects.
-     * @param assets  Read-only asset manager resolving MeshHandles.
-     * @param aspect  Viewport width / height for the projection matrix.
+     * @param scene Read-only scene providing camera, lights, and objects.
+     * @param window Current rendering window
+     * @param assets Read-only asset manager resolving MeshHandles.
+     * @param aspect Viewport width / height for the projection matrix.
      */
     void render(Scene* scene, Window* window, const AssetManager& assets, float aspect);
 
@@ -37,5 +42,6 @@ public:
     int drawCalls() const;
 
 private:
+    RenderPipeline m_render_pipeline;
     int m_drawCalls = 0;
 };

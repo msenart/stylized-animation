@@ -84,6 +84,12 @@ int main() {
         }
     }
 
+    // Setup the renderer
+    int w,h;
+    window.getSize(w, h);
+    auto aspect = h > 0 ? static_cast<float>(w)/static_cast<float>(h) : 0;
+    renderer.setup(&scene,&window,assets,aspect);
+
     Log::info("Engine ready");
     Log::info("F1 -> toggle camera control | F2 -> reload all shaders");
 
@@ -95,6 +101,7 @@ int main() {
     bool prevF2 = false;
     bool prevF3 = false;
 
+    // Record animation
     int vid_w = 1280;
     int vid_h = 720;
     const char* cmd = "ffmpeg -r 60 -f rawvideo -pix_fmt rgba -s 1280x720 -i - "
