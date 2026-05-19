@@ -22,6 +22,16 @@ enum class PassTag {
     FinalRenderPass, // can be rendered
 };
 
+inline std::string PassTagToString(PassTag tag) {
+    switch (tag) {
+        case PassTag::GenericRenderPass: return "Generic Render Pass";
+        case PassTag::ShadowRenderPass:  return "Shadow Render Pass";
+        case PassTag::MeshIDRenderPass:  return "Mesh ID Render Pass";
+        case PassTag::FinalRenderPass:   return "Final Render Pass";
+        default:                         return "Unknown Pass Pass";
+    }
+}
+
 /**
  * @brief Virtual class that gathers all the types of render passes.
  */
@@ -100,4 +110,6 @@ public:
     void onResize(unsigned int window_w, unsigned int window_h) const;
 
     unsigned int getPassTextures(const std::string &name);
+
+    unsigned int getPassFbo(const std::string &name);
 };

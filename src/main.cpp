@@ -7,6 +7,7 @@
 #include "core/Log.h"
 #include "core/Window.h"
 #include "core/AssetManager.h"
+#include "core/MegaWindowContext.h"
 #include "renderer/AnimatedMesh.h"
 #include "scene/Scene.h"
 #include "scene/CameraController.h"
@@ -16,6 +17,7 @@
 #include "renderer/ShaderManager.h"
 #include "ui/DebugConsole.h"
 #include "ui/RenderStats.h"
+#include "ui/SelectionManager.h"
 
 static void setupGLDebugCallback() {
     glEnable(GL_DEBUG_OUTPUT);
@@ -74,6 +76,7 @@ int main() {
     CameraController camCtrl;
     DebugConsole     console;
     RenderStats      stats;
+    SelectionManager selectionManager{&scene,renderer.renderPipeline()};
 
     // Compiling shaders
     for (auto& object : scene.objects) {
@@ -90,15 +93,47 @@ int main() {
     auto aspect = h > 0 ? static_cast<float>(w)/static_cast<float>(h) : 0;
     renderer.setup(&scene,&window,assets,aspect);
 
-    // Set up fram buffer callback
+    // Set up all necessary callbacks
 
-    glfwSetWindowUserPointer(window.handle(), &renderer);
+    MegaWindowContext windowContext;
+    windowContext.scene = &scene;
+    windowContext.renderer = &renderer;
+    windowContext.selectionManager = &selectionManager;
+    windowContext.window = &window;
+
+    glfwSetWindowUserPointer(window.handle(), &windowContext);
 
     glfwSetFramebufferSizeCallback(window.handle(), [](GLFWwindow* window, int width, int height) {
         glViewport(0, 0, width, height);
-
-        if (auto* renderer = static_cast<Renderer*>(glfwGetWindowUserPointer(window))) {
+        MegaWindowContext* windowContext = static_cast<MegaWindowContext*>(glfwGetWindowUserPointer(window));
+        if (!windowContext) {
+            return;
+        }
+        if (auto* renderer = windowContext->renderer) {
             renderer->onResize(width,height);
+        }
+    });
+
+    glfwSetMouseButtonCallback(window.handle(), [](GLFWwindow* window, int button, int action, int mods) {
+
+        ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
+
+        ImGuiIO& io = ImGui::GetIO();
+        if (io.WantCaptureMouse) return;
+
+        auto* ctx = static_cast<MegaWindowContext*>(glfwGetWindowUserPointer(window));
+        if (!ctx) {
+            return;
+        }
+
+        if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+            if (ctx->selectionManager) {
+                double xpos, ypos;
+                glfwGetCursorPos(window, &xpos, &ypos);
+                int w,h;
+                ctx->window->getSize(w,h);
+                ctx->selectionManager->select(glm::vec2(xpos, ypos),h);
+            }
         }
     });
 
@@ -171,7 +206,7 @@ int main() {
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-
+        selectionManager.draw();
         console.draw();
         stats.draw(scene, renderer.drawCalls(), assets.meshCount(), fps);
         ShaderManager::drawUI();

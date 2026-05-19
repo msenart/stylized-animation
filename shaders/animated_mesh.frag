@@ -1,7 +1,7 @@
 #version 460 core
 
-#define TOON_SHADING
-#define CONTOURS
+//#define TOON_SHADING
+//#define CONTOURS
 
 in vec3 normalO;
 in vec3 localPosO;

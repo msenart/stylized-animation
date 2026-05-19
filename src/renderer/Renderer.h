@@ -40,6 +40,10 @@ public:
 
     void onResize(int width, int height);
 
+    RenderPipeline* renderPipeline() {
+        return &m_render_pipeline;
+    }
+
     /// @brief Returns the number of draw calls issued during the last render().
     int drawCalls() const;
 

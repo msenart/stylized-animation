@@ -46,7 +46,7 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
         shader.set("model",obj.transform.matrix());
         shader.set("view",scene->main_camera.view());
         shader.set("projection",scene->main_camera.projection(aspect));
-        shader.set("meshID",static_cast<unsigned int>(1));
+        shader.set("meshID",static_cast<unsigned int>(i+1));
         mesh.uploadUniforms(shader, ctx);
         mesh.draw();
         ++m_drawCalls;

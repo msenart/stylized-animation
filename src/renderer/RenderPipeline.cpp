@@ -84,11 +84,21 @@ void RenderPipeline::setup(unsigned int window_w, unsigned int window_h) const {
 }
 
 void RenderPipeline::execute(const std::string& name) {
-    mapRenderPasses[name]->execute();
+    auto it = mapRenderPasses.find(name);
+    if (it != mapRenderPasses.end()) {
+        it->second->execute();
+    } else {
+        Log::error("Failed to execute render pass: '" + name + "' not found.");
+    }
 }
 
-void RenderPipeline::clear(const std::string &name) {
-    mapRenderPasses[name]->clear();
+void RenderPipeline::clear(const std::string& name) {
+    auto it = mapRenderPasses.find(name);
+    if (it != mapRenderPasses.end()) {
+        it->second->clear();
+    } else {
+        Log::error("Failed to clear render pass: '" + name + "' not found.");
+    }
 }
 
 void RenderPipeline::onResize(unsigned int window_w, unsigned int window_h) const {
@@ -97,6 +107,22 @@ void RenderPipeline::onResize(unsigned int window_w, unsigned int window_h) cons
     }
 }
 
-unsigned int RenderPipeline::getPassTextures(const std::string &name) {
-    return mapRenderPasses[name]->fboTex();
+unsigned int RenderPipeline::getPassTextures(const std::string& name) {
+    auto it = mapRenderPasses.find(name);
+    if (it != mapRenderPasses.end()) {
+        return it->second->fboTex();
+    } else {
+        Log::error("Failed to get texture: Render pass '" + name + "' not found.");
+        return 0;
+    }
+}
+
+unsigned int RenderPipeline::getPassFbo(const std::string& name) {
+    auto it = mapRenderPasses.find(name);
+    if (it != mapRenderPasses.end()) {
+        return it->second->fbo();
+    } else {
+        Log::error("Failed to get FBO: Render pass '" + name + "' not found.");
+        return 0;
+    }
 }

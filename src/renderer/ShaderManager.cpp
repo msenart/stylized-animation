@@ -8,6 +8,9 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+#include "core/MegaWindowContext.h"
+
+#include "GLFW/glfw3.h"
 
 // ---------------------------------------------------------------------------
 // Internal types
@@ -92,23 +95,66 @@ const Shader& ShaderManager::get(ShaderHandle handle) {
 }
 
 void ShaderManager::reloadAll() {
+    GLFWwindow* window = glfwGetCurrentContext();
+    if (!window) {
+        Log::error("ShaderManager: No active GLFW context.");
+        return;
+    }
+
+    auto* ctx = static_cast<MegaWindowContext*>(glfwGetWindowUserPointer(window));
+    if (!ctx || !ctx->scene) {
+        Log::error("ShaderManager: Window context or Scene is missing.");
+        return;
+    }
+
     int ok = 0, fail = 0;
-    for (auto& [handle, entry] : g_entries) {
-        const ShaderKey& k = entry.key;
-        try {
-            *entry.shader = Shader::fromFiles(k.vert, k.frag, k.geom, k.tesc, k.tese);
-            entry.valid   = true;
-            ++ok;
-        } catch (const std::exception& e) {
-            entry.valid = false;
-            ++fail;
-            Log::error("ShaderManager: reload failed for '" + k.vert + "': " + e.what());
+
+    for (auto& obj : ctx->scene->objects) {
+        for (const auto& [tag, key] : obj.passTagShaderSpecifications) {
+
+            ShaderHandle handle = 0;
+            for (const auto& [existingHandle, entry] : g_entries) {
+                if (entry.key.vert == key.vert &&
+                    entry.key.frag == key.frag &&
+                    entry.key.geom == key.geom &&
+                    entry.key.tesc == key.tesc &&
+                    entry.key.tese == key.tese &&
+                    entry.key.defines == key.defines) {
+                    handle = existingHandle;
+                    break;
+                }
+            }
+
+            if (handle == 0) {
+                handle = static_cast<ShaderHandle>(g_entries.size() + 1);
+                g_entries[handle].key = key;
+
+                if (!g_entries[handle].shader) {
+                    g_entries[handle].shader = std::make_unique<Shader>("","");
+                }
+            }
+
+            auto& entry = g_entries[handle];
+
+            try {
+                *entry.shader = Shader::fromFiles(key.vert, key.frag, key.geom, key.tesc, key.tese);
+                entry.valid = true;
+
+                obj.passTagShaderHandle[tag] = handle;
+                ++ok;
+            } catch (const std::exception& e) {
+                entry.valid = false;
+                ++fail;
+                Log::error("ShaderManager: reload failed for '" + key.vert + "': " + e.what());
+            }
         }
     }
-    if (fail == 0)
-        Log::info("ShaderManager: " + std::to_string(ok) + " shader(s) reloaded");
-    else
-        Log::warn("ShaderManager: " + std::to_string(ok) + " OK, " + std::to_string(fail) + " failed");
+
+    if (fail == 0) {
+        Log::info("ShaderManager: " + std::to_string(ok) + " shader(s) loaded/reloaded.");
+    } else {
+        Log::warn("ShaderManager: " + std::to_string(ok) + " OK, " + std::to_string(fail) + " failed.");
+    }
 }
 
 void ShaderManager::drawUI() {

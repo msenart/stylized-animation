@@ -61,6 +61,8 @@ set(sources
     ${SOURCE_DIR}/ui/SelectionManager.h
     ${SOURCE_DIR}/renderer/RenderPipeline.cpp
     ${SOURCE_DIR}/renderer/RenderPipeline.h
+        src/core/MegaWindowContext.h
+        src/scene/Scene.cpp
 )
 
 add_executable(stylize-animation ${sources}) # ${includes}

@@ -11,6 +11,10 @@
 #include "scene/Transform.h"
 #include "core/Types.h"
 #include <map>
+#include <glm/gtc/type_ptr.hpp>
+
+#include "imgui.h"
+#include "renderer/RenderPipeline.h"
 #include "renderer/ShaderManager.h"
 
 /**
@@ -33,6 +37,8 @@ struct Object {
     std::map<PassTag, ShaderKey> passTagShaderSpecifications;
     std::map<PassTag, ShaderHandle> passTagShaderHandle;
     explicit Object(const std::map<PassTag, ShaderKey>& passTagSpecifications) : passTagShaderSpecifications(passTagSpecifications) {}
+
+    void draw(bool* p_open = nullptr);
 };
 
 /**
