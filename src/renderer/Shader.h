@@ -52,12 +52,12 @@ public:
      * @param defines All defines macros needed to compile the shader the right way
      * @throws std::runtime_error if a file cannot be opened or compilation fails.
      */
-    static Shader fromFiles(const std::string &vertPath,
+    static Shader fromFiles(std::set<std::string>& defines,
+                            const std::string &vertPath,
                             const std::string &fragPath,
                             const std::string &geomPath = {},
                             const std::string &tescPath = {},
-                            const std::string &tesePath = {},
-                            std::shared_ptr<std::set<std::string>> defines = nullptr);
+                            const std::string &tesePath = {});
 
     /**
      * @brief Loads a compute shader program from a .glsl file on disk.
@@ -65,7 +65,7 @@ public:
      * @param defines All defines macros needed to compile the shader the right way
      * @throws std::runtime_error if the file cannot be opened or compilation fails.
      */
-    static Shader computeFile(const std::string &compPath, const std::shared_ptr<std::set<std::string>> &defines = nullptr);
+    static Shader computeFile(const std::string &compPath, std::set<std::string> &defines);
 
     ~Shader();
     Shader(Shader&& other) noexcept;

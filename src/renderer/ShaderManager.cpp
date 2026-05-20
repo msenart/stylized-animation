@@ -31,7 +31,7 @@ struct ShaderKeyHash {
         combine(h, k.geom);
         combine(h, k.tesc);
         combine(h, k.tese);
-        for (const auto& define : *k.defines) {
+        for (const auto& define : k.defines) {
             combine(h, define);
         }
         return h;
@@ -58,10 +58,9 @@ ShaderHandle g_next = 1;
 // Public API
 // ---------------------------------------------------------------------------
 
-ShaderHandle ShaderManager::load(const std::string& vert, const std::string& frag,
+ShaderHandle ShaderManager::load(std::set<std::string>& defines, const std::string& vert, const std::string& frag,
                                   const std::string& geom, const std::string& tesc,
                                   const std::string& tese) {
-    auto defines = std::make_shared<std::set<std::string>>();
     ShaderKey key{vert, frag, geom, tesc, tese, defines};
 
     auto it = g_keyToHandle.find(key);
@@ -69,7 +68,7 @@ ShaderHandle ShaderManager::load(const std::string& vert, const std::string& fra
         return it->second;
 
     ShaderHandle handle = g_next++;
-    ShaderEntry entry = ShaderEntry{key, std::make_unique<Shader>(Shader::fromFiles(vert, frag, geom, tesc, tese, defines)), true};
+    ShaderEntry entry = ShaderEntry{key, std::make_unique<Shader>(Shader::fromFiles(defines, vert, frag, geom, tesc, tese)), true};
 
     g_entries[handle] = std::move(entry);
 
@@ -78,13 +77,13 @@ ShaderHandle ShaderManager::load(const std::string& vert, const std::string& fra
     return handle;
 }
 
-ShaderHandle ShaderManager::load(const ShaderKey& key) {
+ShaderHandle ShaderManager::load(ShaderKey& key) {
     auto it = g_keyToHandle.find(key);
     if (it != g_keyToHandle.end())
         return it->second;
-    auto [vert, frag, geom, tesc, tese,defines] = key;
+    auto& [vert, frag, geom, tesc, tese,defines] = key;
     ShaderHandle handle = g_next++;
-    ShaderEntry entry = ShaderEntry{key, std::make_unique<Shader>(Shader::fromFiles(vert, frag, geom, tesc, tese, defines)), true};
+    ShaderEntry entry = ShaderEntry{key, std::make_unique<Shader>(Shader::fromFiles(defines, vert, frag, geom, tesc, tese)), true};
     g_entries[handle] = std::move(entry);
     g_keyToHandle[key] = handle;
     Log::info("ShaderManager: loaded '" + entry.key.getDescription() +  "' -> handle " + std::to_string(handle));
@@ -165,10 +164,10 @@ void ShaderManager::reloadAll()
     int ok = 0, fail = 0;
 
     for (ShaderHandle handle : handlesToReload) {
-        const ShaderKey& key = g_entries[handle].key;
+        ShaderKey& key = g_entries[handle].key;
         try {
             Shader newShader = Shader::fromFiles(
-                key.vert, key.frag, key.geom, key.tesc, key.tese, key.defines
+                key.defines, key.vert, key.frag, key.geom, key.tesc, key.tese
             );
             compiled[handle] = std::make_unique<Shader>(std::move(newShader));
             ++ok;
@@ -193,8 +192,10 @@ void ShaderManager::reloadAll()
             g_entries[handle].valid = false;
     }
 
-    for (const auto& a : assignments)
+    for (const auto& a : assignments) {
         a.obj->passTagShaderHandle[a.tag] = a.handle;
+        a.obj->passTagShaderSpecifications[a.tag].defines = g_entries[a.handle].key.defines;
+    }
 
     for (auto it = g_entries.begin(); it != g_entries.end(); ) {
         if (!activeHandles.count(it->first)) {

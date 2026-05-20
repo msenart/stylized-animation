@@ -14,7 +14,7 @@ using ShaderHandle = uint32_t;
  */
 struct ShaderKey {
     std::string vert, frag, geom, tesc, tese;
-    std::shared_ptr<std::set<std::string>> defines = std::make_shared<std::set<std::string>>();
+    std::set<std::string> defines = {};
 
     ShaderKey() = default;
 
@@ -23,20 +23,15 @@ struct ShaderKey {
               std::string geom = "",
               std::string tesc = "",
               std::string tese = "",
-              std::shared_ptr<std::set<std::string>> defines_v = nullptr)
+              const std::set<std::string> &defines_v = {})
         : vert(std::move(vert)), frag(std::move(frag)), geom(std::move(geom)),
-          tesc(std::move(tesc)), tese(std::move(tese)) {
-        if (defines_v != nullptr) {
-            defines = std::move(defines_v);
-        }
-
-    }
+          tesc(std::move(tesc)), tese(std::move(tese)), defines(defines_v) {}
 
     [[nodiscard]] std::string getDescription() const {
         std::stringstream ss;
 
         // On liste les macros (ex: [TOON_SHADING][CONTOURS])
-        for (const auto& define : *defines) {
+        for (const auto& define : defines) {
             ss << "[" << define << "]";
         }
 
@@ -53,7 +48,7 @@ struct ShaderKey {
     bool operator==(const ShaderKey& o) const {
         // ATTENTION : On utilise *defines et *o.defines pour comparer le CONTENU des sets
         return vert == o.vert && frag == o.frag && geom == o.geom
-            && tesc == o.tesc && tese == o.tese && *defines == *o.defines;
+            && tesc == o.tesc && tese == o.tese && defines == o.defines;
     }
 };
 
@@ -85,7 +80,8 @@ public:
      * @return Stable handle valid until shutdown().
      * @throws std::runtime_error if compilation or linking fails.
      */
-    static ShaderHandle load(const std::string& vert,
+    static ShaderHandle load(std::set<std::string>& defines,
+                            const std::string& vert,
                              const std::string& frag,
                              const std::string& geom = {},
                              const std::string& tesc = {},
@@ -96,7 +92,7 @@ public:
      * @param key shader key to load the shader (cf. ShaderKey)
      * @return shader handle, stable until shutdown().
      */
-    static ShaderHandle load(const ShaderKey& key);
+    static ShaderHandle load(ShaderKey& key);
 
     /**
      * @brief Returns the compiled program for a given handle.

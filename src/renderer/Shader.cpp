@@ -22,25 +22,23 @@ Shader Shader::compute(const char* compSrc) {
     return Shader(buildComputeProgram(compSrc));
 }
 
-Shader Shader::fromFiles(const std::string &vertPath, const std::string &fragPath,
-                         const std::string &geomPath, const std::string &tescPath,
-                         const std::string &tesePath, std::shared_ptr<std::set<std::string>> defines) {
-    if (!defines) {
-        defines = std::make_shared<std::set<std::string>>();
-    }
-    std::string vert = readFile(vertPath, *defines);
-    std::string frag = readFile(fragPath, *defines);
-    std::string geom = geomPath.empty() ? std::string{} : readFile(geomPath, *defines);
-    std::string tesc = tescPath.empty() ? std::string{} : readFile(tescPath, *defines);
-    std::string tese = tesePath.empty() ? std::string{} : readFile(tesePath, *defines);
-    return Shader(vert.c_str(), frag.c_str(),
+Shader Shader::fromFiles(std::set<std::string>& defines,const std::string &vertPath,
+                        const std::string &fragPath, const std::string &geomPath, const std::string &tescPath,
+                         const std::string &tesePath) {
+
+    std::string vert = readFile(vertPath, defines);
+    std::string frag = readFile(fragPath, defines);
+    std::string geom = geomPath.empty() ? std::string{} : readFile(geomPath, defines);
+    std::string tesc = tescPath.empty() ? std::string{} : readFile(tescPath, defines);
+    std::string tese = tesePath.empty() ? std::string{} : readFile(tesePath, defines);
+    return {vert.c_str(), frag.c_str(),
                   geom.empty() ? nullptr : geom.c_str(),
                   tesc.empty() ? nullptr : tesc.c_str(),
-                  tese.empty() ? nullptr : tese.c_str());
+                  tese.empty() ? nullptr : tese.c_str()};
 }
 
-Shader Shader::computeFile(const std::string& compPath, const std::shared_ptr<std::set<std::string>> &defines) {
-    std::string src = readFile(compPath, *defines);
+Shader Shader::computeFile(const std::string& compPath, std::set<std::string> &defines) {
+    std::string src = readFile(compPath, defines);
     return Shader::compute(src.c_str());
 }
 
@@ -96,6 +94,7 @@ GLint Shader::loc(const char* name) const {
 }
 
 std::string Shader::readFile(const std::string& path, std::set<std::string>& defines) {
+    defines.clear();
     std::string content;
     std::set<std::string> visited{};
     int counter = 0;
@@ -106,7 +105,6 @@ std::string Shader::readFile(const std::string& path, std::set<std::string>& def
 }
 
 std::string Shader::readRecursive(const std::string& path, std::set<std::string>& defines, std::set<std::string>& visited, int& counter){
-    defines.clear();
     std::string total_path = SHADER_FOLDER_PATH + path;
     auto cur_id = counter;
     std::string content;
@@ -127,28 +125,18 @@ std::string Shader::readRecursive(const std::string& path, std::set<std::string>
     std::string line;
     int line_counter = 1;
     while (std::getline(input_ss, line)) {
-        if (line.find("#version") != std::string::npos && counter == 0) {
-            output_ss << line + "\n";
-            // just after the first #version, insert the #define macros.
-            for (const auto& define : defines) {
-                output_ss << "#define " + define + "\n";
-            }
-        }
         // deal with version directive
-        else if (line.find("#version") != std::string::npos && counter != 0) {
+        if (line.find("#version") != std::string::npos && counter != 0) {
             continue;
         }
         else if (line.find("#define") != std::string::npos) {
-            // Regex pour capturer le premier mot après #define (en ignorant les espaces)
             static const std::regex define_regex(R"(#define\s+([A-Za-z_][A-Za-z0-9_]*))");
             std::smatch match;
 
             if (std::regex_search(line, match, define_regex)) {
-                // match[1] contient uniquement le nom de la macro capturée
                 defines.insert(match[1].str());
             }
 
-            // On écrit quand même la ligne originale dans le shader final
             output_ss << line + "\n";
         }
         // deal with include directive

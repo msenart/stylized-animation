@@ -114,6 +114,20 @@ namespace {
 
 } // namespace>
 
+static void ShaderDefinesDisplay(const std::set<std::string>& defines)
+{
+    if (defines.empty()) {
+        ImGui::TextDisabled("No defines.");
+        return;
+    }
+
+    for (const auto& define : defines) {
+        ImGui::TextColored(ImVec4(0.6f, 0.85f, 1.f, 1.f), "#define");
+        ImGui::SameLine();
+        ImGui::Text("%s", define.c_str());
+    }
+}
+
 void Object::draw(bool *p_open) {
     if (!ImGui::Begin("Object Inspector", p_open)) {
         ImGui::End();
@@ -123,14 +137,13 @@ void Object::draw(bool *p_open) {
     if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::DragFloat3("Position", glm::value_ptr(transform.position), 0.1f);
         ImGui::DragFloat3("Rotation", glm::value_ptr(transform.rotation), 1.0f);
-        ImGui::DragFloat3("Scale", glm::value_ptr(transform.scale), 0.05f);
+        ImGui::DragFloat3("Scale",    glm::value_ptr(transform.scale),    0.05f);
     }
 
     if (ImGui::CollapsingHeader("Material", ImGuiTreeNodeFlags_DefaultOpen)) {
-        ImGui::ColorEdit3("Couleur", glm::value_ptr(material.color));
+        ImGui::ColorEdit3("Couleur",   glm::value_ptr(material.color));
         ImGui::SliderFloat("Roughness", &material.roughness, 0.0f, 1.0f);
     }
-
 
     if (ImGui::CollapsingHeader("Shader Specifications")) {
         for (auto& [passTag, shaderKey] : passTagShaderSpecifications) {
@@ -138,12 +151,11 @@ void Object::draw(bool *p_open) {
 
             if (ImGui::TreeNode(("Pass Tag : " + PassTagToString(passTag)).c_str())) {
 
-                bool dirty = false;
-                dirty |= ShaderPathInput("Vertex",       shaderKey.vert);
-                dirty |= ShaderPathInput("Fragment",     shaderKey.frag);
-                dirty |= ShaderPathInput("Geometry",     shaderKey.geom, /*optional=*/true);
-                dirty |= ShaderPathInput("Tess Control", shaderKey.tesc, /*optional=*/true);
-                dirty |= ShaderPathInput("Tess Eval",    shaderKey.tese, /*optional=*/true);
+                ShaderPathInput("Vertex",       shaderKey.vert);
+                ShaderPathInput("Fragment",     shaderKey.frag);
+                ShaderPathInput("Geometry",     shaderKey.geom, /*optional=*/true);
+                ShaderPathInput("Tess Control", shaderKey.tesc, /*optional=*/true);
+                ShaderPathInput("Tess Eval",    shaderKey.tese, /*optional=*/true);
 
                 const bool allValid = shaderFileExists(shaderKey.vert)
                                    && shaderFileExists(shaderKey.frag)
@@ -165,20 +177,11 @@ void Object::draw(bool *p_open) {
 
                 ImGui::Separator();
                 ImGui::Text("Defines");
-
-                if (shaderKey.defines->empty()) {
-                    ImGui::TextDisabled("No defines.");
-                    return;
-                }
-
-                for (const auto& define : *shaderKey.defines) {
-                    ImGui::TextColored(ImVec4(0.6f, 0.85f, 1.f, 1.f), "#define");
-                    ImGui::SameLine();
-                    ImGui::Text("%s", define.c_str());
-                }
+                ShaderDefinesDisplay(shaderKey.defines);
 
                 ImGui::TreePop();
             }
+
             ImGui::PopID();
         }
     }
