@@ -1,5 +1,119 @@
 #include "Scene.h"
 
+#include <filesystem>
+
+static int inputTextResizeCallback(ImGuiInputTextCallbackData* data)
+{
+    if (data->EventFlag == ImGuiInputTextFlags_CallbackResize) {
+        auto* str = static_cast<std::string*>(data->UserData);
+        str->resize(data->BufTextLen);
+        data->Buf     = str->data();
+        data->BufSize = static_cast<int>(str->capacity()) + 1;
+    }
+    return 0;
+}
+
+static bool InputTextString(const char* label, std::string& str,
+                            ImGuiInputTextFlags flags = 0)
+{
+    if (str.capacity() < str.size() + 128)
+        str.reserve(str.size() + 128);
+
+    return ImGui::InputText(
+        label,
+        str.data(),
+        str.capacity() + 1,
+        flags | ImGuiInputTextFlags_CallbackResize,
+        inputTextResizeCallback,
+        static_cast<void*>(&str)
+    );
+}
+
+
+namespace {
+
+    bool shaderFileExists(const std::string& relativePath)
+    {
+        if (relativePath.empty()) return true;
+        return std::filesystem::exists(SHADER_FOLDER_PATH + relativePath);
+    }
+
+    static bool ShaderPathInput(const char* label, std::string& path, bool optional = false)
+    {
+        static std::string backup;
+        static std::string activeLabel;
+
+        const bool empty   = path.empty();
+        const bool exists  = shaderFileExists(path);
+        const bool valid   = (optional && empty) || exists; // vide = OK seulement si optionnel
+        const bool problem = !valid;
+
+        ImVec4 dotColor = (optional && empty) ? ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled)
+                        : exists              ? ImVec4(0.2f, 0.85f, 0.2f, 1.f)
+                                              : ImVec4(0.95f, 0.2f, 0.2f, 1.f);
+        ImGui::TextColored(dotColor, "●");
+        ImGui::SameLine();
+
+        if (problem) {
+            ImGui::PushStyleColor(ImGuiCol_FrameBg,        ImVec4(0.4f, 0.05f, 0.05f, 1.f));
+            ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.5f, 0.10f, 0.10f, 1.f));
+            ImGui::PushStyleColor(ImGuiCol_FrameBgActive,  ImVec4(0.6f, 0.15f, 0.15f, 1.f));
+        }
+
+        const bool confirmed = InputTextString(label, path, ImGuiInputTextFlags_EnterReturnsTrue);
+        const bool isFocused = ImGui::IsItemFocused();
+
+        if (problem) ImGui::PopStyleColor(3);
+
+        // Prise de focus → sauvegarde
+        if (isFocused && activeLabel != label) {
+            activeLabel = label;
+            backup      = path;
+        }
+
+        // Rollback si la nouvelle valeur n'est pas acceptable
+        auto shouldRollback = [&]() {
+            if (!optional && path.empty()) return true; // obligatoire et vide → rollback
+            if (!path.empty() && !exists)  return true; // renseigné mais introuvable → rollback
+            return false;
+        };
+
+        if (activeLabel == label) {
+            if (confirmed) {
+                if (shouldRollback()) path = backup;
+                else                  backup = path;
+                activeLabel = "";
+            }
+            else if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+                path        = backup;
+                activeLabel = "";
+            }
+            else if (!isFocused) {
+                if (shouldRollback()) path = backup;
+                activeLabel = "";
+            }
+        }
+
+        if (problem && ImGui::IsItemHovered()) {
+            ImGui::BeginTooltip();
+            ImGui::TextColored(ImVec4(1.f, 0.4f, 0.4f, 1.f), "File not found:");
+            ImGui::Text("%s", (SHADER_FOLDER_PATH + path).c_str());
+            ImGui::EndTooltip();
+        }
+
+        if (optional && !empty) {
+            ImGui::SameLine();
+            ImGui::PushID("clear");
+            if (ImGui::SmallButton("x")) { path.clear(); backup.clear(); activeLabel = ""; }
+            ImGui::PopID();
+        }
+
+        return confirmed && valid;
+    }
+
+
+} // namespace>
+
 void Object::draw(bool *p_open) {
     if (!ImGui::Begin("Object Inspector", p_open)) {
         ImGui::End();
@@ -17,49 +131,56 @@ void Object::draw(bool *p_open) {
         ImGui::SliderFloat("Roughness", &material.roughness, 0.0f, 1.0f);
     }
 
+
     if (ImGui::CollapsingHeader("Shader Specifications")) {
         for (auto& [passTag, shaderKey] : passTagShaderSpecifications) {
             ImGui::PushID(PassTagToString(passTag).data());
+
             if (ImGui::TreeNode(("Pass Tag : " + PassTagToString(passTag)).c_str())) {
 
-                ImGui::InputText("Vertex", shaderKey.vert.data(), 50);
-                ImGui::InputText("Fragment", shaderKey.frag.data(),50);
-                ImGui::InputText("Geometry", shaderKey.geom.data(),50);
-                ImGui::InputText("Tess Control", shaderKey.tesc.data(),50);
-                ImGui::InputText("Tess Eval", shaderKey.tese.data(),50);
+                bool dirty = false;
+                dirty |= ShaderPathInput("Vertex",       shaderKey.vert);
+                dirty |= ShaderPathInput("Fragment",     shaderKey.frag);
+                dirty |= ShaderPathInput("Geometry",     shaderKey.geom, /*optional=*/true);
+                dirty |= ShaderPathInput("Tess Control", shaderKey.tesc, /*optional=*/true);
+                dirty |= ShaderPathInput("Tess Eval",    shaderKey.tese, /*optional=*/true);
 
-                // -- Édition du std::set<std::string> (Defines) --
+                const bool allValid = shaderFileExists(shaderKey.vert)
+                                   && shaderFileExists(shaderKey.frag)
+                                   && shaderFileExists(shaderKey.geom)
+                                   && shaderFileExists(shaderKey.tesc)
+                                   && shaderFileExists(shaderKey.tese);
+
                 ImGui::Separator();
-                ImGui::Text("Defines :");
+                ImGui::BeginDisabled(!allValid);
+                if (ImGui::Button("Reload Shader"))
+                    ShaderManager::reloadAll();
+                ImGui::EndDisabled();
 
-                std::string toRemove = "";
-                for (const std::string& def : shaderKey.defines) {
-                    ImGui::BulletText("%s", def.c_str());
-                    ImGui::SameLine(ImGui::GetWindowWidth() - 50);
-
-                    if (ImGui::Button(("X##" + def).c_str())) {
-                        toRemove = def;
-                    }
-                }
-                if (!toRemove.empty()) {
-                    shaderKey.defines.erase(toRemove);
+                if (!allValid) {
+                    ImGui::SameLine();
+                    ImGui::TextColored(ImVec4(1.f, 0.5f, 0.1f, 1.f),
+                                       "Fix missing files before reloading.");
                 }
 
-                static char newDefineBuf[64] = "";
-                ImGui::InputText("##NewDefine", newDefineBuf, IM_ARRAYSIZE(newDefineBuf));
-                ImGui::SameLine();
+                ImGui::Separator();
+                ImGui::Text("Defines");
 
-                if (ImGui::Button("Add") && newDefineBuf[0] != '\0') {
-                    shaderKey.defines.insert(std::string(newDefineBuf));
-                    newDefineBuf[0] = '\0';
+                if (shaderKey.defines->empty()) {
+                    ImGui::TextDisabled("No defines.");
+                    return;
+                }
+
+                for (const auto& define : *shaderKey.defines) {
+                    ImGui::TextColored(ImVec4(0.6f, 0.85f, 1.f, 1.f), "#define");
+                    ImGui::SameLine();
+                    ImGui::Text("%s", define.c_str());
                 }
 
                 ImGui::TreePop();
             }
-
             ImGui::PopID();
         }
     }
-
     ImGui::End();
 }

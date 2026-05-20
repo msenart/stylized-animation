@@ -4,6 +4,11 @@
  */
 #pragma once
 #include <cstdint>
+#include <string>
 
 /// @brief Opaque handle to a mesh stored in the AssetManager.
 using MeshHandle = uint32_t;
+
+/// @brief the path to the shader folder.
+static const std::string SHADER_FOLDER_PATH = "./shaders/";
+

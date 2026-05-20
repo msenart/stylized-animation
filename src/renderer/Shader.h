@@ -3,6 +3,7 @@
  * @brief GLSL shader program wrapper with uniform upload helpers.
  */
 #pragma once
+#include <memory>
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <string>
@@ -51,12 +52,12 @@ public:
      * @param defines All defines macros needed to compile the shader the right way
      * @throws std::runtime_error if a file cannot be opened or compilation fails.
      */
-    static Shader fromFiles(const std::string& vertPath,
-                            const std::string& fragPath,
-                            const std::string& geomPath = {},
-                            const std::string& tescPath = {},
-                            const std::string& tesePath = {},
-                            const std::set<std::string>& defines = {});
+    static Shader fromFiles(const std::string &vertPath,
+                            const std::string &fragPath,
+                            const std::string &geomPath = {},
+                            const std::string &tescPath = {},
+                            const std::string &tesePath = {},
+                            std::shared_ptr<std::set<std::string>> defines = nullptr);
 
     /**
      * @brief Loads a compute shader program from a .glsl file on disk.
@@ -64,7 +65,7 @@ public:
      * @param defines All defines macros needed to compile the shader the right way
      * @throws std::runtime_error if the file cannot be opened or compilation fails.
      */
-    static Shader computeFile(const std::string& compPath, const std::set<std::string>& defines = {});
+    static Shader computeFile(const std::string &compPath, const std::shared_ptr<std::set<std::string>> &defines = nullptr);
 
     ~Shader();
     Shader(Shader&& other) noexcept;
@@ -94,12 +95,12 @@ private:
 
     GLint  loc(const char* name) const;
 
-    static std::string readFile(const std::string &path, const std::set<std::string> &defines);
+    static std::string readFile(const std::string &path, std::set<std::string> &defines);
 
     static GLuint compile(GLenum type, const char* src);
     static GLuint buildRasterProgram(const char* vertSrc, const char* fragSrc,
                                      const char* geomSrc, const char* tescSrc,
                                      const char* teseSrc);
     static GLuint buildComputeProgram(const char* compSrc);
-    static std::string readRecursive(const std::string& path, const std::set<std::string>& defines, std::set<std::string>& visited, int& counter);
+    static std::string readRecursive(const std::string& path, std::set<std::string>& defines, std::set<std::string>& visited, int& counter);
 };

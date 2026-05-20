@@ -31,7 +31,7 @@ struct ShaderKeyHash {
         combine(h, k.geom);
         combine(h, k.tesc);
         combine(h, k.tese);
-        for (const auto& define : k.defines) {
+        for (const auto& define : *k.defines) {
             combine(h, define);
         }
         return h;
@@ -60,15 +60,16 @@ ShaderHandle g_next = 1;
 
 ShaderHandle ShaderManager::load(const std::string& vert, const std::string& frag,
                                   const std::string& geom, const std::string& tesc,
-                                  const std::string& tese, std::set<std::string> defines) {
-    ShaderKey key{vert, frag, geom, tesc, tese, std::move(defines)};
+                                  const std::string& tese) {
+    auto defines = std::make_shared<std::set<std::string>>();
+    ShaderKey key{vert, frag, geom, tesc, tese, defines};
 
     auto it = g_keyToHandle.find(key);
     if (it != g_keyToHandle.end())
         return it->second;
 
     ShaderHandle handle = g_next++;
-    ShaderEntry entry = ShaderEntry{key, std::make_unique<Shader>(Shader::fromFiles(vert, frag, geom, tesc, tese)), true};
+    ShaderEntry entry = ShaderEntry{key, std::make_unique<Shader>(Shader::fromFiles(vert, frag, geom, tesc, tese, defines)), true};
 
     g_entries[handle] = std::move(entry);
 
@@ -97,6 +98,27 @@ ShaderHandle ShaderManager::getShaderHandleWithKey(const ShaderKey& shaderKey) {
     return 0;
 }
 
+static ShaderHandle acquireHandle(const ShaderKey& key)
+{
+    auto it = g_keyToHandle.find(key);
+    if (it != g_keyToHandle.end())
+        return it->second;
+
+    ShaderHandle handle = g_next++;
+    g_keyToHandle[key]  = handle;
+    g_entries[handle].key = key;
+    return handle;
+}
+
+static void releaseHandle(ShaderHandle handle)
+{
+    auto it = g_entries.find(handle);
+    if (it == g_entries.end()) return;
+
+    g_keyToHandle.erase(it->second.key);
+    g_entries.erase(it);
+}
+
 const Shader& ShaderManager::get(ShaderHandle handle) {
     auto it = g_entries.find(handle);
     if (it == g_entries.end())
@@ -121,38 +143,21 @@ void ShaderManager::reloadAll()
     }
 
     struct PendingAssignment {
-        Object* obj;
-        PassTag  tag;
+        Object*      obj;
+        PassTag      tag;
         ShaderHandle handle;
     };
 
-    std::vector<PendingAssignment> assignments;
+    std::vector<PendingAssignment>   assignments;
     std::unordered_set<ShaderHandle> activeHandles;
     std::unordered_set<ShaderHandle> handlesToReload;
 
     for (auto& obj : ctx->scene->objects) {
         for (const auto& [tag, key] : obj.passTagShaderSpecifications) {
-            ShaderHandle handle = 0;
-            for (const auto& [existingHandle, entry] : g_entries) {
-                if (entry.key.vert    == key.vert  &&
-                    entry.key.frag    == key.frag  &&
-                    entry.key.geom    == key.geom  &&
-                    entry.key.tesc    == key.tesc  &&
-                    entry.key.tese    == key.tese  &&
-                    entry.key.defines == key.defines) {
-                    handle = existingHandle;
-                    break;
-                }
-            }
-
-            if (handle == 0) {
-                handle = ++g_nextHandle;
-                g_entries[handle].key = key;
-            }
-
+            ShaderHandle handle = acquireHandle(key);
             activeHandles.insert(handle);
             handlesToReload.insert(handle);
-            assignments.push_back(PendingAssignment{ &obj, tag, handle });
+            assignments.push_back({ &obj, tag, handle });
         }
     }
 
@@ -162,7 +167,6 @@ void ShaderManager::reloadAll()
     for (ShaderHandle handle : handlesToReload) {
         const ShaderKey& key = g_entries[handle].key;
         try {
-            // key.defines est bien transmis ici (bug original corrigé)
             Shader newShader = Shader::fromFiles(
                 key.vert, key.frag, key.geom, key.tesc, key.tese, key.defines
             );
@@ -179,36 +183,33 @@ void ShaderManager::reloadAll()
     }
 
     for (auto& [handle, newShader] : compiled) {
-        auto& entry    = g_entries[handle];
-        entry.shader   = std::move(newShader);
-        entry.valid    = true;
+        auto& entry  = g_entries[handle];
+        entry.shader = std::move(newShader);
+        entry.valid  = true;
     }
 
     for (ShaderHandle handle : handlesToReload) {
-        if (compiled.count(handle) == 0) {
-            auto& entry = g_entries[handle];
-            if (!entry.shader)
-                entry.valid = false;
-        }
+        if (!compiled.count(handle) && !g_entries[handle].shader)
+            g_entries[handle].valid = false;
     }
 
     for (const auto& a : assignments)
         a.obj->passTagShaderHandle[a.tag] = a.handle;
 
     for (auto it = g_entries.begin(); it != g_entries.end(); ) {
-        it = activeHandles.count(it->first) ? std::next(it)
-                                            : g_entries.erase(it);
+        if (!activeHandles.count(it->first)) {
+            g_keyToHandle.erase(it->second.key); // ← sync g_keyToHandle
+            it = g_entries.erase(it);
+        } else {
+            ++it;
+        }
     }
 
-    if (fail == 0) {
+    if (fail == 0)
         Log::info("ShaderManager: " + std::to_string(ok) + " shader(s) reloaded successfully.");
-    } else {
-        Log::warn(
-            "ShaderManager: " + std::to_string(ok) + " OK, "
-            + std::to_string(fail) + " failed — "
-            "previous shader(s) preserved where available."
-        );
-    }
+    else
+        Log::warn("ShaderManager: " + std::to_string(ok) + " OK, "
+                  + std::to_string(fail) + " failed — previous shader(s) preserved where available.");
 }
 
 void ShaderManager::drawUI() {

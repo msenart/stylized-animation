@@ -1,8 +1,10 @@
 #pragma once
 #include <cstdint>
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>
+#include <sstream>
 class Shader;
 
 using ShaderHandle = uint32_t;
@@ -12,33 +14,46 @@ using ShaderHandle = uint32_t;
  */
 struct ShaderKey {
     std::string vert, frag, geom, tesc, tese;
-    std::set<std::string> defines;
+    std::shared_ptr<std::set<std::string>> defines = std::make_shared<std::set<std::string>>();
 
     ShaderKey() = default;
 
-    ShaderKey(std::string  vert,
-        std::string  frag,
-        std::string  geom = "",
-        std::string  tesc = "",
-        std::string  tese = "",
-        std::set<std::string> defines = {}) : vert(std::move(vert)), frag(std::move(frag)), geom(std::move(geom)), tesc(std::move(tesc)), tese(std::move(tese)), defines(std::move(defines)) {}
+    ShaderKey(std::string vert,
+              std::string frag,
+              std::string geom = "",
+              std::string tesc = "",
+              std::string tese = "",
+              std::shared_ptr<std::set<std::string>> defines_v = nullptr)
+        : vert(std::move(vert)), frag(std::move(frag)), geom(std::move(geom)),
+          tesc(std::move(tesc)), tese(std::move(tese)) {
+        if (defines_v != nullptr) {
+            defines = std::move(defines_v);
+        }
+
+    }
 
     [[nodiscard]] std::string getDescription() const {
-        std::string desc;
-        for (const auto& define : defines) {
-            desc+=define;
+        std::stringstream ss;
+
+        // On liste les macros (ex: [TOON_SHADING][CONTOURS])
+        for (const auto& define : *defines) {
+            ss << "[" << define << "]";
         }
-        desc += "/"  + (vert.size() > 0 ? (vert + "/") : "")
-                    + (geom.size() > 0 ? (geom + "/") : "")
-                    + (tesc.size() > 0 ? (tesc + "/") : "")
-                    + (tese.size() > 0 ? (tese + "/") : "")
-                    + (frag.size() > 0 ? (frag + "/") : "");
-        return desc;
+
+        ss << "/";
+        if (!vert.empty()) ss << vert << "/";
+        if (!geom.empty()) ss << geom << "/";
+        if (!tesc.empty()) ss << tesc << "/";
+        if (!tese.empty()) ss << tese << "/";
+        if (!frag.empty()) ss << frag << "/";
+
+        return ss.str();
     }
 
     bool operator==(const ShaderKey& o) const {
+        // ATTENTION : On utilise *defines et *o.defines pour comparer le CONTENU des sets
         return vert == o.vert && frag == o.frag && geom == o.geom
-            && tesc == o.tesc && tese == o.tese && defines == o.defines;
+            && tesc == o.tesc && tese == o.tese && *defines == *o.defines;
     }
 };
 
@@ -74,8 +89,7 @@ public:
                              const std::string& frag,
                              const std::string& geom = {},
                              const std::string& tesc = {},
-                             const std::string& tese = {},
-                             std::set<std::string> defines = {});
+                             const std::string& tese = {});
 
     /**
      *
