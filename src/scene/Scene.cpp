@@ -35,32 +35,29 @@ void Object::draw(bool *p_open) {
                 std::string toRemove = "";
                 for (const std::string& def : shaderKey.defines) {
                     ImGui::BulletText("%s", def.c_str());
-                    ImGui::SameLine(ImGui::GetWindowWidth() - 50); // Aligne le bouton à droite
+                    ImGui::SameLine(ImGui::GetWindowWidth() - 50);
 
-                    // On utilise "X##" + def pour avoir un label visuel "X" mais un ID unique
                     if (ImGui::Button(("X##" + def).c_str())) {
                         toRemove = def;
                     }
                 }
-
-                // On efface en dehors de la boucle pour ne pas casser l'itérateur du std::set
                 if (!toRemove.empty()) {
                     shaderKey.defines.erase(toRemove);
                 }
 
-                // Ajout d'un nouveau define
-                static std::string newDefine = "";
-                ImGui::InputText("##NouveauDefine", newDefine.data(),50);
+                static char newDefineBuf[64] = "";
+                ImGui::InputText("##NewDefine", newDefineBuf, IM_ARRAYSIZE(newDefineBuf));
                 ImGui::SameLine();
-                if (ImGui::Button("Ajouter") && !newDefine.empty()) {
-                    shaderKey.defines.insert(newDefine);
-                    newDefine.clear(); // On vide le champ après l'ajout
+
+                if (ImGui::Button("Add") && newDefineBuf[0] != '\0') {
+                    shaderKey.defines.insert(std::string(newDefineBuf));
+                    newDefineBuf[0] = '\0';
                 }
 
                 ImGui::TreePop();
             }
 
-            ImGui::PopID(); // Fin du contexte unique pour ce PassTag
+            ImGui::PopID();
         }
     }
 

@@ -7,6 +7,8 @@
 #include <utility>
 #include <regex>
 
+#include "core/Log.h"
+
 static const std::string SHADER_FOLDER_PATH = "./shaders/";
 
 // ---------------------------------------------------------------------------
@@ -95,12 +97,9 @@ std::string Shader::readFile(const std::string& path, const std::set<std::string
     std::string content;
     std::set<std::string> visited{};
     int counter = 0;
-    // add define macros before atually reading the shader
-    for (const auto& define : defines) {
-        content += "#define " + define;
-    }
     // read the whole shader program
     content+=readRecursive(path,defines,visited,counter);
+    Log::info(content);
     return content;
 }
 
@@ -125,8 +124,15 @@ std::string Shader::readRecursive(const std::string& path, const std::set<std::s
     std::string line;
     int line_counter = 1;
     while (std::getline(input_ss, line)) {
+        if (line.find("#version") != std::string::npos && counter == 0) {
+            output_ss << line + "\n";
+            // just after the first #version, insert the #define macros.
+            for (const auto& define : defines) {
+                output_ss << "#define " + define + "\n";
+            }
+        }
         // deal with version directive
-        if (line.find("#version") != std::string::npos && counter != 0) {
+        else if (line.find("#version") != std::string::npos && counter != 0) {
             continue;
         }
         // deal with include directive

@@ -1,4 +1,7 @@
 #include "renderer/ShaderManager.h"
+
+#include <atomic>
+
 #include "renderer/Shader.h"
 #include "core/Log.h"
 #include <imgui.h>
@@ -9,7 +12,7 @@
 #include <utility>
 #include <vector>
 #include "core/MegaWindowContext.h"
-
+#include <set>
 #include "GLFW/glfw3.h"
 
 // ---------------------------------------------------------------------------
@@ -87,6 +90,13 @@ ShaderHandle ShaderManager::load(const ShaderKey& key) {
     return handle;
 }
 
+ShaderHandle ShaderManager::getShaderHandleWithKey(const ShaderKey& shaderKey) {
+    if (g_keyToHandle.count(shaderKey)) {
+        return g_keyToHandle[shaderKey];
+    }
+    return 0;
+}
+
 const Shader& ShaderManager::get(ShaderHandle handle) {
     auto it = g_entries.find(handle);
     if (it == g_entries.end())
@@ -94,7 +104,10 @@ const Shader& ShaderManager::get(ShaderHandle handle) {
     return *it->second.shader;
 }
 
-void ShaderManager::reloadAll() {
+static std::atomic<ShaderHandle> g_nextHandle = 0;
+
+void ShaderManager::reloadAll()
+{
     GLFWwindow* window = glfwGetCurrentContext();
     if (!window) {
         Log::error("ShaderManager: No active GLFW context.");
@@ -107,18 +120,25 @@ void ShaderManager::reloadAll() {
         return;
     }
 
-    int ok = 0, fail = 0;
+    struct PendingAssignment {
+        Object* obj;
+        PassTag  tag;
+        ShaderHandle handle;
+    };
+
+    std::vector<PendingAssignment> assignments;
+    std::unordered_set<ShaderHandle> activeHandles;
+    std::unordered_set<ShaderHandle> handlesToReload;
 
     for (auto& obj : ctx->scene->objects) {
         for (const auto& [tag, key] : obj.passTagShaderSpecifications) {
-
             ShaderHandle handle = 0;
             for (const auto& [existingHandle, entry] : g_entries) {
-                if (entry.key.vert == key.vert &&
-                    entry.key.frag == key.frag &&
-                    entry.key.geom == key.geom &&
-                    entry.key.tesc == key.tesc &&
-                    entry.key.tese == key.tese &&
+                if (entry.key.vert    == key.vert  &&
+                    entry.key.frag    == key.frag  &&
+                    entry.key.geom    == key.geom  &&
+                    entry.key.tesc    == key.tesc  &&
+                    entry.key.tese    == key.tese  &&
                     entry.key.defines == key.defines) {
                     handle = existingHandle;
                     break;
@@ -126,34 +146,68 @@ void ShaderManager::reloadAll() {
             }
 
             if (handle == 0) {
-                handle = static_cast<ShaderHandle>(g_entries.size() + 1);
+                handle = ++g_nextHandle;
                 g_entries[handle].key = key;
-
-                if (!g_entries[handle].shader) {
-                    g_entries[handle].shader = std::make_unique<Shader>("","");
-                }
             }
 
-            auto& entry = g_entries[handle];
-
-            try {
-                *entry.shader = Shader::fromFiles(key.vert, key.frag, key.geom, key.tesc, key.tese);
-                entry.valid = true;
-
-                obj.passTagShaderHandle[tag] = handle;
-                ++ok;
-            } catch (const std::exception& e) {
-                entry.valid = false;
-                ++fail;
-                Log::error("ShaderManager: reload failed for '" + key.vert + "': " + e.what());
-            }
+            activeHandles.insert(handle);
+            handlesToReload.insert(handle);
+            assignments.push_back(PendingAssignment{ &obj, tag, handle });
         }
     }
 
+    std::unordered_map<ShaderHandle, std::unique_ptr<Shader>> compiled;
+    int ok = 0, fail = 0;
+
+    for (ShaderHandle handle : handlesToReload) {
+        const ShaderKey& key = g_entries[handle].key;
+        try {
+            // key.defines est bien transmis ici (bug original corrigé)
+            Shader newShader = Shader::fromFiles(
+                key.vert, key.frag, key.geom, key.tesc, key.tese, key.defines
+            );
+            compiled[handle] = std::make_unique<Shader>(std::move(newShader));
+            ++ok;
+        }
+        catch (const std::exception& e) {
+            ++fail;
+            Log::error(
+                "ShaderManager: reload failed for '" + key.vert + "'. "
+                "Keeping previous shader. Error: " + e.what()
+            );
+        }
+    }
+
+    for (auto& [handle, newShader] : compiled) {
+        auto& entry    = g_entries[handle];
+        entry.shader   = std::move(newShader);
+        entry.valid    = true;
+    }
+
+    for (ShaderHandle handle : handlesToReload) {
+        if (compiled.count(handle) == 0) {
+            auto& entry = g_entries[handle];
+            if (!entry.shader)
+                entry.valid = false;
+        }
+    }
+
+    for (const auto& a : assignments)
+        a.obj->passTagShaderHandle[a.tag] = a.handle;
+
+    for (auto it = g_entries.begin(); it != g_entries.end(); ) {
+        it = activeHandles.count(it->first) ? std::next(it)
+                                            : g_entries.erase(it);
+    }
+
     if (fail == 0) {
-        Log::info("ShaderManager: " + std::to_string(ok) + " shader(s) loaded/reloaded.");
+        Log::info("ShaderManager: " + std::to_string(ok) + " shader(s) reloaded successfully.");
     } else {
-        Log::warn("ShaderManager: " + std::to_string(ok) + " OK, " + std::to_string(fail) + " failed.");
+        Log::warn(
+            "ShaderManager: " + std::to_string(ok) + " OK, "
+            + std::to_string(fail) + " failed — "
+            "previous shader(s) preserved where available."
+        );
     }
 }
 

@@ -90,6 +90,7 @@ public:
      */
     static const Shader& get(ShaderHandle handle);
 
+    static ShaderHandle getShaderHandleWithKey(const ShaderKey& shader_key);
     /**
      * @brief Reloads every registered program from disk.
      *
