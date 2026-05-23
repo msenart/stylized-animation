@@ -113,3 +113,6 @@ set_target_properties(stylize-animation PROPERTIES
 
 # Set project folders
 set_target_properties(stylize-animation PROPERTIES FOLDER ${PROJECT_NAME})
+
+# Set compile options
+# target_compile_options(stylize-animation PRIVATE -O3)

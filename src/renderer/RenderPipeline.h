@@ -1,6 +1,17 @@
-//
-// Created by mathi on 16/05/2026.
-//
+/**
+ * Hello ! Here below is the necessary classes to define the rendering pipeline.
+ * To make a new rendering pipeline, you should :
+ * - Think about a relevant name. See if you can use the information of a previous buffer.
+ * In RenderingPipeline.h/.cpp :
+ * - Insert that new name in : enum class PassTag, std::string PassTagToString(PassTag tag).
+ * - Create a class that is inherited from RenderPass, that have the same core structure as the previous ones (see MeshIDRenderPass).
+ * In Renderer.h/.cpp :
+ * - Add your new render pass in the rendering pipeline in Renderer::setup()
+ * - Like did for the other render passes, add the render pass in the right place (where you think you need the previous information and where that info will be useful for the next passes).
+ * In AnimatedMesh.cpp/StaticMesh.cpp (if you want the render pass to be the default pass for these types of meshes) or in main.cpp.
+ * - AnimatedMesh.cpp/StaticMesh.cpp : add a new entry in the Mesh::shadersKeyMap() map function.
+ * - In main.cpp : When instantiating a new Object type, you can modify the constructor arguments to add your own passes in the member passTagSpecifications. I am not sure if you must not fill the defines variable, because it is dedicated for other functions in the code.
+*/
 
 #pragma once
 
@@ -16,18 +27,18 @@
  * @brief Identifies which Object influences which pass
  */
 enum class PassTag {
-    GenericRenderPass,
-    ShadowRenderPass, // influences the shadow cast pass (not implemented but it's an example)
-    MeshIDRenderPass, // can be selected
-    FinalRenderPass, // can be rendered
+    Generic,
+    Shadow, // influences the shadow cast pass (not implemented but it's an example)
+    MeshID, // can be selected
+    Final, // can be rendered
 };
 
 inline std::string PassTagToString(PassTag tag) {
     switch (tag) {
-        case PassTag::GenericRenderPass: return "Generic Render Pass";
-        case PassTag::ShadowRenderPass:  return "Shadow Render Pass";
-        case PassTag::MeshIDRenderPass:  return "Mesh ID Render Pass";
-        case PassTag::FinalRenderPass:   return "Final Render Pass";
+        case PassTag::Generic: return "Generic Render Pass";
+        case PassTag::Shadow:  return "Shadow Render Pass";
+        case PassTag::MeshID:  return "Mesh ID Render Pass";
+        case PassTag::Final:   return "Final Render Pass";
         default:                         return "Unknown Pass Pass";
     }
 }
@@ -37,14 +48,42 @@ inline std::string PassTagToString(PassTag tag) {
  */
 class RenderPass {
 public:
+    /**
+     * @brief Called once at the beginning of the execution. sets up all the necessary variables (especially OpenGL) to be operational.
+     * @param window_w window width
+     * @param window_h window height
+     */
     virtual void setup(unsigned int window_w, unsigned int window_h) = 0;
+
+    /**
+     * @brief Called at the beginning of the pass to activate the fbo and the right rendering parameters (GL_CULL_FACE, GL_DEPTH_TEST...)
+     */
     virtual void execute() = 0;
+
+    /**
+     * @brief clear the buffer values.
+     */
     virtual void clear() = 0;
+
+    /**
+     * @brief Specific callback automatically called when the window is resized by the user.
+     * @param window_w window width.
+     * @param window_h window height.
+     */
     virtual void onResize(unsigned int window_w, unsigned int window_h) {
         setup(window_w, window_h);
     }
+
+    /**
+     *
+     * @return the fbo of the rendering pass.
+     */
     virtual unsigned int fbo() = 0;
 
+    /**
+     *
+     * @return the precise name of the rendering pass. See MeshIDRenderPass::name() for example.
+     */
     virtual std::string name() = 0;
 
     virtual ~RenderPass() = default;
@@ -53,7 +92,7 @@ public:
 
     RenderPass() = default;
 
-    PassTag tag = PassTag::GenericRenderPass;
+    PassTag tag = PassTag::Generic;
     std::string m_suffix;
 };
 
@@ -76,11 +115,11 @@ public:
         return m_fboTex;
     }
     MeshIDRenderPass(std::string suffix) : RenderPass(std::move(suffix)) {
-        tag = PassTag::MeshIDRenderPass;
+        tag = PassTag::MeshID;
     };
 
     MeshIDRenderPass() : RenderPass() {
-        tag = PassTag::MeshIDRenderPass;
+        tag = PassTag::MeshID;
     }
 
     void setup(unsigned int window_w, unsigned int window_h) override;
@@ -96,11 +135,11 @@ public:
 class FinalRenderPass final : public RenderPass {
 public:
     explicit FinalRenderPass(std::string suffix) : RenderPass(suffix) {
-        tag = PassTag::FinalRenderPass;
+        tag = PassTag::Final;
     };
 
     FinalRenderPass() : RenderPass() {
-        tag = PassTag::FinalRenderPass;
+        tag = PassTag::Final;
     }
 
     void setup(unsigned window_w, unsigned window_h) override;

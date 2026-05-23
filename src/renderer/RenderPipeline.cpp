@@ -53,6 +53,7 @@ void FinalRenderPass::setup(unsigned window_w, unsigned window_h) {}
 void FinalRenderPass::execute() {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
 }
 
 void FinalRenderPass::clear() {

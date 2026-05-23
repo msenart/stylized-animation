@@ -5,6 +5,8 @@
 #include "core/Window.h"
 
 
+
+
 /**
  * @brief It is a bag containing the necessary information about how the scene has to be rendered.
  */

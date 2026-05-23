@@ -34,7 +34,7 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
     m_render_pipeline.execute("Mesh ID Render Pass");
     for (unsigned int i = 0; i < scene->objects.size(); i++) {
         auto obj = scene->objects[i];
-        auto it = obj.passTagShaderHandle.find(PassTag::MeshIDRenderPass);
+        auto it = obj.passTagShaderHandle.find(PassTag::MeshID);
         if (it == obj.passTagShaderHandle.end()) {continue;}
         ShaderHandle handle = it->second;
         if (handle == 0) {continue;}
@@ -56,7 +56,7 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
     m_render_pipeline.clear("Final Render Pass");
     m_render_pipeline.execute("Final Render Pass");
     for (const Object& obj : scene->objects) {
-        auto it = obj.passTagShaderHandle.find(PassTag::FinalRenderPass);
+        auto it = obj.passTagShaderHandle.find(PassTag::Final);
         if (it == obj.passTagShaderHandle.end()) continue;
 
         ShaderHandle handle = it->second;
