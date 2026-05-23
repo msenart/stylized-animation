@@ -44,10 +44,17 @@ public:
         setup(window_w, window_h);
     }
     virtual unsigned int fbo() = 0;
-    virtual unsigned int fboTex() = 0;
+
+    virtual std::string name() = 0;
 
     virtual ~RenderPass() = default;
-    std::string tag = "GenericRenderTag";
+
+    explicit RenderPass(std::string suffix) : m_suffix(suffix) {}
+
+    RenderPass() = default;
+
+    PassTag tag = PassTag::GenericRenderPass;
+    std::string m_suffix;
 };
 
 /**
@@ -60,12 +67,22 @@ public:
     unsigned int fbo() override {
         return m_fbo;
     }
-    unsigned int fboTex() override {
+
+    std::string name() {
+        return !m_suffix.empty() ? PassTagToString(tag) + " " + m_suffix : PassTagToString(tag);
+    }
+
+    unsigned int fboTex() const {
         return m_fboTex;
     }
-    MeshIDRenderPass() : RenderPass() {
-        tag = "MeshIDRenderPass";
+    MeshIDRenderPass(std::string suffix) : RenderPass(std::move(suffix)) {
+        tag = PassTag::MeshIDRenderPass;
     };
+
+    MeshIDRenderPass() : RenderPass() {
+        tag = PassTag::MeshIDRenderPass;
+    }
+
     void setup(unsigned int window_w, unsigned int window_h) override;
     void execute() override;
     ~MeshIDRenderPass() override = default;
@@ -78,9 +95,13 @@ public:
  */
 class FinalRenderPass final : public RenderPass {
 public:
-    FinalRenderPass(): RenderPass() {
-        tag = "FinalRenderPass";
+    explicit FinalRenderPass(std::string suffix) : RenderPass(suffix) {
+        tag = PassTag::FinalRenderPass;
     };
+
+    FinalRenderPass() : RenderPass() {
+        tag = PassTag::FinalRenderPass;
+    }
 
     void setup(unsigned window_w, unsigned window_h) override;
 
@@ -88,9 +109,17 @@ public:
 
     void clear() override;
 
-    unsigned int fbo() override;
+    unsigned int fbo() override {
+        return 0;
+    }
 
-    unsigned int fboTex() override;
+    std::string name() {
+        return !m_suffix.empty() ? PassTagToString(tag) + " " + m_suffix : PassTagToString(tag);
+    }
+
+    unsigned int fboTex() {
+        return 0;
+    }
 };
 
 /**
@@ -108,8 +137,6 @@ public:
     void clear(const std::string& name);
 
     void onResize(unsigned int window_w, unsigned int window_h) const;
-
-    unsigned int getPassTextures(const std::string &name);
 
     unsigned int getPassFbo(const std::string &name);
 };

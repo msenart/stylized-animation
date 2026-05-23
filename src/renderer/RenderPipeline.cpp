@@ -30,7 +30,7 @@ void MeshIDRenderPass::setup(unsigned int window_w, unsigned int window_h) {
 
     auto fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (fboStatus != GL_FRAMEBUFFER_COMPLETE) {
-        Log::error("Framebuffer "+ tag +"  could not be created : " + std::to_string(fboStatus));
+        Log::error("Framebuffer "+ name() +"  could not be created : " + std::to_string(fboStatus));
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
@@ -61,20 +61,16 @@ void FinalRenderPass::clear() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-unsigned int FinalRenderPass::fbo() {return 0;}
-
-unsigned int FinalRenderPass::fboTex() {return 0;}
-
 // render pipeline
 
 void RenderPipeline::addPass(const std::shared_ptr<RenderPass> &pass) {
-    std::string& tag = pass->tag;
+    std::string name = pass->name();
 
-    if (mapRenderPasses.count(tag) > 0) {
-        Log::warn("The pass '" + tag + "' has the same name as another pass already in the render pipeline! Overwriting...");
+    if (mapRenderPasses.count(name) > 0) {
+        Log::warn("The pass '" + name + "' has the same name as another pass already in the render pipeline! Overwriting...");
     }
 
-    mapRenderPasses[tag] = pass;
+    mapRenderPasses[name] = pass;
 }
 
 void RenderPipeline::setup(unsigned int window_w, unsigned int window_h) const {
@@ -104,16 +100,6 @@ void RenderPipeline::clear(const std::string& name) {
 void RenderPipeline::onResize(unsigned int window_w, unsigned int window_h) const {
     for (auto& pair : mapRenderPasses) {
         pair.second->onResize(window_w, window_h);
-    }
-}
-
-unsigned int RenderPipeline::getPassTextures(const std::string& name) {
-    auto it = mapRenderPasses.find(name);
-    if (it != mapRenderPasses.end()) {
-        return it->second->fboTex();
-    } else {
-        Log::error("Failed to get texture: Render pass '" + name + "' not found.");
-        return 0;
     }
 }
 

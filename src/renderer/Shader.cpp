@@ -100,7 +100,6 @@ std::string Shader::readFile(const std::string& path, std::set<std::string>& def
     int counter = 0;
     // read the whole shader program
     content+=readRecursive(path,defines,visited,counter);
-    Log::info(content);
     return content;
 }
 

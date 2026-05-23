@@ -8,7 +8,7 @@
 #include "scene/Scene.h"
 
 void SelectionManager::select(glm::vec2 mousePos, unsigned int window_h) {
-    auto fbo = m_render_pipeline->getPassFbo("MeshIDRenderPass");
+    auto fbo = m_render_pipeline->getPassFbo("Mesh ID Render Pass");
 
     if (fbo == 0) {
         m_selection = nullptr;
