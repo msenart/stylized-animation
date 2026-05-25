@@ -30,7 +30,7 @@ enum class PassTag {
     Generic,
     Shadow, // influences the shadow cast pass (not implemented but it's an example)
     MeshID, // can be selected
-    Final, // can be rendered
+    Final,  // can be rendered
 };
 
 inline std::string PassTagToString(PassTag tag) {
@@ -39,7 +39,7 @@ inline std::string PassTagToString(PassTag tag) {
         case PassTag::Shadow:  return "Shadow Render Pass";
         case PassTag::MeshID:  return "Mesh ID Render Pass";
         case PassTag::Final:   return "Final Render Pass";
-        default:                         return "Unknown Pass Pass";
+        default:               return "Unknown Pass";
     }
 }
 

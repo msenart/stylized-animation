@@ -31,6 +31,7 @@ struct ShaderKeyHash {
         combine(h, k.geom);
         combine(h, k.tesc);
         combine(h, k.tese);
+        combine(h, k.comp);
         for (const auto& define : k.defines) {
             combine(h, define);
         }
@@ -81,12 +82,28 @@ ShaderHandle ShaderManager::load(ShaderKey& key) {
     auto it = g_keyToHandle.find(key);
     if (it != g_keyToHandle.end())
         return it->second;
-    auto& [vert, frag, geom, tesc, tese,defines] = key;
     ShaderHandle handle = g_next++;
-    ShaderEntry entry = ShaderEntry{key, std::make_unique<Shader>(Shader::fromFiles(defines, vert, frag, geom, tesc, tese)), true};
+    std::unique_ptr<Shader> shader;
+    if (key.isCompute())
+        shader = std::make_unique<Shader>(Shader::computeFile(key.comp, key.defines));
+    else
+        shader = std::make_unique<Shader>(Shader::fromFiles(key.defines, key.vert, key.frag, key.geom, key.tesc, key.tese));
+    ShaderEntry entry = ShaderEntry{key, std::move(shader), true};
     g_entries[handle] = std::move(entry);
     g_keyToHandle[key] = handle;
-    Log::info("ShaderManager: loaded '" + entry.key.getDescription() +  "' -> handle " + std::to_string(handle));
+    Log::info("ShaderManager: loaded '" + key.getDescription() + "' -> handle " + std::to_string(handle));
+    return handle;
+}
+
+ShaderHandle ShaderManager::loadCompute(ShaderKey& key) {
+    auto it = g_keyToHandle.find(key);
+    if (it != g_keyToHandle.end())
+        return it->second;
+    ShaderHandle handle = g_next++;
+    ShaderEntry entry = ShaderEntry{key, std::make_unique<Shader>(Shader::computeFile(key.comp, key.defines)), true};
+    g_entries[handle] = std::move(entry);
+    g_keyToHandle[key] = handle;
+    Log::info("ShaderManager: loaded compute '" + key.comp + "' -> handle " + std::to_string(handle));
     return handle;
 }
 
@@ -166,16 +183,19 @@ void ShaderManager::reloadAll()
     for (ShaderHandle handle : handlesToReload) {
         ShaderKey& key = g_entries[handle].key;
         try {
-            Shader newShader = Shader::fromFiles(
-                key.defines, key.vert, key.frag, key.geom, key.tesc, key.tese
-            );
-            compiled[handle] = std::make_unique<Shader>(std::move(newShader));
+            std::unique_ptr<Shader> newShader;
+            if (key.isCompute())
+                newShader = std::make_unique<Shader>(Shader::computeFile(key.comp, key.defines));
+            else
+                newShader = std::make_unique<Shader>(Shader::fromFiles(
+                    key.defines, key.vert, key.frag, key.geom, key.tesc, key.tese));
+            compiled[handle] = std::move(newShader);
             ++ok;
         }
         catch (const std::exception& e) {
             ++fail;
             Log::error(
-                "ShaderManager: reload failed for '" + key.vert + "'. "
+                "ShaderManager: reload failed for '" + (key.isCompute() ? key.comp : key.vert) + "'. "
                 "Keeping previous shader. Error: " + e.what()
             );
         }

@@ -13,7 +13,7 @@ using ShaderHandle = uint32_t;
  * Contains all the information about a shader program : what path to shader it uses, and the shader variants (#define macros)
  */
 struct ShaderKey {
-    std::string vert, frag, geom, tesc, tese;
+    std::string vert, frag, geom, tesc, tese, comp;
     std::set<std::string> defines = {};
 
     ShaderKey() = default;
@@ -23,19 +23,30 @@ struct ShaderKey {
               std::string geom = "",
               std::string tesc = "",
               std::string tese = "",
-              const std::set<std::string> &defines_v = {})
+              const std::set<std::string> &defines_v = {},
+              std::string comp = "")
         : vert(std::move(vert)), frag(std::move(frag)), geom(std::move(geom)),
-          tesc(std::move(tesc)), tese(std::move(tese)), defines(defines_v) {}
+          tesc(std::move(tesc)), tese(std::move(tese)), comp(std::move(comp)),
+          defines(defines_v) {}
+
+    static ShaderKey forCompute(std::string comp, const std::set<std::string>& defines_v = {}) {
+        ShaderKey k;
+        k.comp    = std::move(comp);
+        k.defines = defines_v;
+        return k;
+    }
+
+    [[nodiscard]] bool isCompute() const { return !comp.empty(); }
 
     [[nodiscard]] std::string getDescription() const {
         std::stringstream ss;
 
-        // On liste les macros (ex: [TOON_SHADING][CONTOURS])
         for (const auto& define : defines) {
             ss << "[" << define << "]";
         }
 
         ss << "/";
+        if (!comp.empty()) { ss << comp << "/"; return ss.str(); }
         if (!vert.empty()) ss << vert << "/";
         if (!geom.empty()) ss << geom << "/";
         if (!tesc.empty()) ss << tesc << "/";
@@ -46,9 +57,8 @@ struct ShaderKey {
     }
 
     bool operator==(const ShaderKey& o) const {
-        // ATTENTION : On utilise *defines et *o.defines pour comparer le CONTENU des sets
         return vert == o.vert && frag == o.frag && geom == o.geom
-            && tesc == o.tesc && tese == o.tese && defines == o.defines;
+            && tesc == o.tesc && tese == o.tese && comp == o.comp && defines == o.defines;
     }
 };
 
@@ -93,6 +103,14 @@ public:
      * @return shader handle, stable until shutdown().
      */
     static ShaderHandle load(ShaderKey& key);
+
+    /**
+     * @brief Compiles and registers a compute shader program.
+     * @param key ShaderKey whose comp field is the compute shader filename.
+     * @return Stable handle valid until shutdown().
+     * @throws std::runtime_error if compilation or linking fails.
+     */
+    static ShaderHandle loadCompute(ShaderKey& key);
 
     /**
      * @brief Returns the compiled program for a given handle.

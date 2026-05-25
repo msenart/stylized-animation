@@ -34,7 +34,7 @@ struct Object {
     MeshHandle meshHandle = 0; ///< Reference to geometry in the AssetManager.
     Transform  transform;
     Material   material;
-    std::map<PassTag, ShaderKey> passTagShaderSpecifications;
+    std::map<PassTag, ShaderKey>    passTagShaderSpecifications;
     std::map<PassTag, ShaderHandle> passTagShaderHandle;
     explicit Object(const std::map<PassTag, ShaderKey>& passTagSpecifications) : passTagShaderSpecifications(passTagSpecifications) {}
 

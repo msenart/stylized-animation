@@ -151,17 +151,22 @@ void Object::draw(bool *p_open) {
 
             if (ImGui::TreeNode(("Pass Tag : " + PassTagToString(passTag)).c_str())) {
 
-                ShaderPathInput("Vertex",       shaderKey.vert);
-                ShaderPathInput("Fragment",     shaderKey.frag);
-                ShaderPathInput("Geometry",     shaderKey.geom, /*optional=*/true);
-                ShaderPathInput("Tess Control", shaderKey.tesc, /*optional=*/true);
-                ShaderPathInput("Tess Eval",    shaderKey.tese, /*optional=*/true);
-
-                const bool allValid = shaderFileExists(shaderKey.vert)
-                                   && shaderFileExists(shaderKey.frag)
-                                   && shaderFileExists(shaderKey.geom)
-                                   && shaderFileExists(shaderKey.tesc)
-                                   && shaderFileExists(shaderKey.tese);
+                bool allValid;
+                if (shaderKey.isCompute()) {
+                    ShaderPathInput("Compute", shaderKey.comp);
+                    allValid = shaderFileExists(shaderKey.comp);
+                } else {
+                    ShaderPathInput("Vertex",       shaderKey.vert);
+                    ShaderPathInput("Fragment",     shaderKey.frag);
+                    ShaderPathInput("Geometry",     shaderKey.geom, /*optional=*/true);
+                    ShaderPathInput("Tess Control", shaderKey.tesc, /*optional=*/true);
+                    ShaderPathInput("Tess Eval",    shaderKey.tese, /*optional=*/true);
+                    allValid = shaderFileExists(shaderKey.vert)
+                            && shaderFileExists(shaderKey.frag)
+                            && shaderFileExists(shaderKey.geom)
+                            && shaderFileExists(shaderKey.tesc)
+                            && shaderFileExists(shaderKey.tese);
+                }
 
                 ImGui::Separator();
                 ImGui::BeginDisabled(!allValid);
@@ -185,5 +190,6 @@ void Object::draw(bool *p_open) {
             ImGui::PopID();
         }
     }
+
     ImGui::End();
 }
