@@ -35,7 +35,7 @@ struct Object {
     Transform  transform;
     Material   material;
     std::map<PassTag, ShaderKey>    passTagShaderSpecifications;
-    std::map<PassTag, ShaderHandle> passTagShaderHandle;
+    std::map<PassTag, ShaderHandle> passTagShaderHandle; // don't touch, filled up at runtime from passTagShaderSpecifications
     explicit Object(const std::map<PassTag, ShaderKey>& passTagSpecifications) : passTagShaderSpecifications(passTagSpecifications) {}
 
     void draw(bool* p_open = nullptr);
