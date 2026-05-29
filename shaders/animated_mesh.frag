@@ -1,7 +1,7 @@
 #version 460 core
 
 #define TOON_SHADING_DIFFUSE
-// #define TOON_SHADING_SPECULAR
+//#define TOON_SHADING_SPECULAR
 #define TOON_SHADING_RIM_LIGHTING
 
 in vec3 normalO;
@@ -11,6 +11,7 @@ flat in uint vertexID;
 
 uniform vec3 viewPos;
 uniform uint activationBoneID = 7;
+const float PI = 3.14159265358979323846;
 
 out vec4 FragColor;
 
@@ -25,16 +26,26 @@ layout(std430, binding = 2) readonly buffer BoneBuffer {
     VertexBoneData allVertexBoneData[];
 };
 
+#include "light.glsl"
+
 uniform vec4 not_influenced_vertex_color = vec4(0.0, 0.0, 1.0, 1.0);
 uniform vec4 influenced_vertex_color = vec4(1.0, 0.0, 0.0, 1.0);
 
-float smoothstep(in float x, in float speed){
+float exp_smoothstep(in float x, in float speed){
     return x < 0 ? exp(speed*x)/(1+exp(speed*x)) : 1/(1+exp(-speed*x));
 }
 
-float smoothstepDL(in float x, in float speed){
-    float y = x*speed;
-    return x > 0.0 ? (1.0 + y + y*y/2.0)/(2.0 + y + y*y/2.0) : 1/(2.0 - y + y*y/2);
+float sin_smoothstep(in float x, in float speed){
+    if (x < -PI/(2*speed)){
+        return 0;
+    }
+    else if (x > PI/(2*speed)) {
+        return 1;
+    }
+    else{
+        return (sin(speed*x) + 1)/2.f;
+    }
+
 }
 
 void main() {
@@ -52,7 +63,7 @@ void main() {
 
     // Toon shading diffuse implementation
     vec3 N = normalize(normalO);
-    vec3 L = normalize(vec3(1.0, 1.0, 1.0)); // To change !
+    vec3 L = normalize(allLights[0].position-fragPos); // To change !
     float k_ambient = 0.3;
     float NdotL = dot(N, L);
     float k_diffuse = max(NdotL, 0.0);
@@ -60,17 +71,17 @@ void main() {
     vec3 R = normalize(reflect(L,N));
 
     #ifdef TOON_SHADING_DIFFUSE
-    FragColor.rgb *= k_ambient + (1-k_ambient)*smoothstep(NdotL, 50);
+    FragColor.rgb *= k_ambient + (1-k_ambient)*sin_smoothstep(NdotL, 5);
     #else
     FragColor.rgb *= max(k_diffuse, 0.3);
     #endif
 
     #ifdef TOON_SHADING_SPECULAR
-    FragColor.rgb += vec3(1)*pow(smoothstep(dot(-V,R),50),50);
+    FragColor.rgb += vec3(1)*pow(sin_smoothstep(dot(-V,R),50),5);
     #endif
 
     #ifdef TOON_SHADING_RIM_LIGHTING
-    float rimDot = 1 - smoothstep(dot(V, N),5);
+    float rimDot = 1 - sin_smoothstep(dot(V, N),5);
         FragColor.rgb += vec3(1)*rimDot*k_diffuse;
     #endif
 

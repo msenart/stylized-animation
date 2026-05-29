@@ -2,6 +2,8 @@
 
 #include <filesystem>
 
+#include "glad/glad.h"
+
 static int inputTextResizeCallback(ImGuiInputTextCallbackData* data)
 {
     if (data->EventFlag == ImGuiInputTextFlags_CallbackResize) {
@@ -192,4 +194,10 @@ void Object::draw(bool *p_open) {
     }
 
     ImGui::End();
+}
+
+void Scene::setup() {
+    glCreateBuffers(1, &lights_ssbo);
+    glNamedBufferData(lights_ssbo, lights.size() * sizeof(Light), lights.data(), GL_STATIC_DRAW);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, lights_ssbo);
 }

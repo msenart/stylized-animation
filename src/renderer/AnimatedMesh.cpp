@@ -48,6 +48,7 @@ void AnimatedMesh::uploadUniforms(const Shader& shader, const RenderContext& ctx
     Mesh::uploadUniforms(shader,ctx);
     std::vector<glm::mat4> transforms;
     getBoneTransforms(transforms);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, bones_data_ssbo);
     for (int i = 0 ; i < m_bonesInfo.size(); ++i) {
         shader.set(("gBones["+std::to_string(i)+"]").c_str(), transforms[i]);
     }
@@ -284,7 +285,7 @@ void AnimatedMesh::populateBuffers() {
     glVertexArrayAttribFormat (m_vao,NORMAL_LOCATION,3,GL_FLOAT,GL_FALSE,offsetof(AnimatedVertex, normal));
     glVertexArrayAttribBinding(m_vao,NORMAL_LOCATION,0);
 
-    struct alignas(16) VertexBoneData {
+    struct VertexBoneData {
         unsigned int ids[MAX_NUM_BONES_PER_VERTEX];
         float weights[MAX_NUM_BONES_PER_VERTEX];
     };

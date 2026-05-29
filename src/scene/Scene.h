@@ -50,4 +50,9 @@ struct Scene {
     Camera main_camera;
     std::vector<Light>  lights;
     std::vector<Object> objects;
+    unsigned int lights_ssbo = 0;
+    /**
+     * @brief Sets up the other objects of the scene, typically the lights.
+     */
+    void setup();
 };

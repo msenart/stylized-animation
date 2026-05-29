@@ -64,7 +64,7 @@ int main() {
 
     Light light;
 
-    light.position  = {3.f, 5.f, 3.f};
+    light.position  = {0.f, 0.f, 5.f};
     light.intensity = 1.f;
     scene.lights.push_back(light);
 

@@ -13,13 +13,15 @@ Renderer::Renderer() {
 
 void Renderer::setup(Scene *scene, const Window *window, const AssetManager &assets, float aspect) {
     // Creating the rendering pipeline and the renderer
-    m_render_pipeline = RenderPipeline();
-    m_render_pipeline.addPass(std::make_shared<MeshIDRenderPass>());
-    m_render_pipeline.addPass(std::make_shared<FinalRenderPass>());
+    m_renderPipeline = RenderPipeline();
+    m_renderPipeline.addPass(std::make_shared<MeshIDRenderPass>());
+    m_renderPipeline.addPass(std::make_shared<FinalRenderPass>());
     // Setting up the rendering pipeline and the renderer
     int w, h;
     window->getSize(w,h);
-    m_render_pipeline.setup(w,h);
+    m_renderPipeline.setup(w,h);
+    // Setup the scene (especially insert the lights into the rendering pipeline)
+    scene->setup();
 }
 
 void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, float aspect) {
@@ -30,8 +32,8 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
 
     m_drawCalls = 0;
     // Mesh ID pass
-    m_render_pipeline.clear("Mesh ID Render Pass");
-    m_render_pipeline.execute("Mesh ID Render Pass");
+    m_renderPipeline.clear("Mesh ID Render Pass");
+    m_renderPipeline.execute("Mesh ID Render Pass");
     for (unsigned int i = 0; i < scene->objects.size(); i++) {
         auto obj = scene->objects[i];
         auto it = obj.passTagShaderHandle.find(PassTag::MeshID);
@@ -53,8 +55,8 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
     }
 
     // Screen pass
-    m_render_pipeline.clear("Final Render Pass");
-    m_render_pipeline.execute("Final Render Pass");
+    m_renderPipeline.clear("Final Render Pass");
+    m_renderPipeline.execute("Final Render Pass");
     for (const Object& obj : scene->objects) {
         auto it = obj.passTagShaderHandle.find(PassTag::Final);
         if (it == obj.passTagShaderHandle.end()) continue;
@@ -79,7 +81,7 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
 }
 
 void Renderer::onResize(int width, int height) {
-    m_render_pipeline.onResize(width, height);
+    m_renderPipeline.onResize(width, height);
 }
 
 int Renderer::drawCalls() const {
