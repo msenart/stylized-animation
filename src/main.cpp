@@ -110,6 +110,7 @@ int main() {
         if (!windowContext) {
             return;
         }
+        Log::info(std::to_string(width) + " " +std::to_string(height));
         if (auto* renderer = windowContext->renderer) {
             renderer->onResize(width,height);
         }

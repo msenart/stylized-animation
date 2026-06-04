@@ -12,12 +12,12 @@ flat in uint vertexID;
 
 uniform vec3 viewPos;
 uniform uint activationBoneID = 7;
+uniform uint lightsNumber;
 const float PI = 3.14159265358979323846;
 
 out vec4 FragColor;
 
 const uint MAX_NUM_BONES_PER_VERTEX = 16;
-const uint MAX_LIGHTS = 1;
 
 struct VertexBoneData {
     uint ids[MAX_NUM_BONES_PER_VERTEX];
@@ -71,7 +71,7 @@ void main() {
     vec3 V = normalize(viewPos - fragPos);
     float k_ambient = 0.3;
     // Toon shading diffuse implementation
-    for (int i= 0; i < MAX_LIGHTS; i++){
+    for (int i= 0; i < min(lightsNumber,lightsNumber); i++){
         Light light = allLights[i];
         vec3 L = normalize(light.position-fragPos); // To change !
         float NdotL = dot(N, L);
