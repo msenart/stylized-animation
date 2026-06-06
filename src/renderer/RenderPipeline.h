@@ -82,6 +82,12 @@ public:
      */
     virtual unsigned int fbo() = 0;
 
+    // /**
+    //  *
+    //  * @return the fbo of the rendering pass.
+    //  */
+    // virtual std::vector<unsigned int> fboTexs() = 0;
+
     /**
      *
      * @return the precise name of the rendering pass. See MeshIDRenderPass::name() for example.

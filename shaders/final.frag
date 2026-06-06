@@ -1,4 +1,8 @@
 #version 460 core
+
+
+uniform sampler2D sceneTexture; //the scene has been renderered in this texture
+
 in vec3 fragPos;
 in vec3 normal;
 

@@ -97,7 +97,7 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
         ++m_drawCalls;
     }
 
-    // Screen pass
+    // old Screen pass
     // m_renderPipeline.clear("Final Render Pass");
     // m_renderPipeline.execute("Final Render Pass");
     // for (const Object& obj : scene->objects) {
@@ -121,16 +121,20 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
     //     ++m_drawCalls;
     // }
 
+    //Screen pass
     m_renderPipeline.clear("Final Render Pass");
     m_renderPipeline.execute("Final Render Pass");
     ShaderHandle handle = scene->finalRenderPassShaderHandle;
     if (handle == 0) {Log::error("Scene's mesh handle is null ");}
     const Shader& shader = ShaderManager::get(handle);
     shader.bind();
-    // shader.set("model",obj.transform.matrix());
-    // shader.set("view",scene->main_camera.view());
-    // shader.set("projection",scene->main_camera.projection(aspect));
-    // shader.set("meshID",static_cast<unsigned int>(i+1));
+    //now we bind the texture which comes from the previous framebuffer to the texture unit 0
+    //glActiveTexture(GL_TEXTURE0);
+    //glBindTexture(GL_TEXTURE_2D, textureA); 
+    //glActiveTexture(GL_TEXTURE0);
+    //we tell the shader that the texture named sceneTexture is in the texture unit 0
+    //this texture is actually the one of the previous framebuffer
+    shader.set("sceneTexture", 0);
     p_screen_mesh->uploadUniforms(shader, ctx);
     p_screen_mesh->draw();
     ++m_drawCalls;
