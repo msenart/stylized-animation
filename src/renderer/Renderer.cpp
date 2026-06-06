@@ -78,27 +78,27 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
 
 
     // Mesh ID pass
-    m_renderPipeline.clear("Mesh ID Render Pass");
-    m_renderPipeline.execute("Mesh ID Render Pass");
-    for (unsigned int i = 0; i < scene->objects.size(); i++) {
-        auto obj = scene->objects[i];
-        auto it = obj.passTagShaderHandle.find(PassTag::MeshID);
-        if (it == obj.passTagShaderHandle.end()) {continue;}
-        ShaderHandle handle = it->second;
-        if (handle == 0) {continue;}
+    // m_renderPipeline.clear("Mesh ID Render Pass");
+    // m_renderPipeline.execute("Mesh ID Render Pass");
+    // for (unsigned int i = 0; i < scene->objects.size(); i++) {
+    //     auto obj = scene->objects[i];
+    //     auto it = obj.passTagShaderHandle.find(PassTag::MeshID);
+    //     if (it == obj.passTagShaderHandle.end()) {continue;}
+    //     ShaderHandle handle = it->second;
+    //     if (handle == 0) {continue;}
 
-        const Mesh& mesh = assets.get(obj.meshHandle);
+    //     const Mesh& mesh = assets.get(obj.meshHandle);
 
-        const Shader& shader = ShaderManager::get(handle);
-        shader.bind();
-        shader.set("model",obj.transform.matrix());
-        shader.set("view",scene->main_camera.view());
-        shader.set("projection",scene->main_camera.projection(aspect));
-        shader.set("meshID",static_cast<unsigned int>(i+1));
-        mesh.uploadUniforms(shader, ctx);
-        mesh.draw();
-        ++m_drawCalls;
-    }
+    //     const Shader& shader = ShaderManager::get(handle);
+    //     shader.bind();
+    //     shader.set("model",obj.transform.matrix());
+    //     shader.set("view",scene->main_camera.view());
+    //     shader.set("projection",scene->main_camera.projection(aspect));
+    //     shader.set("meshID",static_cast<unsigned int>(i+1));
+    //     mesh.uploadUniforms(shader, ctx);
+    //     mesh.draw();
+    //     ++m_drawCalls;
+    // }
 
     // old Screen pass
     // m_renderPipeline.clear("Final Render Pass");
@@ -125,6 +125,8 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
     // }
 
     //Screen pass
+    //we draw a squad and fill it according to the shader
+    //and the texture which comes from the hybrid render pass
     m_renderPipeline.clear("Final Render Pass");
     m_renderPipeline.execute("Final Render Pass");
     ShaderHandle handle = scene->finalRenderPassShaderHandle;
