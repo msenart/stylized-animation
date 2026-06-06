@@ -1,5 +1,6 @@
 set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 project(stylize-animation CXX)
 
 #===========================================================================================
@@ -81,6 +82,7 @@ target_link_libraries(stylize-animation PRIVATE OpenGL::GL)
 
 # Handle the optional libraries
 if (${ENABLE_ASSIMP})
+  set(ASSIMP_WARNINGS_AS_ERRORS OFF CACHE BOOL "" FORCE)
     include(${CMAKE_DIR}/LinkASSIMP.cmake)
     LinkASSIMP(stylize-animation PRIVATE)
 endif()

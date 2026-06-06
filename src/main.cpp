@@ -1,4 +1,6 @@
+#include <iostream>
 #include <glad/glad.h>
+#include <cxxopts.hpp>
 #include <GLFW/glfw3.h>
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
@@ -20,213 +22,263 @@
 #include "ui/SelectionManager.h"
 
 static void setupGLDebugCallback() {
-    glEnable(GL_DEBUG_OUTPUT);
-    glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-    glDebugMessageCallback([](GLenum, GLenum type, GLuint, GLenum severity,
-                              GLsizei, const GLchar* message, const void*) {
-        if (severity == GL_DEBUG_SEVERITY_NOTIFICATION) return;
-        if (type == GL_DEBUG_TYPE_ERROR)
-            Log::error(std::string("GL: ") + message);
-        else
-            Log::warn(std::string("GL: ") + message);
-    }, nullptr);
+  glEnable(GL_DEBUG_OUTPUT);
+       glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+       glDebugMessageCallback([](GLenum, GLenum type, GLuint, GLenum severity,
+       GLsizei, const GLchar* message, const void*) {
+         if (severity == GL_DEBUG_SEVERITY_NOTIFICATION) return;
+       if (type == GL_DEBUG_TYPE_ERROR)
+         Log::error(std::string("GL: ") + message);
+       else
+         Log::warn(std::string("GL: ") + message);
+       }, nullptr);
 }
 
-int main() {
-    Window window(1280, 720, "Stylized Animation Engine");
-    setupGLDebugCallback();
-
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGui::StyleColorsDark();
-    ImGui_ImplGlfw_InitForOpenGL(window.handle(), true);
-    ImGui_ImplOpenGL3_Init("#version 460");
-    // creating the assets manager (to not have two meshes duplicated in memory)
-    AssetManager assets;
-
-    // creating the scene
-    Scene scene;
-
-    // creating the elements composing the scene
-    // auto cubeData = Geometry::makeCube();
-    // MeshHandle meshHandle = assets.add(
-    //     std::make_unique<Mesh>(cubeData.vertices, cubeData.indices));
-
-    // auto fileMeshData = Geometry::loadStaticMeshFromFile( "assets/meshes/Praying.fbx");
-    // MeshHandle meshHandle = assets.add(std::make_unique<StaticMesh>(fileMeshData[0].vertices, fileMeshData[0].indices));
-
-    MeshHandle meshHandle = assets.add(std::make_unique<AnimatedMesh>("assets/meshes/Standing Death Left 01.fbx"));
-    Object obj = Object{assets.get(meshHandle).shaderKeysMap()};
-    obj.meshHandle =meshHandle;
-    obj.material.color = {0.8f, 0.3f, 0.2f};
-    obj.transform.scale = glm::vec3(0.05f);
-    scene.objects.push_back(obj);
-
-    Light light;
-
-    light.position  = {0.f, 0.f, 5.f};
-    light.color = {1.0,1.0,0};
-    light.intensity = 1.f;
-    scene.lights.push_back(light);
-
-    scene.main_camera.position = {0.f, 1.f, 5.f};
-    scene.main_camera.target   = {0.f, 0.f, 0.f};
-
-    // instancing the necessary elements to render the scene
-    Renderer         renderer;
-    CameraController camCtrl;
-    DebugConsole     console;
-    RenderStats      stats;
-    SelectionManager selectionManager{&scene,renderer.renderPipeline()};
-
-    // Compiling shaders
-    for (auto& object : scene.objects) {
-        for (auto& pair : object.passTagShaderSpecifications) {
-            auto& render_pass = pair.first;
-            auto& shader_key = pair.second;
-            object.passTagShaderHandle[render_pass] = ShaderManager::load(shader_key);
-        }
-    }
-
-    // Setup the renderer
-    int w,h;
-    window.getSize(w, h);
-    auto aspect = h > 0 ? static_cast<float>(w)/static_cast<float>(h) : 0;
-    renderer.setup(&scene,&window,assets,aspect);
-
-    // Set up all necessary callbacks
-
-    MegaWindowContext windowContext;
-    windowContext.scene = &scene;
-    windowContext.renderer = &renderer;
-    windowContext.selectionManager = &selectionManager;
-    windowContext.window = &window;
-
-    // Here, you tell glfw to give you windowContext instead of window when you will
-    // call glfwGetWindowUserPointer in the future
-    glfwSetWindowUserPointer(window.handle(), &windowContext);
-
-    glfwSetFramebufferSizeCallback(window.handle(), [](GLFWwindow* window, int width, int height) {
-        glViewport(0, 0, width, height);
-        MegaWindowContext* windowContext = static_cast<MegaWindowContext*>(glfwGetWindowUserPointer(window));
-        if (!windowContext) {
-            return;
-        }
-        if (auto* renderer = windowContext->renderer) {
-            renderer->onResize(width,height);
-        }
-    });
-
-    glfwSetMouseButtonCallback(window.handle(), [](GLFWwindow* window, int button, int action, int mods) {
-
-        ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
-
-        ImGuiIO& io = ImGui::GetIO();
-        if (io.WantCaptureMouse) return;
-
-        auto* ctx = static_cast<MegaWindowContext*>(glfwGetWindowUserPointer(window));
-        if (!ctx) {
-            return;
-        }
-
-        if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-            if (ctx->selectionManager) {
-                double xpos, ypos;
-                glfwGetCursorPos(window, &xpos, &ypos);
-                int w,h;
-                ctx->window->getSize(w,h);
-                ctx->selectionManager->select(glm::vec2(xpos, ypos),h);
-            }
-        }
-    });
-
-    Log::info("Engine ready");
-    Log::info("F1 -> toggle camera control | F2 -> reload all shaders");
-
-    double prevTime = glfwGetTime();
-    float  fps      = 0.f;
-    bool paused = false;
-    // Edge-trigger state for toggle keys
-    bool prevF1 = false;
-    bool prevF2 = false;
-    bool prevF3 = false;
-
-    // Record animation
-    int vid_w = 1280;
-    int vid_h = 720;
-    // const char* cmd = "ffmpeg -r 60 -f rawvideo -pix_fmt rgba -s 1280x720 -i - "
-    //     "-threads 0 -preset fast -y -pix_fmt yuv420p -crf 21 -vf vflip output.mp4";
-    // FILE* ffmpeg = popen(cmd, "w");
-    // int* vid_buffer = new int[vid_w * vid_h];
-
-    while (!window.shouldClose()) {
-        window.pollEvents();
-
-        double now = glfwGetTime();
-        float  dt  = static_cast<float>(now - prevTime);
-        prevTime   = now;
-        fps        = dt > 0.f ? 1.f / dt : 0.f;
-
-        // F1 - toggle camera control
-        bool f1 = glfwGetKey(window.handle(), GLFW_KEY_F1) == GLFW_PRESS;
-        if (f1 && !prevF1) {
-            camCtrl.setEnabled(window.handle(), !camCtrl.enabled);
-            Log::info(camCtrl.enabled ? "Camera control ON" : "Camera control OFF");
-        }
-        prevF1 = f1;
-
-        // F2 - hot-reload all shaders from disk
-        bool f2 = glfwGetKey(window.handle(), GLFW_KEY_F2) == GLFW_PRESS;
-        if (f2 && !prevF2)
-            ShaderManager::reloadAll();
-        prevF2 = f2;
-
-        // F3 - Pause animation
-        bool f3 = glfwGetKey(window.handle(), GLFW_KEY_F3) == GLFW_PRESS;
-        if (f3 && !prevF3) {
-            auto& animated_mesh = dynamic_cast<AnimatedMesh&>(assets.get(meshHandle));
-            auto timer = animated_mesh.getTimer();
-            paused = !paused;
-            if (paused) {
-                timer->pause();
-            }
-            else {
-                timer->start();
-            }
-        }
-        prevF3 = f3;
-
-        // ZQSD camera movement
-        camCtrl.update(scene.main_camera, window.handle(), dt);
-
-        int w, h;
-        window.getSize(w, h);
-
-        float aspect = (h > 0) ? static_cast<float>(w) / static_cast<float>(h) : 1.f;
-        renderer.render(&scene, &window, assets, aspect);
-
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-        selectionManager.draw();
-        console.draw();
-        stats.draw(scene, renderer.drawCalls(), assets.meshCount(), fps);
-        ShaderManager::drawUI();
-
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-        // glReadPixels(0, 0, vid_w, vid_h, GL_RGBA, GL_UNSIGNED_BYTE, vid_buffer);
-        // fwrite(vid_buffer, sizeof(int) * vid_w * vid_h, 1, ffmpeg);
-
-        window.swapBuffers();
-    }
-
-    ShaderManager::shutdown();
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
-    // pclose(ffmpeg);
-
+int main(int argc, char *argv[]) {
+  // bool saveVideo = false;
+  // bool headless = false;
+  // int numFrames = 300;
+  // if (argc > 2) {
+  //   for (int i = 0; i < argc; i++) {
+  //     std::string arg(arg_char);
+  //     if (arg == "-s" || arg == "--save-video")
+  //       saveVideo = true;
+  //     if (arg == "-h" || arg == "--headless") { // needs saveVideo to be true
+  //       headless = true;
+  //     }
+  //   }
+  // }
+  cxxopts::Options options("Stylized Animation", "A stylized animation engine");
+  options.add_options()
+    ("s,save-video", "save video with ffmpeg")
+    ("H,headless", "prevents window from popping up. Useful for just generating a video")
+    ("f,frames", "specify a number of frames to generate", cxxopts::value<int>()->default_value("-1"))
+    ("t,target-fps", "target fps of the animation", cxxopts::value<int>()->default_value("-1"))
+    ("h,help", "shows usage");
+  auto result = options.parse(argc, argv);
+  if (result.count("help")) {
+    std::cout << options.help() << std::endl;
     return 0;
+  }
+  bool saveVideo = result.count("save-video");
+  bool headless = result.count("headless");
+  int frames = result["frames"].as<int>();
+  int targetFps = result["target-fps"].as<int>();
+
+  if (headless) {
+    glfwInit();
+    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+  }
+  Window window(1280, 720, "Stylized Animation Engine", headless);
+  setupGLDebugCallback();
+
+  IMGUI_CHECKVERSION();
+  ImGui::CreateContext();
+  ImGui::StyleColorsDark();
+  ImGui_ImplGlfw_InitForOpenGL(window.handle(), true);
+  ImGui_ImplOpenGL3_Init("#version 460");
+  // creating the assets manager (to not have two meshes duplicated in memory)
+  AssetManager assets;
+
+  // creating the scene
+  Scene scene;
+
+  // creating the elements composing the scene
+  // auto cubeData = Geometry::makeCube();
+  // MeshHandle meshHandle = assets.add(
+  //     std::make_unique<Mesh>(cubeData.vertices, cubeData.indices));
+
+  // auto fileMeshData = Geometry::loadStaticMeshFromFile( "assets/meshes/Praying.fbx");
+  // MeshHandle meshHandle = assets.add(std::make_unique<StaticMesh>(fileMeshData[0].vertices, fileMeshData[0].indices));
+
+  MeshHandle meshHandle = assets.add(std::make_unique<AnimatedMesh>("assets/meshes/Standing Death Left 01.fbx"));
+  Object obj = Object{assets.get(meshHandle).shaderKeysMap()};
+  obj.meshHandle =meshHandle;
+  obj.material.color = {0.8f, 0.3f, 0.2f};
+  obj.transform.scale = glm::vec3(0.05f);
+  scene.objects.push_back(obj);
+
+  Light light;
+
+  light.position  = {0.f, 0.f, 5.f};
+  light.color = {1.0,1.0,0};
+  light.intensity = 1.f;
+  scene.lights.push_back(light);
+
+  scene.main_camera.position = {0.f, 1.f, 5.f};
+  scene.main_camera.target   = {0.f, 0.f, 0.f};
+
+  // instancing the necessary elements to render the scene
+  Renderer         renderer;
+  CameraController camCtrl;
+  DebugConsole     console;
+  RenderStats      stats;
+  SelectionManager selectionManager{&scene,renderer.renderPipeline()};
+
+  // Compiling shaders
+  for (auto& object : scene.objects) {
+    for (auto& pair : object.passTagShaderSpecifications) {
+      auto& render_pass = pair.first;
+      auto& shader_key = pair.second;
+      object.passTagShaderHandle[render_pass] = ShaderManager::load(shader_key);
+    }
+  }
+
+  // Setup the renderer
+  int w,h;
+  window.getSize(w, h);
+  auto aspect = h > 0 ? static_cast<float>(w)/static_cast<float>(h) : 0;
+  renderer.setup(&scene,&window,assets,aspect);
+
+  // Set up all necessary callbacks
+
+  MegaWindowContext windowContext;
+  windowContext.scene = &scene;
+  windowContext.renderer = &renderer;
+  windowContext.selectionManager = &selectionManager;
+  windowContext.window = &window;
+
+  // Here, you tell glfw to give you windowContext instead of window when you will
+  // call glfwGetWindowUserPointer in the future
+  glfwSetWindowUserPointer(window.handle(), &windowContext);
+
+  glfwSetFramebufferSizeCallback(window.handle(), [](GLFWwindow* window, int width, int height) {
+    glViewport(0, 0, width, height);
+    MegaWindowContext* windowContext = static_cast<MegaWindowContext*>(glfwGetWindowUserPointer(window));
+    if (!windowContext) {
+      return;
+    }
+    if (auto* renderer = windowContext->renderer) {
+      renderer->onResize(width,height);
+    }
+  });
+
+  glfwSetMouseButtonCallback(window.handle(), [](GLFWwindow* window, int button, int action, int mods) {
+
+    ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
+
+    ImGuiIO& io = ImGui::GetIO();
+    if (io.WantCaptureMouse) return;
+
+    auto* ctx = static_cast<MegaWindowContext*>(glfwGetWindowUserPointer(window));
+    if (!ctx) {
+      return;
+    }
+
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+      if (ctx->selectionManager) {
+        double xpos, ypos;
+        glfwGetCursorPos(window, &xpos, &ypos);
+        int w,h;
+        ctx->window->getSize(w,h);
+        ctx->selectionManager->select(glm::vec2(xpos, ypos),h);
+      }
+    }
+  });
+
+  Log::info("Engine ready");
+  Log::info("F1 -> toggle camera control | F2 -> reload all shaders");
+
+  double prevTime = glfwGetTime();
+  int currentFrame = 0;
+  float  fps      = 0.f;
+  bool paused = false;
+  // Edge-trigger state for toggle keys
+  bool prevF1 = false;
+  bool prevF2 = false;
+  bool prevF3 = false;
+
+  // Record animation
+  int vid_w = 1280;
+  int vid_h = 720;
+  FILE* ffmpeg = nullptr;
+  int* vidBuffer = nullptr;
+  if (saveVideo == true) {
+    const char* cmd = "ffmpeg -r 60 -f rawvideo -pix_fmt rgba -s 1280x720 -i - "
+      "-threads 0 -preset fast -y -pix_fmt yuv420p -crf 21 -vf vflip output.mp4";
+    ffmpeg = popen(cmd, "w");
+    vidBuffer = new int[vid_w * vid_h];
+  }
+  while (!window.shouldClose() && (frames <= 0 || currentFrame < frames)) {
+    window.pollEvents();
+
+    double now = glfwGetTime();
+    float  dt  = static_cast<float>(now - prevTime);
+    prevTime   = now;
+    fps        = dt > 0.f ? 1.f / dt : 0.f;
+
+    if (targetFps > 0) {
+      dt = 1.0f / targetFps;
+    }
+
+    // F1 - toggle camera control
+    bool f1 = glfwGetKey(window.handle(), GLFW_KEY_F1) == GLFW_PRESS;
+    if (f1 && !prevF1) {
+      camCtrl.setEnabled(window.handle(), !camCtrl.enabled);
+      Log::info(camCtrl.enabled ? "Camera control ON" : "Camera control OFF");
+    }
+    prevF1 = f1;
+
+    // F2 - hot-reload all shaders from disk
+    bool f2 = glfwGetKey(window.handle(), GLFW_KEY_F2) == GLFW_PRESS;
+    if (f2 && !prevF2)
+      ShaderManager::reloadAll();
+    prevF2 = f2;
+
+    // F3 - Pause animation
+    bool f3 = glfwGetKey(window.handle(), GLFW_KEY_F3) == GLFW_PRESS;
+    if (f3 && !prevF3) {
+      auto& animated_mesh = dynamic_cast<AnimatedMesh&>(assets.get(meshHandle));
+      auto timer = animated_mesh.getTimer();
+      paused = !paused;
+      if (paused) {
+        timer->pause();
+      }
+      else {
+        timer->start();
+      }
+    }
+    prevF3 = f3;
+
+    // ZQSD camera movement
+    camCtrl.update(scene.main_camera, window.handle(), dt);
+
+    int w, h;
+    window.getSize(w, h);
+
+    float aspect = (h > 0) ? static_cast<float>(w) / static_cast<float>(h) : 1.f;
+    renderer.render(&scene, &window, assets, aspect);
+
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+    selectionManager.draw();
+    console.draw();
+    stats.draw(scene, renderer.drawCalls(), assets.meshCount(), fps);
+    ShaderManager::drawUI();
+
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+    if (saveVideo == true) {
+      glReadPixels(0, 0, vid_w, vid_h, GL_RGBA, GL_UNSIGNED_BYTE, vidBuffer);
+      fwrite(vidBuffer, sizeof(int) * vid_w * vid_h, 1, ffmpeg);
+    }
+    window.swapBuffers();
+    currentFrame++;
+  }
+
+  if (saveVideo){
+    std::cout << "video saved!"  << std::endl;
+  }
+
+  ShaderManager::shutdown();
+  ImGui_ImplOpenGL3_Shutdown();
+  ImGui_ImplGlfw_Shutdown();
+  ImGui::DestroyContext();
+  if (saveVideo == true) {
+    pclose(ffmpeg);
+  }
+
+  return 0;
 }

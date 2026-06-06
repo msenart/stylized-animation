@@ -5,3 +5,6 @@ stylized-animation
 stylize-animation.exe
 stylized-animation.exe
 personal/
+.clangd
+compile_commands.json
+*.mp4
