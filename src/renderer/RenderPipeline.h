@@ -234,6 +234,9 @@ public:
 
     void setup(unsigned int window_w, unsigned int window_h) const;
 
+    /**
+     * bind the corresponding framebuffer
+     */
     void execute(const std::string& name);
 
     void clear(const std::string& name);

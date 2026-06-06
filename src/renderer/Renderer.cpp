@@ -57,7 +57,10 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
         }
 
         ShaderHandle handle = it->second;
-        if (handle == 0) continue;
+        if (handle == 0) {
+            Log::error("shader of obj "+std::to_string(obj.meshHandle)+" is null for hybrid render pass");
+            continue;
+        };
 
         const Mesh& mesh = assets.get(obj.meshHandle);
 
@@ -129,9 +132,13 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
     const Shader& shader = ShaderManager::get(handle);
     shader.bind();
     //now we bind the texture which comes from the previous framebuffer to the texture unit 0
-    //glActiveTexture(GL_TEXTURE0);
-    //glBindTexture(GL_TEXTURE_2D, textureA); 
-    //glActiveTexture(GL_TEXTURE0);
+    std::vector<unsigned int> hybridFboTexs = m_renderPipeline.getPassFboTexs("Hybrid Render Pass");
+    if(hybridFboTexs.empty()){
+        Log::error("hybrid render pass' fboTexs is empty. Cannot bind texture for final render pass.");
+    }
+    unsigned int texture = hybridFboTexs[0];
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture); 
     //we tell the shader that the texture named sceneTexture is in the texture unit 0
     //this texture is actually the one of the previous framebuffer
     shader.set("sceneTexture", 0);

@@ -19,7 +19,7 @@ void HybridRenderPass::setup(unsigned int window_w, unsigned int window_h) {
     // creating texture 1 (scene)
     glGenTextures(1, &m_fboTex1);
     glBindTexture(GL_TEXTURE_2D, m_fboTex1);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, window_w, window_h, 0, GL_RGBA, GL_UNSIGNED_INT, nullptr);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, window_w, window_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -31,7 +31,7 @@ void HybridRenderPass::setup(unsigned int window_w, unsigned int window_h) {
     glGenTextures(1, &m_fboTex2);
     glBindTexture(GL_TEXTURE_2D, m_fboTex2);
     //will use GL_R3UI later, for now use GL_RGBA because it is easier AND GL_RED_INTEGER instead of GL_RGBA
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, window_w, window_h, 0, GL_RGBA, GL_UNSIGNED_INT, nullptr);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, window_w, window_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -76,7 +76,7 @@ void HybridRenderPass::clear() {
     //glClearBufferuiv(GL_COLOR, 0, &clearValue);
 
     // clear all the buffer of the color attachments specified by glDrawBuffer (see setup)
-    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClearColor(1.0f, 1.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
