@@ -82,11 +82,11 @@ public:
      */
     virtual unsigned int fbo() = 0;
 
-    // /**
-    //  *
-    //  * @return the fbo of the rendering pass.
-    //  */
-    // virtual std::vector<unsigned int> fboTexs() = 0;
+    /**
+     *
+     * @return the fbo of the rendering pass.
+     */
+    virtual std::vector<unsigned int> fboTexs() = 0;
 
     /**
      *
@@ -129,6 +129,10 @@ public:
         return m_fboTex2;
     }
 
+    std::vector<unsigned int> fboTexs() override{
+        return {m_fboTex1, m_fboTex2};
+    }
+
     HybridRenderPass(std::string suffix) : RenderPass(std::move(suffix)) {
         tag = PassTag::Hybrid;
     };
@@ -163,6 +167,11 @@ public:
     unsigned int fboTex() const {
         return m_fboTex;
     }
+
+    std::vector<unsigned int> fboTexs() override{
+        return {m_fboTex};
+    }
+
     MeshIDRenderPass(std::string suffix) : RenderPass(std::move(suffix)) {
         tag = PassTag::MeshID;
     };
@@ -202,6 +211,10 @@ public:
         return 0;
     }
 
+    std::vector<unsigned int> fboTexs() override{
+        return {0};
+    }
+
     std::string name() {
         return !m_suffix.empty() ? PassTagToString(tag) + " " + m_suffix : PassTagToString(tag);
     }
@@ -228,4 +241,8 @@ public:
     void onResize(unsigned int window_w, unsigned int window_h) const;
 
     unsigned int getPassFbo(const std::string &name);
+
+    std::vector<unsigned int> getPassFboTexs(const std::string &name);
+
+
 };

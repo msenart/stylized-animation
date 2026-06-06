@@ -189,3 +189,14 @@ unsigned int RenderPipeline::getPassFbo(const std::string& name) {
         return 0;
     }
 }
+
+
+std::vector<unsigned int> RenderPipeline::getPassFboTexs(const std::string &name){
+    auto it = mapRenderPasses.find(name);
+    if (it != mapRenderPasses.end()) {
+        return it->second->fboTexs();
+    } else {
+        Log::error("Failed to get FBO: Render pass '" + name + "' not found.");
+        return {};
+    }
+}
