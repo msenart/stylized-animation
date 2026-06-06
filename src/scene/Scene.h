@@ -17,6 +17,7 @@
 #include "renderer/RenderPipeline.h"
 #include "renderer/ShaderManager.h"
 
+
 /**
  * @brief Surface appearance properties for an object.
  */

@@ -21,8 +21,8 @@ public:
     StaticMesh(const std::vector<StaticVertex>& vertices, const std::vector<uint32_t>& indices);
     ~StaticMesh() override;
 
-    StaticMesh(const StaticMesh&)            = delete;
-    StaticMesh& operator=(const StaticMesh&) = delete;
+    //StaticMesh(const StaticMesh&)            = delete;
+    //StaticMesh& operator=(const StaticMesh&) = delete;
 
     void draw() const override;
     void uploadUniforms(const Shader& shader, const RenderContext& ctx) const override;

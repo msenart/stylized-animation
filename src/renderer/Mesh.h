@@ -2,12 +2,17 @@
 #include <map>
 #include <glm/glm.hpp>
 #include "renderer/ShaderManager.h"
-#include "Renderer.h"
+#include "renderer/Types_renderer.h"
+
 enum class PassTag;
 class Shader;
 
 class Mesh {
 public:
+    //Meshes don't have shader Handle but only shader keys
+    //shader handles of object of the scene are created at runtime in main.c
+    //and stored in the atribute passTagShaderHandle of the objects of the 
+    //vector "objects" of the scene
     virtual const std::map<PassTag, ShaderKey> shaderKeysMap() const = 0;
 
     virtual void draw() const = 0;

@@ -9,9 +9,22 @@
 
 Renderer::Renderer() {
     glEnable(GL_DEPTH_TEST);
+    
 }
 
 void Renderer::setup(Scene *scene, const Window *window, const AssetManager &assets, float aspect) {
+
+    //create screen_mesh (rect that takes all the screen)
+    glm::vec3 a = {1.0, 1.0, 0.0};
+    std::vector<StaticVertex> vertices = {
+        {{-1.0, -1.0, 0.0}, {0.0, 0.0, 1.0}}, //pos, normal
+        {{-1.0, 1.0, 0.0}, {0.0, 0.0, 1.0}},
+        {{1.0, -1.0, 0.0}, {0.0, 0.0, 1.0}},
+        {{1.0, 1.0, 0.0}, {0.0, 0.0, 1.0}},
+    };
+    std::vector<uint32_t> indices = {0, 2, 1, 2, 3, 1}; //triangles
+    p_screen_mesh = std::make_unique<StaticMesh>(vertices, indices); //instancie le mesh
+
     // Creating the rendering pipeline and the renderer
     m_renderPipeline = RenderPipeline();
     m_renderPipeline.addPass(std::make_shared<MeshIDRenderPass>());
@@ -85,29 +98,42 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
     }
 
     // Screen pass
+    // m_renderPipeline.clear("Final Render Pass");
+    // m_renderPipeline.execute("Final Render Pass");
+    // for (const Object& obj : scene->objects) {
+    //     auto it = obj.passTagShaderHandle.find(PassTag::Final);
+    //     if (it == obj.passTagShaderHandle.end()) continue;
+
+    //     ShaderHandle handle = it->second;
+    //     if (handle == 0) continue;
+
+    //     const Mesh& mesh = assets.get(obj.meshHandle);
+
+    //     const Shader& shader = ShaderManager::get(handle);
+    //     shader.bind();
+    //     shader.set("model",obj.transform.matrix());
+    //     shader.set("viewPos",scene->main_camera.position);
+    //     shader.set("view",scene->main_camera.view());
+    //     shader.set("projection",scene->main_camera.projection(aspect));
+    //     shader.set("objectColor",obj.material.color);
+    //     mesh.uploadUniforms(shader, ctx);
+    //     mesh.draw();
+    //     ++m_drawCalls;
+    // }
+
     m_renderPipeline.clear("Final Render Pass");
     m_renderPipeline.execute("Final Render Pass");
-    for (const Object& obj : scene->objects) {
-        auto it = obj.passTagShaderHandle.find(PassTag::Final);
-        if (it == obj.passTagShaderHandle.end()) continue;
-
-        ShaderHandle handle = it->second;
-        if (handle == 0) continue;
-
-        const Mesh& mesh = assets.get(obj.meshHandle);
-
-        const Shader& shader = ShaderManager::get(handle);
-        shader.bind();
-        shader.set("model",obj.transform.matrix());
-        shader.set("viewPos",scene->main_camera.position);
-        shader.set("view",scene->main_camera.view());
-        shader.set("projection",scene->main_camera.projection(aspect));
-        shader.set("objectColor",obj.material.color);
-        mesh.uploadUniforms(shader, ctx);
-        mesh.draw();
-        ++m_drawCalls;
-    }
-
+    ShaderHandle handle = scene->finalRenderPassShaderHandle;
+    if (handle == 0) {Log::error("Scene's mesh handle is null ");}
+    const Shader& shader = ShaderManager::get(handle);
+    shader.bind();
+    // shader.set("model",obj.transform.matrix());
+    // shader.set("view",scene->main_camera.view());
+    // shader.set("projection",scene->main_camera.projection(aspect));
+    // shader.set("meshID",static_cast<unsigned int>(i+1));
+    p_screen_mesh->uploadUniforms(shader, ctx);
+    p_screen_mesh->draw();
+    ++m_drawCalls;
 }
 
 void Renderer::onResize(int width, int height) {
