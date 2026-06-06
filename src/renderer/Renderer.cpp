@@ -32,6 +32,35 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
     ctx.window = window;
 
     m_drawCalls = 0;
+
+    // Hybrid pass
+    m_renderPipeline.clear("Hybrid Render Pass");
+    m_renderPipeline.execute("Hybrid Render Pass");
+    for (const Object& obj : scene->objects) {
+        auto it = obj.passTagShaderHandle.find(PassTag::Hybrid);
+        if (it == obj.passTagShaderHandle.end()){
+            Log::error("Did not find shader handle for Hybrid Render Pass for object whose meshHandle is "+std::to_string(obj.meshHandle));
+            continue;
+        }
+
+        ShaderHandle handle = it->second;
+        if (handle == 0) continue;
+
+        const Mesh& mesh = assets.get(obj.meshHandle);
+
+        const Shader& shader = ShaderManager::get(handle);
+        shader.bind();
+        shader.set("model",obj.transform.matrix());
+        shader.set("viewPos",scene->main_camera.position);
+        shader.set("view",scene->main_camera.view());
+        shader.set("projection",scene->main_camera.projection(aspect));
+        shader.set("objectColor",obj.material.color);
+        mesh.uploadUniforms(shader, ctx);
+        mesh.draw();
+        ++m_drawCalls;
+    }
+
+
     // Mesh ID pass
     m_renderPipeline.clear("Mesh ID Render Pass");
     m_renderPipeline.execute("Mesh ID Render Pass");
