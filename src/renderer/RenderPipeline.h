@@ -20,6 +20,7 @@
 #include <memory>
 #include <set>
 #include <unordered_map>
+#include <glm/glm.hpp>
 
 #include "core/Log.h"
 

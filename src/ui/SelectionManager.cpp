@@ -14,7 +14,29 @@ void SelectionManager::select(glm::vec2 mousePos, unsigned int window_h) {
 
 
 
-    auto fbo = m_render_pipeline->getPassFbo("Mesh ID Render Pass");
+    // auto fbo = m_render_pipeline->getPassFbo("Mesh ID Render Pass");
+
+    // if (fbo == 0) {
+    //     m_selection = nullptr;
+    //     return;
+    // }
+    // glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
+
+    // glReadBuffer(GL_COLOR_ATTACHMENT0);
+
+    // int x = static_cast<int>(mousePos.x);
+    // int y = static_cast<int>(mousePos.y);
+
+    // GLuint pixelId = 0;
+
+    // glReadPixels(x, window_h - y, 1, 1, GL_RED_INTEGER, GL_UNSIGNED_INT, &pixelId);
+    // Log::info("pixelId : "+std::to_string(pixelId));
+
+    // glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+
+    int x = static_cast<int>(mousePos.x);
+    int y = static_cast<int>(mousePos.y);
+    auto fbo = m_render_pipeline->getPassFbo("Hybrid Render Pass");
 
     if (fbo == 0) {
         m_selection = nullptr;
@@ -22,17 +44,14 @@ void SelectionManager::select(glm::vec2 mousePos, unsigned int window_h) {
     }
     glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
 
-    glReadBuffer(GL_COLOR_ATTACHMENT0);
+    glReadBuffer(GL_COLOR_ATTACHMENT1);
 
-    int x = static_cast<int>(mousePos.x);
-    int y = static_cast<int>(mousePos.y);
+    //GLuint pixelId = 0;
+    glm::uvec4 piwelMetatData = {0, 0, 0, 0};
 
-    GLuint pixelId = 0;
+    glReadPixels(x, window_h - y, 1, 1, GL_RGBA_INTEGER, GL_UNSIGNED_INT, &piwelMetatData);
 
-    glReadPixels(x, window_h - y, 1, 1, GL_RED_INTEGER, GL_UNSIGNED_INT, &pixelId);
-    Log::info("pixelId : "+std::to_string(pixelId));
-
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+    GLuint pixelId = piwelMetatData[0];
 
     if (pixelId == 0) {
         m_selection = nullptr;
@@ -69,10 +88,10 @@ void SelectionManager::select(glm::vec2 mousePos, unsigned int window_h) {
     glReadBuffer(GL_COLOR_ATTACHMENT1);
 
     //GLuint pixelId = 0;
-    pixelValue = {0.0, 0.0, 0.0, 0.0};
+    glm::uvec4 upixelValue = {0, 0, 0, 0};
 
-    glReadPixels(x, window_h - y, 1, 1, GL_RGBA, GL_FLOAT, &pixelValue);
-    Log::info("hybrid_framebuffer, color_attachment_1 : "+std::to_string(pixelValue[0])+" "+std::to_string(pixelValue[1])+" "+std::to_string(pixelValue[2]));
+    glReadPixels(x, window_h - y, 1, 1, GL_RGBA_INTEGER, GL_UNSIGNED_INT, &upixelValue);
+    Log::info("hybrid_framebuffer, color_attachment_1 : "+std::to_string(upixelValue[0])+" "+std::to_string(upixelValue[1])+" "+std::to_string(upixelValue[2]));
 
 
     glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);

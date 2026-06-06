@@ -16,7 +16,7 @@ const float PI = 3.14159265358979323846;
 
 // 2 output values : one for each color attachment
 layout(location = 0) out vec4 FragColor0; //scene
-layout(location = 1) out vec4 FragColor1; //meshId
+layout(location = 1) out uvec4 FragColor1; //meshId
 
 const uint MAX_NUM_BONES_PER_VERTEX = 16;
 const uint MAX_LIGHTS = 1;
@@ -57,9 +57,12 @@ vec3 ACESFilm(vec3 x) {
     return clamp((x*(a*x+b))/(x*(c*x+d)+e), 0.0, 1.0);
 }
 
-vec4 getFragColor1(){
+uvec4 getFragColor1(){
     //return the value for the 2nd texture
-    return vec4(1.0, 1.0, 1.0, 1.0);
+    //r : MeshId
+    //g : contour detection for alice
+    //b, a : libre
+    return uvec4(1, 0, 0, 0);
 }
 
 void main() {

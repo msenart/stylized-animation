@@ -27,11 +27,11 @@ void HybridRenderPass::setup(unsigned int window_w, unsigned int window_h) {
     //GL_COLOR_ATTACHMENT0 : 1er emplacement pour la texture
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_fboTex1, 0);
 
-    // creating texture 2 (meshId)
+    // creating texture 2 (metadata : meshId, contour, etc...)
     glGenTextures(1, &m_fboTex2);
     glBindTexture(GL_TEXTURE_2D, m_fboTex2);
-    //will use GL_R3UI later, for now use GL_RGBA because it is easier AND GL_RED_INTEGER instead of GL_RGBA
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, window_w, window_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    //will use GL_R32UI later, for now use GL_RGBA because it is easier AND GL_RED_INTEGER instead of GL_RGBA
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32UI, window_w, window_h, 0, GL_RGBA_INTEGER, GL_UNSIGNED_INT, nullptr);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -71,13 +71,15 @@ void HybridRenderPass::execute() {
 
 void HybridRenderPass::clear() {
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
-    //used to clear the buffer of 1 omponent
-    //GLuint clearValue = 0;
-    //glClearBufferuiv(GL_COLOR, 0, &clearValue);
+    
 
     // clear all the buffer of the color attachments specified by glDrawBuffer (see setup)
     glClearColor(1.0f, 1.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    //used to clear the buffer of 1 omponent
+    GLuint clearValue[4] = {0, 0, 0, 0};
+    glClearBufferuiv(GL_COLOR, 1, clearValue); //second arg : drawBuffer -> refers to color attachment
 }
 
 // MeshIDRenderPass implementation
