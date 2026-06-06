@@ -102,6 +102,8 @@ int main() {
     windowContext.selectionManager = &selectionManager;
     windowContext.window = &window;
 
+    // Here, you tell glfw to give you windowContext instead of window when you will
+    // call glfwGetWindowUserPointer in the future
     glfwSetWindowUserPointer(window.handle(), &windowContext);
 
     glfwSetFramebufferSizeCallback(window.handle(), [](GLFWwindow* window, int width, int height) {
