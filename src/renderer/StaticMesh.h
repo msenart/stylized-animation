@@ -29,11 +29,10 @@ public:
 
     GLsizei indexCount() const;
 
-    //TODO! add hybrid render pass
+    //TODO! check if this shaders work
     [[nodiscard]] const std::map<PassTag, ShaderKey> shaderKeysMap() const override{
         std::map<PassTag, ShaderKey> key_map ={
-            {PassTag::Final , ShaderKey{"blinn_phong.vert","blinn_phong.frag"}},
-        {PassTag::MeshID , ShaderKey{"blinn_phong.vert","selection.frag"}}
+            {PassTag::Hybrid , ShaderKey{"blinn_phong.vert","hybrid.frag"}},
         };
         return key_map;
     }
