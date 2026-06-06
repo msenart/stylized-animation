@@ -16,6 +16,7 @@ void Renderer::setup(Scene *scene, const Window *window, const AssetManager &ass
     m_renderPipeline = RenderPipeline();
     m_renderPipeline.addPass(std::make_shared<MeshIDRenderPass>());
     m_renderPipeline.addPass(std::make_shared<FinalRenderPass>());
+    m_renderPipeline.addPass(std::make_shared<HybridRenderPass>());
     // Setting up the rendering pipeline and the renderer
     int w, h;
     window->getSize(w,h);
