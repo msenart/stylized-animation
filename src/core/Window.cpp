@@ -4,13 +4,14 @@
 #include <GLFW/glfw3.h>
 #include <stdexcept>
 
-Window::Window(int width, int height, const std::string& title) {
+Window::Window(int width, int height, const std::string& title, bool headless) {
     if (!glfwInit())
         throw std::runtime_error("Failed to initialise GLFW");
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    if (headless) glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 
     m_handle = glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
     if (!m_handle) {

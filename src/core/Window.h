@@ -22,7 +22,7 @@ public:
      * @param title  Window title string.
      * @throws std::runtime_error if GLFW or GLAD initialisation fails.
      */
-    Window(int width, int height, const std::string& title);
+    Window(int width, int height, const std::string& title, bool headless);
     ~Window();
 
     Window(const Window&)            = delete;
