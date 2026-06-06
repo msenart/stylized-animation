@@ -3,20 +3,13 @@
 #include "scene/Scene.h"
 #include "core/AssetManager.h"
 #include "core/Window.h"
+#include "renderer/Types_renderer.h"
+#include "renderer/StaticMesh.h"
 
 
 
 
-/**
- * @brief It is a bag containing the necessary information about how the scene has to be rendered.
- */
-struct RenderContext {
-    Camera* camera;
-    Scene* scene;
-    Window* window;
-    PassTag passTag;
-    float deltaTime;
-};
+
 
 /**
  * @brief Issues OpenGL draw calls for every Object in a Scene.
@@ -50,6 +43,9 @@ public:
     int drawCalls() const;
 
 private:
+    //std::vector<StaticMesh> meshes;
+    //StaticMesh screen_mesh; //used to render a rect on which to draw for the final render pass
+    std::unique_ptr<StaticMesh> p_screen_mesh; //used to render a rect on which to draw for the final render pass
     RenderPipeline m_renderPipeline;
     int m_drawCalls = 0;
 };

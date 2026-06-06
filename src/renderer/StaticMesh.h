@@ -21,18 +21,18 @@ public:
     StaticMesh(const std::vector<StaticVertex>& vertices, const std::vector<uint32_t>& indices);
     ~StaticMesh() override;
 
-    StaticMesh(const StaticMesh&)            = delete;
-    StaticMesh& operator=(const StaticMesh&) = delete;
+    //StaticMesh(const StaticMesh&)            = delete;
+    //StaticMesh& operator=(const StaticMesh&) = delete;
 
     void draw() const override;
     void uploadUniforms(const Shader& shader, const RenderContext& ctx) const override;
 
     GLsizei indexCount() const;
 
+    //TODO! check if this shaders work
     [[nodiscard]] const std::map<PassTag, ShaderKey> shaderKeysMap() const override{
         std::map<PassTag, ShaderKey> key_map ={
-            {PassTag::Final , ShaderKey{"blinn_phong.vert","blinn_phong.frag"}},
-        {PassTag::MeshID , ShaderKey{"blinn_phong.vert","selection.frag"}}
+            {PassTag::Hybrid , ShaderKey{"blinn_phong.vert","hybrid.frag"}},
         };
         return key_map;
     }
