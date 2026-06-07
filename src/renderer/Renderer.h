@@ -30,8 +30,9 @@ public:
      * @param window Current rendering window
      * @param assets Read-only asset manager resolving MeshHandles.
      * @param aspect Viewport width / height for the projection matrix.
+     * @param dt elapsed time since last frame
      */
-    void render(Scene* scene, Window* window, const AssetManager& assets, float aspect);
+    void render(Scene* scene, Window* window, const AssetManager& assets, float aspect, float dt);
 
     void onResize(int width, int height);
 

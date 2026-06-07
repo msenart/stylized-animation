@@ -38,7 +38,7 @@ void Renderer::setup(Scene *scene, const Window *window, const AssetManager &ass
     scene->setup();
 }
 
-void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, float aspect) {
+void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, float aspect, float dt) {
     RenderContext ctx{};
     ctx.camera = &scene->main_camera;
     ctx.scene = scene;
