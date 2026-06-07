@@ -140,7 +140,7 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
     }
     unsigned int texture = hybridFboTexs[0];
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture); 
+    glBindTexture(GL_TEXTURE_2D, texture);
     //we tell the shader that the texture named sceneTexture is in the texture unit 0
     //this texture is actually the one of the previous framebuffer
     shader.set("sceneTexture", 0);
