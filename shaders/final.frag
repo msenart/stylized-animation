@@ -1,5 +1,6 @@
 #version 460 core
 
+#include "perlin_noise.glsl"
 
 uniform sampler2D sceneTexture; //the scene has been renderered in this texture
 
@@ -12,6 +13,11 @@ out vec4 fragColor;
 
 void main() {
     
-    //vec2 vTex = (fragPos.xy+1)/2;
-    fragColor = vec4(texture(sceneTexture, texCoord).rgb, 1.0);
+    //fragColor = vec4(texture(sceneTexture, texCoord).rgb, 1.0);
+
+    //float noise = noise3D(vec3(texCoord, 0.0));
+    vec3 noise_vec = test_vec3(vec3(texCoord, 0.0));
+
+    //fragColor = vec4(vec3(noise), 1.0);
+    fragColor = vec4(noise_vec, 1.0);
 }

@@ -4,9 +4,18 @@
 //They made a video explaining their work, available here:
 //  https://www.youtube.com/watch?v=welK2U7UkzE
 
-uniform float noise_scale = 1.0;
-uniform vec3 noise_transform;
+uniform float noise_scale = 3.0;
+//uniform vec3 noise_transform;
 
+vec3 test_vec3(vec3 uvw){
+
+	uvw *= noise_scale;
+	vec3 gridFract = fract(uvw);
+    return gridFract;
+    
+    
+    
+}
 
 vec3 random3D(vec3 uvw){
 	
@@ -19,12 +28,13 @@ vec3 random3D(vec3 uvw){
 
 float noise3D(vec3 uvw){
 	uvw *= noise_scale;
-	uvw += noise_transform;
+	//uvw += noise_transform;
 	
 	vec3 gridIndex = floor(uvw); 
 	vec3 gridFract = fract(uvw);
 	
 	vec3 blur = smoothstep(0.0, 1.0, gridFract);
+    //vec3 blur = gridFract;
 	
 	vec3 blb = gridIndex + vec3(0.0, 0.0, 0.0);
 	vec3 brb = gridIndex + vec3(1.0, 0.0, 0.0);
