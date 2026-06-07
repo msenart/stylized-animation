@@ -106,6 +106,7 @@ int main() {
     windowContext.renderer = &renderer;
     windowContext.selectionManager = &selectionManager;
     windowContext.window = &window;
+    windowContext.cameraController = &camCtrl;
 
     glfwSetWindowUserPointer(window.handle(), &windowContext);
 
@@ -158,10 +159,10 @@ int main() {
     // Record animation
     int vid_w = 1280;
     int vid_h = 720;
-    // const char* cmd = "ffmpeg -r 60 -f rawvideo -pix_fmt rgba -s 1280x720 -i - "
-    //     "-threads 0 -preset fast -y -pix_fmt yuv420p -crf 21 -vf vflip output.mp4";
-    // FILE* ffmpeg = popen(cmd, "w");
-    // int* vid_buffer = new int[vid_w * vid_h];
+    const char* cmd = "ffmpeg -r 60 -f rawvideo -pix_fmt rgba -s 1280x720 -i - "
+        "-threads 0 -preset fast -y -pix_fmt yuv420p -crf 21 -vf vflip output.mp4";
+    FILE* ffmpeg = popen(cmd, "w");
+    int* vid_buffer = new int[vid_w * vid_h];
 
     while (!window.shouldClose()) {
         window.pollEvents();
@@ -214,14 +215,14 @@ int main() {
         ImGui::NewFrame();
         selectionManager.draw();
         console.draw();
-        stats.draw(scene, renderer.drawCalls(), assets.meshCount(), fps);
+        stats.draw(window, renderer.drawCalls(), assets.meshCount(), fps);
         ShaderManager::drawUI();
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-        // glReadPixels(0, 0, vid_w, vid_h, GL_RGBA, GL_UNSIGNED_BYTE, vid_buffer);
-        // fwrite(vid_buffer, sizeof(int) * vid_w * vid_h, 1, ffmpeg);
+        glReadPixels(0, 0, vid_w, vid_h, GL_RGBA, GL_UNSIGNED_BYTE, vid_buffer);
+        fwrite(vid_buffer, sizeof(int) * vid_w * vid_h, 1, ffmpeg);
 
         window.swapBuffers();
     }

@@ -6,7 +6,7 @@
 #include <cstddef>
 
 struct Scene;
-
+class Window;
 /**
  * @brief An ImGui window showing FPS, draw calls, scene counts, and camera state.
  */
@@ -22,5 +22,5 @@ public:
      * @param meshCount  Total number of meshes in the AssetManager.
      * @param fps        Frames per second (1 / deltaTime).
      */
-    void draw(const Scene& scene, int drawCalls, std::size_t meshCount, float fps);
+    void draw(const Window& window, int drawCalls, std::size_t meshCount, float fps);
 };
