@@ -10,11 +10,16 @@ uniform float noise_scale = 3.0;
 vec3 test_vec3(vec3 uvw){
 
 	uvw *= noise_scale;
+	vec3 gridIndex = floor(uvw); 
 	vec3 gridFract = fract(uvw);
-    return gridFract;
-    
-    
-    
+    vec3 blur = smoothstep(0.0, 1.0, gridFract);
+
+
+    return blur;    
+}
+
+float test(vec3 uvw){
+    return mix(0.0, 1.0, 0.0);
 }
 
 vec3 random3D(vec3 uvw){
@@ -73,6 +78,7 @@ float noise3D(vec3 uvw){
 	float dotTLF = dot(gradTLF, distToPixelFromTLF);
 	float dotTRF = dot(gradTRF, distToPixelFromTRF);
 	
+    //return mix(dotBLB, dotBRB, blur.x);
 	
 	return mix(
 		mix(
