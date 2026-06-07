@@ -221,8 +221,9 @@ int main(int argc, char *argv[]) {
 
     // F2 - hot-reload all shaders from disk
     bool f2 = glfwGetKey(window.handle(), GLFW_KEY_F2) == GLFW_PRESS;
-    if (f2 && !prevF2)
+    if (f2 && !prevF2){
       ShaderManager::reloadAll();
+    }
     prevF2 = f2;
 
     // F3 - Pause animation
