@@ -49,7 +49,6 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
     //time
     time = time + dt;
     while(time>max_time){
-        Log::info("time = "+std::to_string(dt));
         time -= max_time;
     }
 

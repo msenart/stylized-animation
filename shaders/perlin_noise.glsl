@@ -7,21 +7,6 @@
 uniform float noise_scale = 3.0;
 //uniform vec3 noise_transform;
 
-vec3 test_vec3(vec3 uvw){
-
-	uvw *= noise_scale;
-	vec3 gridIndex = floor(uvw); 
-	vec3 gridFract = fract(uvw);
-    vec3 blur = smoothstep(0.0, 1.0, gridFract);
-
-
-    return blur;    
-}
-
-float test(vec3 uvw){
-    return mix(0.0, 1.0, 0.0);
-}
-
 vec3 random3D(vec3 uvw){
 	
     uvw = vec3( dot(uvw, vec3(127.1,311.7, 513.7) ),
@@ -30,6 +15,54 @@ vec3 random3D(vec3 uvw){
 			
     return -1.0 + 2.0 * fract(sin(uvw) * 43758.5453123);
 }
+
+vec3 test_vec3(vec3 uvw){
+
+	uvw *= noise_scale;
+	vec3 gridIndex = floor(uvw); 
+	vec3 gridFract = fract(uvw);
+    vec3 blur = smoothstep(0.0, 1.0, gridFract);
+
+	vec3 blb = gridIndex + vec3(0.0, 0.0, 0.0);
+	vec3 brb = gridIndex + vec3(1.0, 0.0, 0.0);
+	vec3 tlb = gridIndex + vec3(0.0, 1.0, 0.0);
+	vec3 trb = gridIndex + vec3(1.0, 1.0, 0.0);
+
+	if(gridIndex.z == noise_scale -1.0){
+		//for the random value in the future, 
+		//we don't take the value t' = t + 1.0
+		//but t' = 0.0 in order to have a loop.
+		//otherwise, we can see a break when the time component
+		//(uvw.z) go back to 0.0
+		gridIndex.z = -1.0; 
+	}
+
+	vec3 blf = gridIndex + vec3(0.0, 0.0, 1.0);
+	vec3 brf = gridIndex + vec3(1.0, 0.0, 1.0);
+	vec3 tlf = gridIndex + vec3(0.0, 1.0, 1.0);
+	vec3 trf = gridIndex + vec3(1.0, 1.0, 1.0);
+
+	vec3 gradBLB = random3D(blb); 
+	vec3 gradBRB = random3D(brb);
+	vec3 gradTLB = random3D(tlb);
+	vec3 gradTRB = random3D(trb);
+	vec3 gradBLF = random3D(blf);
+	vec3 gradBRF = random3D(brf);
+	vec3 gradTLF = random3D(tlf);
+	vec3 gradTRF = random3D(trf);
+
+	if (blur.x < 0.5){
+		return gradBLB/2 +0.5; 
+	}
+    return gradBLF/2 +0.5;    
+}
+
+
+float test(vec3 uvw){
+    return mix(0.0, 1.0, 0.0);
+}
+
+
 
 float noise3D(vec3 uvw){
 	uvw *= noise_scale;
@@ -45,6 +78,16 @@ float noise3D(vec3 uvw){
 	vec3 brb = gridIndex + vec3(1.0, 0.0, 0.0);
 	vec3 tlb = gridIndex + vec3(0.0, 1.0, 0.0);
 	vec3 trb = gridIndex + vec3(1.0, 1.0, 0.0);
+
+	if(gridIndex.z == noise_scale -1.0){
+		//for the random value in the future, 
+		//we don't take the value t' = t + 1.0
+		//but t' = 0.0 in order to have a loop.
+		//otherwise, we can see a break when the time component
+		//(uvw.z) go back to 0.0
+		gridIndex.z = -1.0; 
+	}
+
 	vec3 blf = gridIndex + vec3(0.0, 0.0, 1.0);
 	vec3 brf = gridIndex + vec3(1.0, 0.0, 1.0);
 	vec3 tlf = gridIndex + vec3(0.0, 1.0, 1.0);
@@ -64,10 +107,10 @@ float noise3D(vec3 uvw){
 	vec3 distToPixelFromBRB = gridFract - vec3(1.0, 0.0, 0.0);
 	vec3 distToPixelFromTLB = gridFract - vec3(0.0, 1.0, 0.0);
 	vec3 distToPixelFromTRB = gridFract - vec3(1.0, 1.0, 0.0);
-	vec3 distToPixelFromBLF = gridFract - vec3(0.0, 0.0, 1.0);
-	vec3 distToPixelFromBRF = gridFract - vec3(1.0, 0.0, 1.0);
-	vec3 distToPixelFromTLF = gridFract - vec3(0.0, 1.0, 1.0);
-	vec3 distToPixelFromTRF = gridFract - vec3(1.0, 1.0, 1.0);
+	vec3 distToPixelFromBLF = gridFract - vec3(0.0, 0.0, 1.0); //1.0
+	vec3 distToPixelFromBRF = gridFract - vec3(1.0, 0.0, 1.0); //1.0
+	vec3 distToPixelFromTLF = gridFract - vec3(0.0, 1.0, 1.0); //1.0
+	vec3 distToPixelFromTRF = gridFract - vec3(1.0, 1.0, 1.0); //1.0
 	
 	float dotBLB = dot(gradBLB, distToPixelFromBLB);
 	float dotBRB = dot(gradBRB, distToPixelFromBRB);
@@ -78,7 +121,6 @@ float noise3D(vec3 uvw){
 	float dotTLF = dot(gradTLF, distToPixelFromTLF);
 	float dotTRF = dot(gradTRF, distToPixelFromTRF);
 	
-    //return mix(dotBLB, dotBRB, blur.x);
 	
 	return mix(
 		mix(

@@ -17,6 +17,7 @@ void main() {
     //fragColor = vec4(texture(sceneTexture, texCoord).rgb, 1.0);
 
     float noise = noise3D(vec3(texCoord, time));
+    //vec3 noise_vec = test_vec3(vec3(texCoord, time));
 
     fragColor = vec4(vec3(noise), 1.0);
     //fragColor = vec4(noise_vec, 1.0);
