@@ -74,7 +74,7 @@ void HybridRenderPass::clear() {
     
 
     // clear all the buffer of the color attachments specified by glDrawBuffer (see setup)
-    glClearColor(1.0f, 1.0f, 0.0f, 1.0f);
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     //used to clear the buffer of 1 omponent

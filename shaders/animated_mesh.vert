@@ -22,6 +22,8 @@ struct VertexBoneData {
 };
 
 layout(std430, binding = 2) readonly buffer BoneBuffer {
+    //ssbo (store buffer) that contains for each vertex 
+    //the bones it is associated with 
     VertexBoneData allVertexBoneData[];
 };
 
