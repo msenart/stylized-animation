@@ -44,8 +44,8 @@ public:
     int drawCalls() const;
 
 private:
-    //std::vector<StaticMesh> meshes;
-    //StaticMesh screen_mesh; //used to render a rect on which to draw for the final render pass
+    const float max_time = 2.0; //toutes les duex secondes
+    float time=0; //time since the begining of the programm, modulo max_time
     std::unique_ptr<StaticMesh> p_screen_mesh; //used to render a rect on which to draw for the final render pass
     RenderPipeline m_renderPipeline;
     int m_drawCalls = 0;
