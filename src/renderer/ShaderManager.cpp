@@ -13,7 +13,10 @@
 #include <vector>
 #include "core/MegaWindowContext.h"
 #include <set>
+#include <unordered_set>
+
 #include "GLFW/glfw3.h"
+#include "scene/Scene.h"
 
 // ---------------------------------------------------------------------------
 // Internal types

@@ -4,7 +4,8 @@
 #define TOON_SHADING_SPECULAR
 #define TOON_SHADING_RIM_LIGHTING
 #define TOON_SHADING_AMBIENT
-
+#include "light.glsl"
+#include "toon_shading.glsl"
 in vec3 normalO;
 in vec3 localPosO;
 in vec3 fragPos;
@@ -12,12 +13,11 @@ flat in uint vertexID;
 
 uniform vec3 viewPos;
 uniform uint activationBoneID = 7;
-const float PI = 3.14159265358979323846;
+uniform uint lightsNumber;
 
 out vec4 FragColor;
 
 const uint MAX_NUM_BONES_PER_VERTEX = 16;
-const uint MAX_LIGHTS = 1;
 
 struct VertexBoneData {
     uint ids[MAX_NUM_BONES_PER_VERTEX];
@@ -28,27 +28,8 @@ layout(std430, binding = 2) readonly buffer BoneBuffer {
     VertexBoneData allVertexBoneData[];
 };
 
-#include "light.glsl"
-
 uniform vec4 not_influenced_vertex_color = vec4(0.0, 0.0, 1.0, 1.0);
 uniform vec4 influenced_vertex_color = vec4(1.0, 0.0, 0.0, 1.0);
-
-float exp_smoothstep(in float x, in float speed){
-    return x < 0 ? exp(speed*x)/(1+exp(speed*x)) : 1/(1+exp(-speed*x));
-}
-
-float sin_smoothstep(in float x, in float speed){
-    if (x < -PI/(2*speed)){
-        return 0;
-    }
-    else if (x > PI/(2*speed)) {
-        return 1;
-    }
-    else{
-        return (sin(speed*x) + 1)/2.f;
-    }
-
-}
 
 vec3 ACESFilm(vec3 x) {
     float a = 2.51, b = 0.03, c = 2.43, d = 0.59, e = 0.14;
@@ -69,44 +50,53 @@ void main() {
     vec3 baseColor = mix(not_influenced_vertex_color, influenced_vertex_color, weight).rgb;
     vec3 N = normalize(normalO);
     vec3 V = normalize(viewPos - fragPos);
-    float k_ambient = 0.3;
+    float k_ambient = 0.05f;
+    float k_diffuse = 1.0f;
+    float k_specular = 0.3f;
+    float k_rim = 0.5f;
+    #ifdef TOON_SHADING_AMBIENT
+    FragColor.rgb += baseColor*k_ambient;
+    #endif
+
     // Toon shading diffuse implementation
-    for (int i= 0; i < MAX_LIGHTS; i++){
+    for (int i= 0; i < lightsNumber; i++){
         Light light = allLights[i];
         vec3 L = normalize(light.position-fragPos); // To change !
-        float NdotL = dot(N, L);
-        float k_diffuse = max(NdotL, 0.0);
         vec3 R = normalize(reflect(L,N));
 
-        #ifdef TOON_SHADING_AMBIENT
-        FragColor.rgb += baseColor*k_ambient;
-        #endif
-
         #ifdef TOON_SHADING_DIFFUSE
-        FragColor.rgb += light.color*baseColor*(1-k_ambient)*sin_smoothstep(NdotL, 5);
+//        FragColor.rgb += light.color*baseColor*(1-k_ambient)*sin_smoothstep(dot(N, L), 0.5f);
+//        FragColor.rgb += light.color*baseColor*(1-k_ambient)*sin_smoothstep(dot(N, L), -0.3f, 0.3f);
+//        FragColor.rgb += light.color*baseColor*(1-k_ambient)*halftone(gl_FragCoord.xy,0.1f, sin_smoothstep(NdotL, 0.5f));
+        float NdotL = dot(N, L);
+        float shadow_to_midtone = sin_smoothstep(NdotL,-0.2f, 0.05f)*crosshatching(gl_FragCoord.xy,0.1f,mix(NdotL,0.0f, 0.1f));
+        float midtone_to_light = sin_smoothstep(NdotL,0.35f, 0.5f);
+        FragColor.rgb += k_diffuse*light.color*baseColor*(1-k_ambient)*(max(shadow_to_midtone,midtone_to_light));
         #endif
 
         #ifdef TOON_SHADING_SPECULAR
-        FragColor.rgb += light.color*pow(sin_smoothstep(dot(-V,R),2),50);
+        FragColor.rgb += k_specular*light.color*halftone(gl_FragCoord.xy,0.15f,sin_smoothstep(2*pow(max(dot(V,-R),0)*max(dot(N,L),0),2)-1,-1.0f,1.0f));
+//        FragColor.rgb += light.color*pow(sin_smoothstep(dot(-V,R),2),0.5f);
         #endif
 
         #ifdef TOON_SHADING_RIM_LIGHTING
-        float rimDot = 1 - sin_smoothstep(dot(V, N),5);
-        FragColor.rgb += light.color*rimDot*k_diffuse;
+        float rimDot = 1 - dot(V, N);
+        FragColor.rgb += k_rim*light.color*k_ambient*(1-sin_smoothstep(1-rimDot*pow(max(dot(N,L),0.001f),0.1f),0.0f, 0.5f));
         #endif
-
-        #ifdef CONTOURS
-        float epsilon = 0.3;
-        vec3 V = normalize(viewPos - fragPos);
-
-        if (max(dot(N, V), 0.0) < epsilon) {
-            FragColor.rgb *= 0;
-        }
-        #endif
-
-        // naive HDR processing
-        FragColor.rgb = ACESFilm(FragColor.rgb);
-
-        FragColor = vec4(pow(FragColor.rgb, vec3(1.0/2.2)), 1.0);
     }
+
+    #ifdef CONTOURS
+    float epsilon = 0.3;
+
+    if (max(dot(N, V), 0.0) < epsilon) {
+        FragColor.rgb *= 0;
+    }
+    #endif
+
+    // naive HDR processing
+    FragColor.rgb = ACESFilm(FragColor.rgb);
+
+
+//    FragColor = vec4(halftone(gl_FragCoord.xy,0.05f, 0.5f));
+    FragColor = vec4(pow(FragColor.rgb, vec3(1.0/2.2)), 1.0);
 }

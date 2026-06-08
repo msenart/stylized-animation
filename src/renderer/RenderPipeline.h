@@ -186,6 +186,7 @@ public:
     ~MeshIDRenderPass() override = default;
     void clear() override;
 
+    void onResize(unsigned int window_w, unsigned int window_h) override;
 };
 
 /**
@@ -206,6 +207,8 @@ public:
     void execute() override ;
 
     void clear() override;
+
+    void onResize(unsigned int window_w, unsigned int window_h) override;
 
     unsigned int fbo() override {
         //return default framebuffer
