@@ -4,13 +4,11 @@
 #define TOON_SHADING_SPECULAR
 #define TOON_SHADING_RIM_LIGHTING
 #define TOON_SHADING_AMBIENT
-#define PHONG_BSDF
-#define GGX_BSDF
+//#define GGX_BSDF
 
 #include "hybrid_metadata.glsl"
 #include "light.glsl"
-#include "toon_shading.glsl"
-#include "lightingBSDF.glsl"
+#include "toon_shading_utilities.glsl"
 #include "bsdf_utilities.glsl"
 
 in vec3 normalO;
@@ -71,7 +69,7 @@ void main() {
     vec3 V = normalize(viewPos - fragPos);
     float k_ambient = 0.2f;
     float k_diffuse = 1.0f;
-    float k_specular = 0.3f;
+    float k_specular = 1.0f;
     float k_rim = 0.5f;
     #ifdef TOON_SHADING_AMBIENT
     FragColor0.rgb += baseColor*k_ambient;
@@ -80,15 +78,16 @@ void main() {
     // Toon shading diffuse implementation
     for (int i= 0; i < lightsNumber; i++){
         Light light = allLights[i];
-        vec3 L = normalize(light.position-fragPos); // To change !
+        light.color = vec3(1); // <--------------------------------- shouldn't be here ! has to be removed !
+        vec3 L = normalize(light.position-fragPos);
         vec3 R = normalize(reflect(L,N));
 
         float diffuse = 0;
         float specular = 0;
         #ifdef GGX_BSDF
-        float roughness = 0.5f;
-        diffuse = getGGXDiffuse(L,N);
-        specular = getGGXSpecular(L,N,V,roughness);
+        float roughness = 0.6f;
+        diffuse = 2*getGGXDiffuse(L,N);
+        specular = 2*getGGXSpecular(L,N,V,roughness);
         #endif
         #ifndef GGX_BSDF
         float shininess = 2.f;
@@ -100,20 +99,19 @@ void main() {
 //        FragColor0.rgb += light.color*baseColor*(1-k_ambient)*sin_smoothstep(dot(N, L), 0.5f);
 //        FragColor0.rgb += light.color*baseColor*(1-k_ambient)*sin_smoothstep(dot(N, L), -0.3f, 0.3f);
 //        FragColor0.rgb += light.color*baseColor*(1-k_ambient)*halftone(gl_FragCoord.xy,0.1f, sin_smoothstep(NdotL, 0.5f));
-        float NdotL = dot(N, L);
-        float shadow_to_midtone = sin_smoothstep(NdotL,-0.2f, 0.05f)*crosshatching(gl_FragCoord.xy,0.1f,mix(NdotL,0.0f, 0.1f));
-        float midtone_to_light = sin_smoothstep(NdotL,0.35f, 0.5f);
+        float shadow_to_midtone = sin_smoothstep(diffuse,-0.2f, 0.05f)*crosshatching(gl_FragCoord.xy,0.1f,mix(diffuse,0.0f, 0.1f));
+        float midtone_to_light = sin_smoothstep(diffuse,0.35f, 0.5f);
         FragColor0.rgb += k_diffuse*light.color*baseColor*(1-k_ambient)*(max(shadow_to_midtone,midtone_to_light));
         #endif
 
         #ifdef TOON_SHADING_SPECULAR
-        FragColor0.rgb += k_specular*light.color*halftone(gl_FragCoord.xy,0.15f,sin_smoothstep(2*pow(max(dot(V,-R),0)*max(dot(N,L),0),2)-1,-1.0f,1.0f));
+        FragColor0.rgb += k_specular*light.color*halftone(gl_FragCoord.xy,0.15f,sin_smoothstep(2*pow(specular,2)-1,-1.0f,1.0f));
 //        FragColor0.rgb += light.color*pow(sin_smoothstep(dot(-V,R),2),0.5f);
         #endif
 
         #ifdef TOON_SHADING_RIM_LIGHTING
         float rimDot = 1 - dot(V, N);
-        FragColor0.rgb += k_rim*light.color*k_ambient*(1-sin_smoothstep(1-rimDot*pow(max(dot(N,L),0.001f),0.1f),0.0f, 0.5f));
+        FragColor0.rgb += k_rim*light.color*k_ambient*(1-sin_smoothstep(1-rimDot*pow(diffuse,0.1f),0.0f, 0.5f));
         #endif
     }
 
