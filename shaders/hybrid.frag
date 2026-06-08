@@ -5,11 +5,15 @@
 #define TOON_SHADING_RIM_LIGHTING
 #define TOON_SHADING_AMBIENT
 
+#include "hybrid_metadata.glsl"
+
 in vec3 normalO;
 in vec3 localPosO;
 in vec3 fragPos;
+in float realZ;
 flat in uint vertexID;
 
+uniform uint meshId = 1;
 uniform vec3 viewPos;
 uniform uint activationBoneID = 7;
 const float PI = 3.14159265358979323846;
@@ -17,6 +21,7 @@ const float PI = 3.14159265358979323846;
 // 2 output values : one for each color attachment
 layout(location = 0) out vec4 FragColor0; //scene
 layout(location = 1) out uvec4 FragColor1; //meshId
+layout(location = 2) out vec4 FragColor2; //normal buffer
 
 const uint MAX_NUM_BONES_PER_VERTEX = 16;
 const uint MAX_LIGHTS = 1;
@@ -57,18 +62,14 @@ vec3 ACESFilm(vec3 x) {
     return clamp((x*(a*x+b))/(x*(c*x+d)+e), 0.0, 1.0);
 }
 
-uvec4 getFragColor1(){
-    //return the value for the 2nd texture
-    //r : MeshId
-    //g : contour detection for alice
-    //b, a : libre
-    return uvec4(1, 0, 0, 0);
-}
-
 void main() {
 
     //Write in color attachment 1 (MeshId)
-    FragColor1 = getFragColor1();
+    FragColor1 = getFragColor1(meshId);
+
+    //write in normal buffer
+    //FragColor2 = getFragColor2(normalO, gl_FragCoord.z);
+    FragColor2 = getFragColor2(normalO, realZ);
 
     //write in color attachment 2 (scene)
     FragColor0 = vec4(0);
@@ -125,4 +126,6 @@ void main() {
         FragColor0 = vec4(pow(FragColor0.rgb, vec3(1.0/2.2)), 1.0);
     }
 
+    
+    //depth = gl_FragCoord.z
 }

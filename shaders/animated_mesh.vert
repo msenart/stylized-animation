@@ -6,6 +6,7 @@ layout(location = 1) in vec3 normal;
 out vec3 normalO;
 out vec3 localPosO;
 out vec3 fragPos;
+out float realZ;
 flat out uint vertexID;
 
 const uint MAX_NUM_BONES_PER_VERTEX = 16;
@@ -41,4 +42,5 @@ void main() {
     normalO = vec3(transpose(inverse(boneTransform))*vec4(normal,0.0));
     localPosO = position;
     vertexID = gl_VertexID;
+    realZ = (view*vec4(fragPos,1.0)).z; //before projection -> linear
 }

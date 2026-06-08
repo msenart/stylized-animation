@@ -95,6 +95,16 @@ endif()
 include(${CMAKE_DIR}/LinkGLM.cmake)
 LinkGLM(stylize-animation PRIVATE)
 
+include(${CMAKE_DIR}/LinkCXXOPTS.cmake)
+LinkCXXOPTS(stylize-animation PRIVATE)
+
+# Copy shaders to the output directory so the executable can find them at runtime
+add_custom_command(TARGET stylize-animation POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/shaders
+        $<TARGET_FILE_DIR:stylize-animation>/shaders
+    COMMENT "Copying shaders to output directory")
+
 #copy target to root
 add_custom_command(TARGET ${PROJECT_NAME}
   POST_BUILD

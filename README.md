@@ -22,7 +22,7 @@ link to the animation tutorial using Assimp : https://www.youtube.com/watch?v=r6
 ### The render passes
 
 We have 2 render passes :
-- hybrid render pass which will render all the mesh objects into a framebuffer which is composed of 2 textures. the first for rendering the objects as usual (which contains vec4), and a second for metadata which contains uvec4. More textures can be added if needed. Note that having several output texture in a frambuffer is called Multiple Render Targets (MRT).
+- hybrid render pass which will render all the mesh objects into a framebuffer which is composed of 3 textures. the first for rendering the objects as usual (which contains vec4), a second for metadata which contains uvec4, and the third for normals and z value (before projection). The last one is used later for contour detection. More textures can be added if needed. Note that having several output texture in a frambuffer is called Multiple Render Targets (MRT).
 - final render pass which is actually a post processing render pass. Only a special mesh (a squad) is rendered is this pass. It takes as a texture ("sceneTexture" unifrom sample2D in fragment shaders) the first texture of the framebuffer from the hybrid render pass and display it on the squad which will be drawn on the screen. It will take more textures in the future.
 
 Each object has its own shaders for the hybrid render pass.
@@ -36,6 +36,7 @@ The fragment shader needs to write in both textures. Therefore you must declare 
 ```
 layout(location = 0) out vec4 FragColor0; //scene
 layout(location = 1) out uvec4 FragColor1; //metadata
+layout(location = 2) out uvec4 FragColor2; //normals 
 ```
 
 The r and b component of FragColor1 is reserved by meshId and contour detection. 

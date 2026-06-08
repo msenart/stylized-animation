@@ -240,7 +240,10 @@ void ShaderManager::reloadAll()
 }
 
 void ShaderManager::drawUI() {
-    ImGui::Begin("Shaders");
+  if (!ImGui::Begin("Shaders")) {
+        ImGui::End();
+        return;
+    }
 
     if (ImGui::Button("Reload All (F2)"))
         reloadAll();

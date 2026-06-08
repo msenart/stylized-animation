@@ -39,6 +39,18 @@ void HybridRenderPass::setup(unsigned int window_w, unsigned int window_h) {
     //GL_COLOR_ATTACHMENT1 : 2ème emplacement pour la texture
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, m_fboTex2, 0);
 
+    
+    // creating texture 3 (for normals -> used for contours detection)
+    glGenTextures(1, &m_fboTex3);
+    glBindTexture(GL_TEXTURE_2D, m_fboTex3);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, window_w, window_h, 0, GL_RGBA, GL_FLOAT, nullptr); //use RGBA16F and GL_FLOAT 
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    //GL_COLOR_ATTACHMENT2 : 3ème emplacement pour la texture
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, m_fboTex3, 0);
+
     //create a depth buffer
     GLuint depthrenderbuffer;
     glGenRenderbuffers(1, &depthrenderbuffer);
@@ -46,9 +58,9 @@ void HybridRenderPass::setup(unsigned int window_w, unsigned int window_h) {
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, window_w, window_h);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthrenderbuffer);
 
-    // attach the 2 color attachment to the framebuffer
-    GLenum attachments[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
-    glDrawBuffers(2, attachments);
+    // attach the 3 color attachment to the framebuffer
+    GLenum attachments[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
+    glDrawBuffers(3, attachments);
 
     //why ???
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -78,8 +90,12 @@ void HybridRenderPass::clear() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     //used to clear the buffer of 1 omponent
-    GLuint clearValue[4] = {0, 0, 0, 0};
-    glClearBufferuiv(GL_COLOR, 1, clearValue); //second arg : drawBuffer -> refers to color attachment
+    GLuint uclearValue[4] = {0, 0, 0, 0};
+    glClearBufferuiv(GL_COLOR, 1, uclearValue); //second arg : drawBuffer -> refers to color attachment
+
+    //clear the normal buffer 
+    GLfloat clearValue[4] = {0.0, 0.0, 0.0, 0.0};
+    glClearBufferfv(GL_COLOR, 2, clearValue);
 }
 
 // MeshIDRenderPass implementation

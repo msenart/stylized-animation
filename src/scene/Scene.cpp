@@ -200,7 +200,7 @@ void Scene::setup() {
 
     // compile the shaders for the final render pass
 
-    ShaderKey shader_key = ShaderKey{"final.vert","final.frag"};
+    ShaderKey shader_key = ShaderKey{"final.vert","final_noisy_contours.frag"}; //final_noisy_contours //final_noise_effect
     finalRenderPassShaderHandle = ShaderManager::load(shader_key);
 
     //???

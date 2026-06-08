@@ -14,7 +14,7 @@ struct Camera {
     glm::vec3 up        {0.f, 1.f, 0.f};
     float     fov       = 45.f;  ///< Vertical field of view in degrees.
     float     nearPlane = 0.1f;
-    float     farPlane  = 100.f;
+    float     farPlane  = 100.f; //100.f
 
     /**
      * @brief Computes the view matrix (world → camera space).

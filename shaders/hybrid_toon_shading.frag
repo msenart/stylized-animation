@@ -4,18 +4,27 @@
 #define TOON_SHADING_SPECULAR
 #define TOON_SHADING_RIM_LIGHTING
 #define TOON_SHADING_AMBIENT
+
+
+#include "hybrid_metadata.glsl"
 #include "light.glsl"
 #include "toon_shading.glsl"
+
 in vec3 normalO;
 in vec3 localPosO;
 in vec3 fragPos;
+in float realZ;
 flat in uint vertexID;
 
+uniform uint meshId = 1;
 uniform vec3 viewPos;
 uniform uint activationBoneID = 7;
 uniform uint lightsNumber;
 
-out vec4 FragColor;
+// 2 output values : one for each color attachment
+layout(location = 0) out vec4 FragColor0; //scene
+layout(location = 1) out uvec4 FragColor1; //meshId
+layout(location = 2) out vec4 FragColor2; //normal buffer
 
 const uint MAX_NUM_BONES_PER_VERTEX = 16;
 
@@ -37,7 +46,14 @@ vec3 ACESFilm(vec3 x) {
 }
 
 void main() {
-    FragColor = vec4(0);
+
+    //Write in color attachment 1 (MeshId)
+    FragColor1 = getFragColor1(meshId);
+
+    //write in normal buffer
+    FragColor2 = getFragColor2(normalO, realZ);
+
+    FragColor0 = vec4(0);
     // Bone highlighting
     float weight = 0.0;
     VertexBoneData vertex_bone_data = allVertexBoneData[vertexID];
@@ -55,7 +71,7 @@ void main() {
     float k_specular = 0.3f;
     float k_rim = 0.5f;
     #ifdef TOON_SHADING_AMBIENT
-    FragColor.rgb += baseColor*k_ambient;
+    FragColor0.rgb += baseColor*k_ambient;
     #endif
 
     // Toon shading diffuse implementation
@@ -65,23 +81,23 @@ void main() {
         vec3 R = normalize(reflect(L,N));
 
         #ifdef TOON_SHADING_DIFFUSE
-//        FragColor.rgb += light.color*baseColor*(1-k_ambient)*sin_smoothstep(dot(N, L), 0.5f);
-//        FragColor.rgb += light.color*baseColor*(1-k_ambient)*sin_smoothstep(dot(N, L), -0.3f, 0.3f);
-//        FragColor.rgb += light.color*baseColor*(1-k_ambient)*halftone(gl_FragCoord.xy,0.1f, sin_smoothstep(NdotL, 0.5f));
+//        FragColor0.rgb += light.color*baseColor*(1-k_ambient)*sin_smoothstep(dot(N, L), 0.5f);
+//        FragColor0.rgb += light.color*baseColor*(1-k_ambient)*sin_smoothstep(dot(N, L), -0.3f, 0.3f);
+//        FragColor0.rgb += light.color*baseColor*(1-k_ambient)*halftone(gl_FragCoord.xy,0.1f, sin_smoothstep(NdotL, 0.5f));
         float NdotL = dot(N, L);
         float shadow_to_midtone = sin_smoothstep(NdotL,-0.2f, 0.05f)*crosshatching(gl_FragCoord.xy,0.1f,mix(NdotL,0.0f, 0.1f));
         float midtone_to_light = sin_smoothstep(NdotL,0.35f, 0.5f);
-        FragColor.rgb += k_diffuse*light.color*baseColor*(1-k_ambient)*(max(shadow_to_midtone,midtone_to_light));
+        FragColor0.rgb += k_diffuse*light.color*baseColor*(1-k_ambient)*(max(shadow_to_midtone,midtone_to_light));
         #endif
 
         #ifdef TOON_SHADING_SPECULAR
-        FragColor.rgb += k_specular*light.color*halftone(gl_FragCoord.xy,0.15f,sin_smoothstep(2*pow(max(dot(V,-R),0)*max(dot(N,L),0),2)-1,-1.0f,1.0f));
-//        FragColor.rgb += light.color*pow(sin_smoothstep(dot(-V,R),2),0.5f);
+        FragColor0.rgb += k_specular*light.color*halftone(gl_FragCoord.xy,0.15f,sin_smoothstep(2*pow(max(dot(V,-R),0)*max(dot(N,L),0),2)-1,-1.0f,1.0f));
+//        FragColor0.rgb += light.color*pow(sin_smoothstep(dot(-V,R),2),0.5f);
         #endif
 
         #ifdef TOON_SHADING_RIM_LIGHTING
         float rimDot = 1 - dot(V, N);
-        FragColor.rgb += k_rim*light.color*k_ambient*(1-sin_smoothstep(1-rimDot*pow(max(dot(N,L),0.001f),0.1f),0.0f, 0.5f));
+        FragColor0.rgb += k_rim*light.color*k_ambient*(1-sin_smoothstep(1-rimDot*pow(max(dot(N,L),0.001f),0.1f),0.0f, 0.5f));
         #endif
     }
 
@@ -89,14 +105,14 @@ void main() {
     float epsilon = 0.3;
 
     if (max(dot(N, V), 0.0) < epsilon) {
-        FragColor.rgb *= 0;
+        FragColor0.rgb *= 0;
     }
     #endif
 
     // naive HDR processing
-    FragColor.rgb = ACESFilm(FragColor.rgb);
+    FragColor0.rgb = ACESFilm(FragColor0.rgb);
 
 
-//    FragColor = vec4(halftone(gl_FragCoord.xy,0.05f, 0.5f));
-    FragColor = vec4(pow(FragColor.rgb, vec3(1.0/2.2)), 1.0);
+//    FragColor0 = vec4(halftone(gl_FragCoord.xy,0.05f, 0.5f));
+    FragColor0 = vec4(pow(FragColor0.rgb, vec3(1.0/2.2)), 1.0);
 }

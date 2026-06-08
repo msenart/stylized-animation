@@ -1,0 +1,52 @@
+#version 460 core
+
+
+uniform float deformation = 0.03; //0.05 //0.02
+uniform float space_noise_scale = 12.0; //10 //15
+uniform float time_noise_scale = 3.0; //10 //15
+
+
+#include "perlin_noise.glsl"
+
+uniform sampler2D sceneTexture; //the scene has been renderered in this texture
+uniform usampler2D metadataTexture; //the metadata has been renderered in this texture
+                                    //notice the u before "sampler2D" that indicates that
+                                    //sampler type is uvec
+
+uniform float time = 0.5; //value between 0 and 1
+
+
+in vec2 texCoord;
+
+
+out vec4 fragColor;
+
+void main() {
+    
+    
+    vec2 noise = noise3D_to_2D(vec3(texCoord, time), space_noise_scale, time_noise_scale);
+    vec3 background = vec3(noise.x, noise.y, 1.0);
+    noise = noise*deformation;
+    //noise = vec2(0.1, 0.1);
+    vec2 newTexCoord = texCoord + noise; //deformed texCoord
+    // newTexCoord.x = clamp(newTexCoord.x, 0.0, 1.0);
+    // newTexCoord.y = clamp(newTexCoord.y, 0.0, 1.0);
+
+    if (newTexCoord.x >1.0 || newTexCoord.y <0.0 ||newTexCoord.y >1.0 || newTexCoord.y <0.0){
+        //if texCoord is outside the texture, set background
+        fragColor = vec4(background, 1.0); //find a better solution ? (scale the image to have what is outside)
+                                                //pixelisé mais tant pis? ou alors meileur resolution du framebuffer d'avant mais
+                                                //ça devient compliqué
+    }
+    else{
+        //draw the scene with deformed value
+        uvec4 metadata = texture(metadataTexture, newTexCoord);
+        uint meshId = metadata.x;
+        if(meshId == 0){
+            fragColor = vec4(background, 1.0);
+        }
+        else{
+            fragColor = vec4(texture(sceneTexture, newTexCoord).rgb, 1.0);
+        }
+    }
+}
