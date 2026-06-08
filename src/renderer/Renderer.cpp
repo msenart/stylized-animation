@@ -136,17 +136,25 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
     shader.bind();
     //now we bind the texture which comes from the previous framebuffer to the texture unit 0
     std::vector<unsigned int> hybridFboTexs = m_renderPipeline.getPassFboTexs("Hybrid Render Pass");
-    if(hybridFboTexs.empty()){
-        Log::error("hybrid render pass' fboTexs is empty. Cannot bind texture for final render pass.");
+    if(hybridFboTexs.size() != 2){
+        Log::error("hybrid render pass' fbo should have exactly 2 color attachments (textures), but it has "
+            +std::to_string(hybridFboTexs.size())+" color attachments");
     }
     unsigned int texture = hybridFboTexs[0];
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture); 
+    texture = hybridFboTexs[1];
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, texture); 
+    //glActiveTexture(GL_TEXTURE0);
     //we tell the shader that the texture named sceneTexture is in the texture unit 0
     //this texture is actually the one of the previous framebuffer
     shader.set("sceneTexture", 0);
+    shader.set("metadataTexture", 1);
     p_screen_mesh->uploadUniforms(shader, ctx);
     p_screen_mesh->draw();
+
+    glActiveTexture(GL_TEXTURE0);
     ++m_drawCalls;
 }
 

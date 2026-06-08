@@ -2,6 +2,9 @@
 
 
 uniform sampler2D sceneTexture; //the scene has been renderered in this texture
+uniform usampler2D metadataTexture; //the metadata has been renderered in this texture
+                                    //notice the u before "sampler2D" that indicates that
+                                    //sampler type is uvec
 
 // in vec3 fragPos;
 // in vec3 normal;
@@ -12,6 +15,8 @@ out vec4 fragColor;
 
 void main() {
     
-    //vec2 vTex = (fragPos.xy+1)/2;
+    //uvec4 metadata = texture(metadataTexture, texCoord);
+
     fragColor = vec4(texture(sceneTexture, texCoord).rgb, 1.0);
+    
 }
