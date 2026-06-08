@@ -74,7 +74,7 @@ void HybridRenderPass::clear() {
     
 
     // clear all the buffer of the color attachments specified by glDrawBuffer (see setup)
-    glClearColor(1.0f, 1.0f, 0.0f, 1.0f);
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     //used to clear the buffer of 1 omponent
@@ -121,6 +121,11 @@ void MeshIDRenderPass::clear() {
     glClearBufferuiv(GL_COLOR, 0, &clearValue);
 }
 
+void MeshIDRenderPass::onResize(unsigned int window_w, unsigned int window_h) {
+    // glDeleteTextures(1, &m_fbo);
+    setup(window_w, window_h);
+}
+
 // final render pass
 
 void FinalRenderPass::setup(unsigned window_w, unsigned window_h) {}
@@ -138,6 +143,8 @@ void FinalRenderPass::clear() {
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
+
+void FinalRenderPass::onResize(unsigned int window_w, unsigned int window_h) {}
 
 // render pipeline
 

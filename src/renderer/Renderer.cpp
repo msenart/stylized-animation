@@ -38,7 +38,7 @@ void Renderer::setup(Scene *scene, const Window *window, const AssetManager &ass
     scene->setup();
 }
 
-void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, float aspect) {
+void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, float aspect, float dt) {
     RenderContext ctx{};
     ctx.camera = &scene->main_camera;
     ctx.scene = scene;
@@ -46,10 +46,18 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
 
     m_drawCalls = 0;
 
+    //time
+    time = time + dt;
+    while(time>max_time){
+        time -= max_time;
+    }
+
+
     // Hybrid pass
     m_renderPipeline.clear("Hybrid Render Pass");
     m_renderPipeline.execute("Hybrid Render Pass");
-    for (const Object& obj : scene->objects) {
+    for (unsigned int i = 0; i < scene->objects.size(); i++) {
+        auto obj = scene->objects[i];
         auto it = obj.passTagShaderHandle.find(PassTag::Hybrid);
         if (it == obj.passTagShaderHandle.end()){
             Log::error("Did not find shader handle for Hybrid Render Pass for object whose meshHandle is "+std::to_string(obj.meshHandle));
@@ -66,11 +74,13 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
 
         const Shader& shader = ShaderManager::get(handle);
         shader.bind();
+        shader.set("lightsNumber", static_cast<unsigned int>(scene->lights.size()));
         shader.set("model",obj.transform.matrix());
         shader.set("viewPos",scene->main_camera.position);
         shader.set("view",scene->main_camera.view());
         shader.set("projection",scene->main_camera.projection(aspect));
         shader.set("objectColor",obj.material.color);
+        shader.set("meshId",static_cast<unsigned int>(i+1));
         mesh.uploadUniforms(shader, ctx);
         mesh.draw();
         ++m_drawCalls;
@@ -129,23 +139,35 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
     //and the texture which comes from the hybrid render pass
     m_renderPipeline.clear("Final Render Pass");
     m_renderPipeline.execute("Final Render Pass");
+    //find and bind shader
     ShaderHandle handle = scene->finalRenderPassShaderHandle;
     if (handle == 0) {Log::error("Scene's mesh handle is null ");}
     const Shader& shader = ShaderManager::get(handle);
     shader.bind();
     //now we bind the texture which comes from the previous framebuffer to the texture unit 0
     std::vector<unsigned int> hybridFboTexs = m_renderPipeline.getPassFboTexs("Hybrid Render Pass");
-    if(hybridFboTexs.empty()){
-        Log::error("hybrid render pass' fboTexs is empty. Cannot bind texture for final render pass.");
+    if(hybridFboTexs.size() != 2){
+        Log::error("hybrid render pass' fbo should have exactly 2 color attachments (textures), but it has "
+            +std::to_string(hybridFboTexs.size())+" color attachments");
     }
     unsigned int texture = hybridFboTexs[0];
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture);
+    glBindTexture(GL_TEXTURE_2D, texture); 
+    texture = hybridFboTexs[1];
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, texture); 
+    //glActiveTexture(GL_TEXTURE0);
     //we tell the shader that the texture named sceneTexture is in the texture unit 0
     //this texture is actually the one of the previous framebuffer
     shader.set("sceneTexture", 0);
+    shader.set("metadataTexture", 1);
+    //others uniforms
+    shader.set("time", time/max_time); //for final_perlin_background.frag
+    //draw mesh
     p_screen_mesh->uploadUniforms(shader, ctx);
     p_screen_mesh->draw();
+
+    glActiveTexture(GL_TEXTURE0);
     ++m_drawCalls;
 }
 
