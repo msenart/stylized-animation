@@ -35,19 +35,6 @@ static void setupGLDebugCallback() {
 }
 
 int main(int argc, char *argv[]) {
-  // bool saveVideo = false;
-  // bool headless = false;
-  // int numFrames = 300;
-  // if (argc > 2) {
-  //   for (int i = 0; i < argc; i++) {
-  //     std::string arg(arg_char);
-  //     if (arg == "-s" || arg == "--save-video")
-  //       saveVideo = true;
-  //     if (arg == "-h" || arg == "--headless") { // needs saveVideo to be true
-  //       headless = true;
-  //     }
-  //   }
-  // }
   cxxopts::Options options("Stylized Animation", "A stylized animation engine");
   options.add_options()
     ("s,save-video", "save video with ffmpeg")
