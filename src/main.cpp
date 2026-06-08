@@ -87,7 +87,9 @@ int main(int argc, char *argv[]) {
   Scene scene;
 
   MeshHandle meshHandle = assets.add(std::make_unique<AnimatedMesh>("assets/meshes/Standing Death Left 01.fbx"));
-  Object obj = Object{assets.get(meshHandle).shaderKeysMap()};
+  auto sk = assets.get(meshHandle).shaderKeysMap();
+  sk[PassTag::Hybrid] = ShaderKey{"animated_mesh.vert","hybrid_toon_shading.frag"};
+  Object obj = Object{sk};
   obj.meshHandle =meshHandle;
   obj.material.color = {0.8f, 0.3f, 0.2f};
   obj.transform.scale = glm::vec3(0.05f);
