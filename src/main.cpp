@@ -246,7 +246,7 @@ int main(int argc, char *argv[]) {
     window.getSize(w, h);
 
     float aspect = (h > 0) ? static_cast<float>(w) / static_cast<float>(h) : 1.f;
-    renderer.render(&scene, &window, assets, aspect);
+    renderer.render(&scene, &window, assets, aspect, dt);
 
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();

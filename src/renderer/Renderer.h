@@ -30,8 +30,9 @@ public:
      * @param window Current rendering window
      * @param assets Read-only asset manager resolving MeshHandles.
      * @param aspect Viewport width / height for the projection matrix.
+     * @param dt elapsed time since last frame
      */
-    void render(Scene* scene, Window* window, const AssetManager& assets, float aspect);
+    void render(Scene* scene, Window* window, const AssetManager& assets, float aspect, float dt);
 
     void onResize(int width, int height);
 
@@ -43,8 +44,8 @@ public:
     int drawCalls() const;
 
 private:
-    //std::vector<StaticMesh> meshes;
-    //StaticMesh screen_mesh; //used to render a rect on which to draw for the final render pass
+    const float max_time = 2.0; //toutes les duex secondes
+    float time=0; //time since the begining of the programm, modulo max_time
     std::unique_ptr<StaticMesh> p_screen_mesh; //used to render a rect on which to draw for the final render pass
     RenderPipeline m_renderPipeline;
     int m_drawCalls = 0;

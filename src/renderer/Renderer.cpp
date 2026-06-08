@@ -38,13 +38,20 @@ void Renderer::setup(Scene *scene, const Window *window, const AssetManager &ass
     scene->setup();
 }
 
-void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, float aspect) {
+void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, float aspect, float dt) {
     RenderContext ctx{};
     ctx.camera = &scene->main_camera;
     ctx.scene = scene;
     ctx.window = window;
 
     m_drawCalls = 0;
+
+    //time
+    time = time + dt;
+    while(time>max_time){
+        time -= max_time;
+    }
+
 
     // Hybrid pass
     m_renderPipeline.clear("Hybrid Render Pass");
@@ -130,6 +137,7 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
     //and the texture which comes from the hybrid render pass
     m_renderPipeline.clear("Final Render Pass");
     m_renderPipeline.execute("Final Render Pass");
+    //find and bind shader
     ShaderHandle handle = scene->finalRenderPassShaderHandle;
     if (handle == 0) {Log::error("Scene's mesh handle is null ");}
     const Shader& shader = ShaderManager::get(handle);
@@ -151,6 +159,7 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
     //this texture is actually the one of the previous framebuffer
     shader.set("sceneTexture", 0);
     shader.set("metadataTexture", 1);
+    shader.set("time", time/max_time);
     p_screen_mesh->uploadUniforms(shader, ctx);
     p_screen_mesh->draw();
 
