@@ -89,6 +89,7 @@ public:
     void set(const char* name, bool v) const;
     void set(const char* name, unsigned int v) const;
 private:
+    // m_id is the value return by buildRasterProgram which is called by the constructor
     GLuint m_id = 0;
 
     explicit Shader(GLuint id) : m_id(id) {}

@@ -17,6 +17,7 @@
 #include "renderer/RenderPipeline.h"
 #include "renderer/ShaderManager.h"
 
+
 /**
  * @brief Surface appearance properties for an object.
  */
@@ -35,7 +36,7 @@ struct Object {
     Transform  transform;
     Material   material;
     std::map<PassTag, ShaderKey>    passTagShaderSpecifications;
-    std::map<PassTag, ShaderHandle> passTagShaderHandle; // don't touch, filled up at runtime from passTagShaderSpecifications
+    std::map<PassTag, ShaderHandle> passTagShaderHandle; // don't touch, filled up at runtime from passTagShaderSpecifications in main.c with ShaderManager.load()
     explicit Object(const std::map<PassTag, ShaderKey>& passTagSpecifications) : passTagShaderSpecifications(passTagSpecifications) {}
 
     void draw(bool* p_open = nullptr);
@@ -50,6 +51,8 @@ struct Scene {
     Camera main_camera;
     std::vector<Light>  lights;
     std::vector<Object> objects;
+    ShaderHandle finalRenderPassShaderHandle; //shaders that will be used in the final render pass
+                                              //which is a post-processing render pass
     unsigned int lights_ssbo = 0;
     /**
      * @brief Sets up the other objects of the scene, typically the lights.

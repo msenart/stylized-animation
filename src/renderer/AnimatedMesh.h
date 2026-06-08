@@ -69,10 +69,11 @@ public:
     }
 
 private:
+    // associate shaders for each render pass
     const std::map<PassTag, ShaderKey> shaderKeysMap() const override {
         std::map<PassTag, ShaderKey> key_map = {
-            {PassTag::Final, ShaderKey{"animated_mesh.vert","animated_mesh.frag"}},
-            {PassTag::MeshID, ShaderKey{"animated_mesh.vert","selection.frag"}}
+            {PassTag::Hybrid, ShaderKey{"animated_mesh.vert","hybrid.frag"}}
+
         };
         return key_map;
     }

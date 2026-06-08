@@ -20,6 +20,7 @@
 #include <memory>
 #include <set>
 #include <unordered_map>
+#include <glm/glm.hpp>
 
 #include "core/Log.h"
 
@@ -31,6 +32,7 @@ enum class PassTag {
     Shadow, // influences the shadow cast pass (not implemented but it's an example)
     MeshID, // can be selected
     Final,  // can be rendered
+    Hybrid, // select and render in a texure
 };
 
 inline std::string PassTagToString(PassTag tag) {
@@ -39,6 +41,7 @@ inline std::string PassTagToString(PassTag tag) {
         case PassTag::Shadow:  return "Shadow Render Pass";
         case PassTag::MeshID:  return "Mesh ID Render Pass";
         case PassTag::Final:   return "Final Render Pass";
+        case PassTag::Hybrid:   return "Hybrid Render Pass";
         default:               return "Unknown Pass";
     }
 }
@@ -82,6 +85,12 @@ public:
 
     /**
      *
+     * @return the fbo of the rendering pass.
+     */
+    virtual std::vector<unsigned int> fboTexs() = 0;
+
+    /**
+     *
      * @return the precise name of the rendering pass. See MeshIDRenderPass::name() for example.
      */
     virtual std::string name() = 0;
@@ -95,6 +104,51 @@ public:
     PassTag tag = PassTag::Generic;
     std::string m_suffix;
 };
+
+
+/**
+ * @brief Render pass that draws a mesh ID texture map to make mesh selection easier and draw the scene on another texture.
+ */
+class HybridRenderPass final : public RenderPass {
+    unsigned int m_fbo = 0;
+    unsigned int m_fboTex1 = 0; //scene
+    unsigned int m_fboTex2 = 0; //meshId
+public:
+    unsigned int fbo() override {
+        return m_fbo;
+    }
+
+    std::string name() {
+        return !m_suffix.empty() ? PassTagToString(tag) + " " + m_suffix : PassTagToString(tag);
+    }
+
+    unsigned int fboTex1() const {
+        return m_fboTex1;
+    }
+
+    unsigned int fboTex2() const {
+        return m_fboTex2;
+    }
+
+    std::vector<unsigned int> fboTexs() override{
+        return {m_fboTex1, m_fboTex2};
+    }
+
+    HybridRenderPass(std::string suffix) : RenderPass(std::move(suffix)) {
+        tag = PassTag::Hybrid;
+    };
+
+    HybridRenderPass() : RenderPass() {
+        tag = PassTag::Hybrid;
+    }
+
+    void setup(unsigned int window_w, unsigned int window_h) override;
+    void execute() override;
+    ~HybridRenderPass() override = default;
+    void clear() override;
+
+};
+
 
 /**
  * @brief Render pass that draws a mesh ID texture map to make mesh selection easier.
@@ -114,6 +168,11 @@ public:
     unsigned int fboTex() const {
         return m_fboTex;
     }
+
+    std::vector<unsigned int> fboTexs() override{
+        return {m_fboTex};
+    }
+
     MeshIDRenderPass(std::string suffix) : RenderPass(std::move(suffix)) {
         tag = PassTag::MeshID;
     };
@@ -152,7 +211,12 @@ public:
     void onResize(unsigned int window_w, unsigned int window_h) override;
 
     unsigned int fbo() override {
+        //return default framebuffer
         return 0;
+    }
+
+    std::vector<unsigned int> fboTexs() override{
+        return {0};
     }
 
     std::string name() {
@@ -174,6 +238,9 @@ public:
 
     void setup(unsigned int window_w, unsigned int window_h) const;
 
+    /**
+     * bind the corresponding framebuffer
+     */
     void execute(const std::string& name);
 
     void clear(const std::string& name);
@@ -181,4 +248,8 @@ public:
     void onResize(unsigned int window_w, unsigned int window_h) const;
 
     unsigned int getPassFbo(const std::string &name);
+
+    std::vector<unsigned int> getPassFboTexs(const std::string &name);
+
+
 };

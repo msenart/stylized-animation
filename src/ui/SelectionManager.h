@@ -23,6 +23,10 @@ class SelectionManager {
     RenderPipeline* m_render_pipeline = nullptr;
 public:
     SelectionManager(Scene* scene, RenderPipeline* render_pipeline) : m_scene(scene), m_render_pipeline(render_pipeline) {}
+    
+    /**
+     * @brief read inside the fbo used for the first rendering pass, and return the object drawn at this pos
+     */
     void select(glm::vec2 mousePos, unsigned int window_h);
     void draw();
     const auto& getSelection() const {return m_selection;}

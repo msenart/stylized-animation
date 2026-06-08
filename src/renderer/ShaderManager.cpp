@@ -179,6 +179,9 @@ void ShaderManager::reloadAll()
             assignments.push_back({ &obj, tag, handle });
         }
     }
+    ShaderHandle handle = ctx->scene->finalRenderPassShaderHandle;
+    activeHandles.insert(handle);
+    handlesToReload.insert(handle);
 
     std::unordered_map<ShaderHandle, std::unique_ptr<Shader>> compiled;
     int ok = 0, fail = 0;
