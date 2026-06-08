@@ -5,6 +5,8 @@
 #define TOON_SHADING_RIM_LIGHTING
 #define TOON_SHADING_AMBIENT
 
+#include "hybrid_metadata.glsl"
+
 in vec3 normalO;
 in vec3 localPosO;
 in vec3 fragPos;
@@ -57,18 +59,10 @@ vec3 ACESFilm(vec3 x) {
     return clamp((x*(a*x+b))/(x*(c*x+d)+e), 0.0, 1.0);
 }
 
-uvec4 getFragColor1(){
-    //return the value for the 2nd texture
-    //r : MeshId
-    //g : contour detection for alice
-    //b, a : libre
-    return uvec4(1, 0, 0, 0);
-}
-
 void main() {
 
     //Write in color attachment 1 (MeshId)
-    FragColor1 = getFragColor1();
+    FragColor1 = getFragColor1(1);
 
     //write in color attachment 2 (scene)
     FragColor0 = vec4(0);
