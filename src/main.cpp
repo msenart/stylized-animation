@@ -60,6 +60,9 @@ int main(int argc, char *argv[]) {
     std::cout << options.help() << std::endl;
     return 0;
   }
+
+
+  
   bool saveVideo = result.count("save-video");
   bool headless = result.count("headless");
   int frames = result["frames"].as<int>();
@@ -82,14 +85,6 @@ int main(int argc, char *argv[]) {
 
   // creating the scene
   Scene scene;
-
-  // creating the elements composing the scene
-  // auto cubeData = Geometry::makeCube();
-  // MeshHandle meshHandle = assets.add(
-  //     std::make_unique<Mesh>(cubeData.vertices, cubeData.indices));
-
-  // auto fileMeshData = Geometry::loadStaticMeshFromFile( "assets/meshes/Praying.fbx");
-  // MeshHandle meshHandle = assets.add(std::make_unique<StaticMesh>(fileMeshData[0].vertices, fileMeshData[0].indices));
 
   MeshHandle meshHandle = assets.add(std::make_unique<AnimatedMesh>("assets/meshes/Standing Death Left 01.fbx"));
   Object obj = Object{assets.get(meshHandle).shaderKeysMap()};
@@ -137,6 +132,7 @@ int main(int argc, char *argv[]) {
   windowContext.renderer = &renderer;
   windowContext.selectionManager = &selectionManager;
   windowContext.window = &window;
+  windowContext.cameraController = &camCtrl;
 
   // Here, you tell glfw to give you windowContext instead of window when you will
   // call glfwGetWindowUserPointer in the future
@@ -255,7 +251,7 @@ int main(int argc, char *argv[]) {
     ImGui::NewFrame();
     selectionManager.draw();
     console.draw();
-    stats.draw(scene, renderer.drawCalls(), assets.meshCount(), fps);
+    stats.draw(window, renderer.drawCalls(), assets.meshCount(), fps);
     ShaderManager::drawUI();
 
     ImGui::Render();
