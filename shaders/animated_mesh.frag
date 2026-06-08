@@ -51,7 +51,7 @@ void main() {
     vec3 N = normalize(normalO);
     vec3 V = normalize(viewPos - fragPos);
     float k_ambient = 0.05f;
-    float k_diffuse = 1f;
+    float k_diffuse = 1.0f;
     float k_specular = 0.3f;
     float k_rim = 0.5f;
     #ifdef TOON_SHADING_AMBIENT
@@ -75,7 +75,7 @@ void main() {
         #endif
 
         #ifdef TOON_SHADING_SPECULAR
-        FragColor.rgb += k_specular*light.color*halftone(gl_FragCoord.xy,0.15f,sin_smoothstep(2*pow(max(dot(V,-R),0)*max(dot(N,L),0),2)-1,-1f,1f));
+        FragColor.rgb += k_specular*light.color*halftone(gl_FragCoord.xy,0.15f,sin_smoothstep(2*pow(max(dot(V,-R),0)*max(dot(N,L),0),2)-1,-1.0f,1.0f));
 //        FragColor.rgb += light.color*pow(sin_smoothstep(dot(-V,R),2),0.5f);
         #endif
 
