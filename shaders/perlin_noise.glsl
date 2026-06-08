@@ -42,21 +42,6 @@ vec3 random3D_from_seed(vec3 uvw, PerlinNoiseSeed seed){
 
 
 
-vec3 test_vec3(vec3 uvw){
-	PerlinNoiseSeed seed = {vec3(1.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0), vec3(0.0, 0.0, 1.0), 0.5};
-	return seed.v1;
-}
-
-
-
-float test(vec3 uvw){
-	PerlinNoiseSeed seed = {vec3(1.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0), vec3(0.0, 0.0, 1.0), 0.5};
-    //Seed seed = Seed(vec3(1.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0), vec3(0.0, 0.0, 1.0), 0.5);
-	//return get_float(seed);
-	return seed.f;
-}
-
-
 //take a vec3 and return a 1D noise (basic perlin noise)
 float noise3D_from_seed(vec3 uvw, PerlinNoiseSeed seed){
 	uvw *= noise_scale;
