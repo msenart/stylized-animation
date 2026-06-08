@@ -4,11 +4,14 @@
 #define TOON_SHADING_SPECULAR
 #define TOON_SHADING_RIM_LIGHTING
 #define TOON_SHADING_AMBIENT
-
+#define PHONG_BSDF
+#define GGX_BSDF
 
 #include "hybrid_metadata.glsl"
 #include "light.glsl"
 #include "toon_shading.glsl"
+#include "lightingBSDF.glsl"
+#include "bsdf_utilities.glsl"
 
 in vec3 normalO;
 in vec3 localPosO;
@@ -66,7 +69,7 @@ void main() {
     vec3 baseColor = mix(not_influenced_vertex_color, influenced_vertex_color, weight).rgb;
     vec3 N = normalize(normalO);
     vec3 V = normalize(viewPos - fragPos);
-    float k_ambient = 0.05f;
+    float k_ambient = 0.2f;
     float k_diffuse = 1.0f;
     float k_specular = 0.3f;
     float k_rim = 0.5f;
@@ -79,6 +82,19 @@ void main() {
         Light light = allLights[i];
         vec3 L = normalize(light.position-fragPos); // To change !
         vec3 R = normalize(reflect(L,N));
+
+        float diffuse = 0;
+        float specular = 0;
+        #ifdef GGX_BSDF
+        float roughness = 0.5f;
+        diffuse = getGGXDiffuse(L,N);
+        specular = getGGXSpecular(L,N,V,roughness);
+        #endif
+        #ifndef GGX_BSDF
+        float shininess = 2.f;
+        diffuse = getPhongDiffuse(L,N);
+        specular = getPhongSpecular(L,N,V,shininess);
+        #endif
 
         #ifdef TOON_SHADING_DIFFUSE
 //        FragColor0.rgb += light.color*baseColor*(1-k_ambient)*sin_smoothstep(dot(N, L), 0.5f);
