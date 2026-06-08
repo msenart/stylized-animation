@@ -159,7 +159,9 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
     //this texture is actually the one of the previous framebuffer
     shader.set("sceneTexture", 0);
     shader.set("metadataTexture", 1);
-    shader.set("time", time/max_time);
+    //others uniforms
+    shader.set("time", time/max_time); //for final_perlin_background.frag
+    //draw mesh
     p_screen_mesh->uploadUniforms(shader, ctx);
     p_screen_mesh->draw();
 
