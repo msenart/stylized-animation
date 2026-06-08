@@ -56,7 +56,8 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
     // Hybrid pass
     m_renderPipeline.clear("Hybrid Render Pass");
     m_renderPipeline.execute("Hybrid Render Pass");
-    for (const Object& obj : scene->objects) {
+    for (unsigned int i = 0; i < scene->objects.size(); i++) {
+        auto obj = scene->objects[i];
         auto it = obj.passTagShaderHandle.find(PassTag::Hybrid);
         if (it == obj.passTagShaderHandle.end()){
             Log::error("Did not find shader handle for Hybrid Render Pass for object whose meshHandle is "+std::to_string(obj.meshHandle));
@@ -79,6 +80,7 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
         shader.set("view",scene->main_camera.view());
         shader.set("projection",scene->main_camera.projection(aspect));
         shader.set("objectColor",obj.material.color);
+        shader.set("meshId",static_cast<unsigned int>(i+1));
         mesh.uploadUniforms(shader, ctx);
         mesh.draw();
         ++m_drawCalls;

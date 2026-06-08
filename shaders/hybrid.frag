@@ -12,6 +12,7 @@ in vec3 localPosO;
 in vec3 fragPos;
 flat in uint vertexID;
 
+uniform uint meshId = 1;
 uniform vec3 viewPos;
 uniform uint activationBoneID = 7;
 const float PI = 3.14159265358979323846;
@@ -62,7 +63,7 @@ vec3 ACESFilm(vec3 x) {
 void main() {
 
     //Write in color attachment 1 (MeshId)
-    FragColor1 = getFragColor1(1);
+    FragColor1 = getFragColor1(meshId);
 
     //write in color attachment 2 (scene)
     FragColor0 = vec4(0);

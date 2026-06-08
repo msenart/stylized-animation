@@ -15,6 +15,7 @@ in vec3 localPosO;
 in vec3 fragPos;
 flat in uint vertexID;
 
+uniform uint meshId = 1;
 uniform vec3 viewPos;
 uniform uint activationBoneID = 7;
 uniform uint lightsNumber;
@@ -45,7 +46,7 @@ vec3 ACESFilm(vec3 x) {
 void main() {
 
     //Write in color attachment 1 (MeshId)
-    FragColor1 = getFragColor1(1);
+    FragColor1 = getFragColor1(meshId);
 
     FragColor0 = vec4(0);
     // Bone highlighting

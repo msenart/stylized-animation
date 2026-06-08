@@ -7,7 +7,7 @@
 #include "GLFW/glfw3.h"
 #include "scene/Scene.h"
 
-#define DEBUG
+//#define DEBUG
 
 void SelectionManager::select(glm::vec2 mousePos, unsigned int window_h) {
     
