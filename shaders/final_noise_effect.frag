@@ -22,7 +22,7 @@ void main() {
 
     if(meshId == 0){
         //background
-        vec2 noise_vec2 = noise3D_to_2D(vec3(texCoord, time));
+        vec2 noise_vec2 = noise3D_to_2D(vec3(texCoord, time), 3.0);
         fragColor = vec4(noise_vec2.x, 0.0, noise_vec2.y,1.0);
     }
     else{

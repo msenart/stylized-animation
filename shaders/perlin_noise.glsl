@@ -4,7 +4,7 @@
 //They made a video explaining their work, available here:
 //  https://www.youtube.com/watch?v=welK2U7UkzE
 
-uniform float noise_scale = 3.0;
+//uniform float noise_scale = 3.0;
 //uniform vec3 noise_transform;
 
 //arbitray numbers for the pseudo-random generator
@@ -43,7 +43,7 @@ vec3 random3D_from_seed(vec3 uvw, PerlinNoiseSeed seed){
 
 
 //take a vec3 and return a 1D noise (basic perlin noise)
-float noise3D_from_seed(vec3 uvw, PerlinNoiseSeed seed){
+float noise3D_from_seed(vec3 uvw, float noise_scale, PerlinNoiseSeed seed){
 	uvw *= noise_scale;
 	//uvw += noise_transform;
 	
@@ -114,13 +114,13 @@ float noise3D_from_seed(vec3 uvw, PerlinNoiseSeed seed){
 }
 
 //classic perlin NOise
-float noise3D_to_1D(vec3 uvw){
-	return noise3D_from_seed(uvw, seed1);
+float noise3D_to_1D(vec3 uvw, float noise_scale){
+	return noise3D_from_seed(uvw, noise_scale, seed1);
 }
 
 //perlin Noise that returns a vec2
-vec2 noise3D_to_2D(vec3 uvw){
-	float x = noise3D_from_seed(uvw, seed1);
-	float y = noise3D_from_seed(uvw, seed2);
+vec2 noise3D_to_2D(vec3 uvw, float noise_scale){
+	float x = noise3D_from_seed(uvw, noise_scale, seed1);
+	float y = noise3D_from_seed(uvw, noise_scale, seed2);
 	return vec2(x, y);
 }
