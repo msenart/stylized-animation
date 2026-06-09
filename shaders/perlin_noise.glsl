@@ -44,7 +44,7 @@ vec3 random3D_from_seed(vec3 uvw, PerlinNoiseSeed seed){
 
 //take a vec3 and return a 1D noise (basic perlin noise)
 float noise3D_from_seed(vec3 uvw, float noise_scale, PerlinNoiseSeed seed){
-	uvw *= noise_scale;
+	uvw.xyz *= noise_scale; //time component remain the same
 	//uvw += noise_transform;
 	
 	vec3 gridIndex = floor(uvw); 

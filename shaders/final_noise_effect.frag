@@ -1,6 +1,9 @@
 #version 460 core
 
 
+uniform float deformation = 0.0;
+uniform vec3 background_color = vec3(0.1, 0.9, 0.1);
+
 #include "perlin_noise.glsl"
 
 uniform sampler2D sceneTexture; //the scene has been renderered in this texture
@@ -17,17 +20,27 @@ in vec2 texCoord;
 out vec4 fragColor;
 
 void main() {
-    uvec4 metadata = texture(metadataTexture, texCoord);
-    uint meshId = metadata.x;
+    
 
-    if(meshId == 0){
-        //background
-        vec2 noise_vec2 = noise3D_to_2D(vec3(texCoord, time), 3.0);
-        fragColor = vec4(noise_vec2.x, 0.0, noise_vec2.y,1.0);
+    vec2 noise = noise3D_to_2D(vec3(texCoord, time), 10.0)*deformation;
+    //noise = vec2(0.1, 0.1);
+    vec2 newTexCoord = texCoord + noise; //deformed texCoord
+
+    if (newTexCoord.x >1.0 || newTexCoord.y <0.0 ||newTexCoord.y >1.0 || newTexCoord.y <0.0){
+        //if texCoord is outside the texture, set background
+        fragColor = vec4(background_color, 1.0);
     }
     else{
-        //draw mesh from the scene texture
-        fragColor = vec4(texture(sceneTexture, texCoord).rgb, 1.0);
+        //draw the scene with deformed value
+        uvec4 metadata = texture(metadataTexture, newTexCoord);
+        uint meshId = metadata.x;
+        if(meshId == 0){
+            fragColor = vec4(background_color, 1.0);
+        }
+        else{
+            fragColor = vec4(texture(sceneTexture, newTexCoord).rgb, 1.0);
+        }
     }
+    fragColor = vec4(noise3D_to_2D(vec3(texCoord, time), 10.0), 1.0, 1.0);
 
 }
