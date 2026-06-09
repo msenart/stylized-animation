@@ -44,7 +44,9 @@ vec3 random3D_from_seed(vec3 uvw, PerlinNoiseSeed seed){
 
 //take a vec3 and return a 1D noise (basic perlin noise)
 float noise3D_from_seed(vec3 uvw, float noise_scale, PerlinNoiseSeed seed){
-	uvw.xyz *= noise_scale; //time component remain the same
+	float time_noise_scale = 3.0; //must be an integer for the time loop texture to be correct
+	uvw.xy *= noise_scale; //time component remain the same
+	uvw.z *= time_noise_scale;
 	//uvw += noise_transform;
 	
 	vec3 gridIndex = floor(uvw); 
@@ -58,7 +60,7 @@ float noise3D_from_seed(vec3 uvw, float noise_scale, PerlinNoiseSeed seed){
 	vec3 tlb = gridIndex + vec3(0.0, 1.0, 0.0);
 	vec3 trb = gridIndex + vec3(1.0, 1.0, 0.0);
 
-	if(gridIndex.z == noise_scale -1.0){
+	if(gridIndex.z == time_noise_scale -1.0){
 		//for the random value in the future, 
 		//we don't take the value t' = t + 1.0
 		//but t' = 0.0 in order to have a loop.

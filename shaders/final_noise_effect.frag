@@ -41,6 +41,6 @@ void main() {
             fragColor = vec4(texture(sceneTexture, newTexCoord).rgb, 1.0);
         }
     }
-    fragColor = vec4(noise3D_to_2D(vec3(texCoord, time), 10.0), 1.0, 1.0);
+    fragColor = vec4(noise3D_to_2D(vec3(texCoord, time), 4.0), 1.0, 1.0);
 
 }
