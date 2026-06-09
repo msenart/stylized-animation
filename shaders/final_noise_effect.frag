@@ -17,7 +17,7 @@ in vec2 texCoord;
 out vec4 fragColor;
 
 void main() {
-        uvec4 metadata = texture(metadataTexture, texCoord);
+    uvec4 metadata = texture(metadataTexture, texCoord);
     uint meshId = metadata.x;
 
     if(meshId == 0){
