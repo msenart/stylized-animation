@@ -11,6 +11,7 @@
 #include "core/AssetManager.h"
 #include "core/MegaWindowContext.h"
 #include "renderer/AnimatedMesh.h"
+#include "renderer/SmearMesh.h"
 #include "scene/Scene.h"
 #include "scene/CameraController.h"
 #include "renderer/Geometry.h"
@@ -48,8 +49,6 @@ int main(int argc, char *argv[]) {
     return 0;
   }
 
-
-  
   bool saveVideo = result.count("save-video");
   bool headless = result.count("headless");
   int frames = result["frames"].as<int>();
@@ -73,7 +72,8 @@ int main(int argc, char *argv[]) {
   // creating the scene
   Scene scene;
 
-  MeshHandle meshHandle = assets.add(std::make_unique<AnimatedMesh>("assets/meshes/Standing Death Left 01.fbx"));
+  // MeshHandle meshHandle = assets.add(std::make_unique<AnimatedMesh>("assets/meshes/Standing Death Left 01.fbx"));
+  MeshHandle meshHandle = assets.add(std::make_unique<SmearMesh>("assets/meshes/Standing Death Left 01.fbx"));
   auto sk = assets.get(meshHandle).shaderKeysMap();
   sk[PassTag::Hybrid] = ShaderKey{"animated_mesh.vert","hybrid.frag"};
   Object obj = Object{sk};
