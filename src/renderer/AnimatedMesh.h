@@ -50,7 +50,7 @@ struct BoneInfo {
     }
 };
 
-inline glm::mat4 aiMat4ToGlmMat4(const aiMatrix4x4& m) {
+inline glm::mat4 aiMat4ToGlmMat4(const aiMatrix4x4& m) { // TODO put it somewhere else more global
     glm::mat4 glmMat = glm::transpose(glm::make_mat4(&m.a1));
     return glmMat;
 }
@@ -68,7 +68,7 @@ public:
         return &timer;
     }
 
-private:
+protected:
     // associate shaders for each render pass
     const std::map<PassTag, ShaderKey> shaderKeysMap() const override {
         std::map<PassTag, ShaderKey> key_map = {
@@ -89,10 +89,10 @@ private:
     Timer timer = Timer(0,100);
     glm::mat4 m_globalInverseTransform;
 
-    mutable std::map<std::string, int> m_boneNameToIndexMap;
-    mutable std::vector<BoneInfo> m_bonesInfo;
+    mutable std::map<std::string, int> m_boneNameToIndexMap; // NOTE here you have the list of bone names and idx
+    mutable std::vector<BoneInfo> m_bonesInfo; // NOTE can do m_bonesInfo[boneIdx]
 
-    int  getBoneID(const aiBone* bone);
+    int getBoneID(const aiBone* bone);
 
     static glm::mat4 calculateInterpolatedPosition(const double& animationTicks, const aiNodeAnim* animationNode);
 
@@ -100,9 +100,14 @@ private:
 
     static glm::mat4 calculateInterpolatedScale(const double& animationTicks, const aiNodeAnim* animationNode);
 
+    const aiNodeAnim* getNodeAnimFromNode(const aiNode* node) const;
+
     void readNodeHierarchy(const double& animationTicks,const aiNode* node, const glm::mat4& parentTransformation) const;
     void getBoneTransforms(std::vector<glm::mat4>& transforms) const;
     void parseMeshes();
     void populateBuffers();
     void setTimer(const double& minTime, const double& maxTime);
+
+    void getBonePosition(const aiNode *currentNode, glm::vec3 &c_r, glm::vec3 &c_t, glm::vec3 &length);
+    glm::mat4 getBoneGlobalTransformByName(std::string name);
 };

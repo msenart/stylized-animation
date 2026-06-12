@@ -54,6 +54,8 @@ void AnimatedMesh::uploadUniforms(const Shader& shader, const RenderContext& ctx
     }
 }
 
+// This method adds a bone to the dictionary if it isn't already there, then
+// returns an ID
 int AnimatedMesh::getBoneID(const aiBone* bone) {
     std::string boneName(bone->mName.data);
     auto it = m_boneNameToIndexMap.find(boneName);
@@ -118,6 +120,7 @@ glm::mat4 AnimatedMesh::calculateInterpolatedPosition(const double& animationTic
     glm::vec3 out = glm::make_vec3(&start.x) + ((float)factor)*glm::make_vec3(&delta.x);
     return glm::translate(glm::mat4(1.0f), out);
 }
+
 glm::mat4 AnimatedMesh::calculateInterpolatedScale(const double& animationTicks, const aiNodeAnim* animationNode) {
 
     if (animationNode->mNumScalingKeys == 1) {
@@ -145,23 +148,28 @@ glm::mat4 AnimatedMesh::calculateInterpolatedScale(const double& animationTicks,
     return glm::scale(glm::mat4(1.0f), out);
 }
 
+const aiNodeAnim* AnimatedMesh::getNodeAnimFromNode(const aiNode* node) const {
+  std::string nodeName = node->mName.data;
+
+  const aiAnimation* animation = m_scene->mAnimations[0]; // TODO adapt for more animations
+  for (unsigned int i = 0; i < animation->mNumChannels; i++) {
+    const aiNodeAnim* animation_node_i = animation->mChannels[i];
+    if (std::string(animation_node_i->mNodeName.data) == nodeName) {
+      return animation_node_i;
+    }
+  }
+  return nullptr;
+}
+
+// recursive function that reads the whole node (animation) tree and updates things
 void AnimatedMesh::readNodeHierarchy(const double& animationTicks, const aiNode *node, const glm::mat4 &parentTransformation) const {
     glm::mat4 node_transformation = aiMat4ToGlmMat4(node->mTransformation);
     std::string nodeName = node->mName.data;
-
-    const aiAnimation* animation = m_scene->mAnimations[0];
-    const aiNodeAnim* animation_node = nullptr;
-    for (unsigned int i = 0; i < animation->mNumChannels; i++) {
-        const aiNodeAnim* animation_node_i = animation->mChannels[i];
-        if (std::string(animation_node_i->mNodeName.data) == nodeName) {
-            animation_node = animation_node_i;
-            break;
-        }
-    }
+    const aiNodeAnim *animation_node = getNodeAnimFromNode(node);
 
     if (animation_node) {
-        glm::mat4 translation = calculateInterpolatedPosition(animationTicks, animation_node);
-        glm::mat4 rotation = calculateInterpolatedRotation(animationTicks, animation_node);
+          glm::mat4 translation = calculateInterpolatedPosition(animationTicks, animation_node);
+          glm::mat4 rotation = calculateInterpolatedRotation(animationTicks, animation_node);
         glm::mat4 scale = calculateInterpolatedScale(animationTicks, animation_node);
         node_transformation=translation*rotation*scale;
     }
@@ -312,4 +320,29 @@ void AnimatedMesh::populateBuffers() {
 
 void AnimatedMesh::setTimer(const double& minTime, const double& maxTime) {
     this->timer = Timer(minTime,maxTime);
+}
+
+// sets bone root (c_r), bone tip (c_t) and bone length
+void AnimatedMesh::getBonePosition(const aiNode *currentNode, glm::vec3 &c_r, glm::vec3 &c_t, glm::vec3 &length) {
+  c_r = glm::vec3(getBoneGlobalTransformByName(currentNode->mName.C_Str())[3]); // root pos = position of current node
+  const aiNodeAnim* currentNodeAnim = getNodeAnimFromNode(currentNode);
+  aiNode* childNode = currentNode->mChildren[0];
+  if (childNode != nullptr) { // if has child (and it is a bone), then tip (supposedly) is root of child
+    c_t = glm::vec3(getBoneGlobalTransformByName(childNode->mName.C_Str())[3]);
+    length = glm::length(c_t - c_r);
+  } // else, we suppose the bone to have length 1.0 idk
+  else {
+
+  }
+}
+
+// returns the global transform of the bone (or node) with name [name]
+glm::mat4 AnimatedMesh::getBoneGlobalTransformByName(std::string name) {
+  auto it = m_boneNameToIndexMap.find(name);
+  if (it != m_boneNameToIndexMap.end()) { // if node is bone
+    int boneIdx = it->second;
+    BoneInfo boneInfo = m_bonesInfo[boneIdx];
+    return boneInfo.finalTransformationMatrix;
+  }
+  return glm::mat4(); // identity matrix
 }
