@@ -29,6 +29,10 @@ public:
 
     GLsizei indexCount() const;
 
+    [[nodiscard]] glm::vec3 pseudo_barycentre() const override {
+        return m_barycentre;
+    }
+
     //TODO! check if this shaders work
     [[nodiscard]] const std::map<PassTag, ShaderKey> shaderKeysMap() const override{
         std::map<PassTag, ShaderKey> key_map ={
@@ -40,4 +44,5 @@ private:
     // const static std::map<MeshPassTag,ShaderKey> SHADER_KEYS_MAP; Must define SHADER_KEYS_MAP ! Don't forget !
     GLuint  m_vao = 0, m_vbo = 0, m_ebo = 0;
     GLsizei m_indexCount = 0;
+    glm::vec3 m_barycentre;
 };

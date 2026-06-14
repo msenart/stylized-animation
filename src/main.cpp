@@ -25,15 +25,15 @@
 
 static void setupGLDebugCallback() {
   glEnable(GL_DEBUG_OUTPUT);
-       glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-       glDebugMessageCallback([](GLenum, GLenum type, GLuint, GLenum severity,
-       GLsizei, const GLchar* message, const void*) {
-         if (severity == GL_DEBUG_SEVERITY_NOTIFICATION) return;
-       if (type == GL_DEBUG_TYPE_ERROR)
-         Log::error(std::string("GL: ") + message);
-       else
-         Log::warn(std::string("GL: ") + message);
-       }, nullptr);
+     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+     glDebugMessageCallback([](GLenum, GLenum type, GLuint, GLenum severity,
+     GLsizei, const GLchar* message, const void*) {
+       if (severity == GL_DEBUG_SEVERITY_NOTIFICATION) return;
+     if (type == GL_DEBUG_TYPE_ERROR)
+       Log::error(std::string("GL: ") + message);
+     else
+       Log::warn(std::string("GL: ") + message);
+     }, nullptr);
 }
 
 

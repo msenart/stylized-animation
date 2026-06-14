@@ -197,14 +197,6 @@ void Object::draw(bool *p_open) {
 }
 
 void Scene::setup() {
-
-    // compile the shaders for the final render pass
-
-    ShaderKey shader_key = ShaderKey{"final.vert","final.frag"}; //final_noisy_contours //final_noise_effect
-    finalRenderPassShaderHandle = ShaderManager::load(shader_key);
-
-    //???
-
     glCreateBuffers(1, &lights_ssbo);
     glNamedBufferData(lights_ssbo, lights.size() * sizeof(Light), lights.data(), GL_STATIC_DRAW);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, lights_ssbo);

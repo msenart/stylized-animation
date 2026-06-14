@@ -4,6 +4,7 @@
 
 #include "RenderPipeline.h"
 
+#include "Shader.h"
 #include "core/Log.h"
 #include "glad/glad.h"
 
@@ -98,6 +99,69 @@ void HybridRenderPass::clear() {
     glClearBufferfv(GL_COLOR, 2, clearValue);
 }
 
+void KAFRenderPass::setup(unsigned window_w, unsigned window_h) {
+    // creating frame buffer
+    glGenFramebuffers(1, &m_fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+
+    // creating texture for the frame buffer
+
+    // buffer 1
+    glGenTextures(1, &m_fboTex1);
+    glBindTexture(GL_TEXTURE_2D, m_fboTex1);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, window_w, window_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_fboTex1, 0);
+
+    // buffer 2
+    glGenTextures(1, &m_fboTex1);
+    glBindTexture(GL_TEXTURE_2D, m_fboTex2);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, window_w, window_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, m_fboTex2, 0);
+
+    auto fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (fboStatus != GL_FRAMEBUFFER_COMPLETE) {
+        Log::error("Framebuffer "+ name() +"  could not be created : " + std::to_string(fboStatus));
+    }
+
+    m_sh1 = ShaderManager::load(m_sk1);
+    m_sh2 = ShaderManager::load(m_sk2);
+    m_sh3 = ShaderManager::load(m_sk3);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void KAFRenderPass::execute() {
+    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+}
+
+void KAFRenderPass::clear() {
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+unsigned KAFRenderPass::fbo() {
+    return m_fbo;
+}
+
+std::vector<unsigned int> KAFRenderPass::fboTexs() {
+    return {
+        m_fboTex1,m_fboTex2
+    };
+}
+
 // MeshIDRenderPass implementation
 
 void MeshIDRenderPass::setup(unsigned int window_w, unsigned int window_h) {
@@ -144,7 +208,9 @@ void MeshIDRenderPass::onResize(unsigned int window_w, unsigned int window_h) {
 
 // final render pass
 
-void FinalRenderPass::setup(unsigned window_w, unsigned window_h) {}
+void FinalRenderPass::setup(unsigned window_w, unsigned window_h) {
+    m_finalPassShaderHandle = ShaderManager::load(m_finalPassShaderKey);
+}
 
 void FinalRenderPass::execute() {
     //switch to default framebuffer (id=0)
@@ -215,7 +281,6 @@ unsigned int RenderPipeline::getPassFbo(const std::string& name) {
     }
 }
 
-
 std::vector<unsigned int> RenderPipeline::getPassFboTexs(const std::string &name){
     auto it = mapRenderPasses.find(name);
     if (it != mapRenderPasses.end()) {
@@ -224,4 +289,12 @@ std::vector<unsigned int> RenderPipeline::getPassFboTexs(const std::string &name
         Log::error("Failed to get FBO: Render pass '" + name + "' not found.");
         return {};
     }
+}
+
+std::shared_ptr<RenderPass> RenderPipeline::getPass(const std::string &name) {
+    auto it = mapRenderPasses.find(name);
+    if (it != mapRenderPasses.end()) {
+        return it->second;
+    }
+    return nullptr;
 }

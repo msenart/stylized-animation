@@ -72,6 +72,7 @@ public:
     }
 
 protected:
+
     // associate shaders for each render pass
     const std::map<PassTag, ShaderKey> shaderKeysMap() const override {
         std::map<PassTag, ShaderKey> key_map = {
@@ -80,6 +81,8 @@ protected:
         };
         return key_map;
     }
+
+private:
     // const static std::map<MeshPassTag, ShaderKey> SHADER_KEYS_MAP;
 
     const aiScene* m_scene = nullptr;
@@ -89,7 +92,9 @@ protected:
     GLuint m_vao = 0, m_vbo = 0, m_ebo = 0;
     GLuint bones_data_ssbo = 0;
     GLsizei m_indexCount = 0;
-    Timer timer = Timer(0,1000000);
+
+    Timer timer = Timer(0,100000.);
+
     glm::mat4 m_globalInverseTransform;
 
     mutable std::map<std::string, int> m_boneNameToIndexMap; // NOTE here you have the list of bone names and idx

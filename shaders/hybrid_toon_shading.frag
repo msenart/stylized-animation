@@ -4,7 +4,7 @@
 #define TOON_SHADING_SPECULAR
 #define TOON_SHADING_RIM_LIGHTING
 #define TOON_SHADING_AMBIENT
-//#define GGX_BSDF
+#define GGX_BSDF
 
 #include "hybrid_metadata.glsl"
 #include "light.glsl"
@@ -21,6 +21,9 @@ uniform uint meshId = 1;
 uniform vec3 viewPos;
 uniform uint activationBoneID = 7;
 uniform uint lightsNumber;
+//uniform vec3 objectBarycentre;
+uniform mat4 view;
+uniform mat4 projection;
 
 // 2 output values : one for each color attachment
 layout(location = 0) out vec4 FragColor0; //scene
@@ -82,6 +85,8 @@ void main() {
         vec3 L = normalize(light.position-fragPos);
         vec3 R = normalize(reflect(L,N));
 
+        vec2 patternPos = gl_FragCoord.xy;
+
         float diffuse = 0;
         float specular = 0;
         #ifdef GGX_BSDF
@@ -99,13 +104,13 @@ void main() {
 //        FragColor0.rgb += light.color*baseColor*(1-k_ambient)*sin_smoothstep(dot(N, L), 0.5f);
 //        FragColor0.rgb += light.color*baseColor*(1-k_ambient)*sin_smoothstep(dot(N, L), -0.3f, 0.3f);
 //        FragColor0.rgb += light.color*baseColor*(1-k_ambient)*halftone(gl_FragCoord.xy,0.1f, sin_smoothstep(NdotL, 0.5f));
-        float shadow_to_midtone = sin_smoothstep(diffuse,-0.2f, 0.05f)*crosshatching(gl_FragCoord.xy,0.1f,mix(diffuse,0.0f, 0.1f));
+        float shadow_to_midtone = sin_smoothstep(diffuse,-0.2f, 0.05f)*crosshatching(patternPos,0.1f,mix(diffuse,0.0f, 0.1f));
         float midtone_to_light = sin_smoothstep(diffuse,0.35f, 0.5f);
         FragColor0.rgb += k_diffuse*light.color*baseColor*(1-k_ambient)*(max(shadow_to_midtone,midtone_to_light));
         #endif
 
         #ifdef TOON_SHADING_SPECULAR
-        FragColor0.rgb += k_specular*light.color*halftone(gl_FragCoord.xy,0.15f,sin_smoothstep(2*pow(specular,2)-1,-1.0f,1.0f));
+        FragColor0.rgb += k_specular*light.color*halftone(patternPos,0.15f,sin_smoothstep(2*pow(specular,2)-1,-1.0f,1.0f));
 //        FragColor0.rgb += light.color*pow(sin_smoothstep(dot(-V,R),2),0.5f);
         #endif
 
@@ -125,8 +130,5 @@ void main() {
 
     // naive HDR processing
     FragColor0.rgb = ACESFilm(FragColor0.rgb);
-
-
-//    FragColor0 = vec4(halftone(gl_FragCoord.xy,0.05f, 0.5f));
     FragColor0 = vec4(pow(FragColor0.rgb, vec3(1.0/2.2)), 1.0);
 }

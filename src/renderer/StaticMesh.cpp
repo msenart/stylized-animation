@@ -10,6 +10,13 @@ static constexpr unsigned int NORMAL_LOCATION   = 1;
 StaticMesh::StaticMesh(const std::vector<StaticVertex>& vertices, const std::vector<uint32_t>& indices)
     : m_indexCount(static_cast<GLsizei>(indices.size()))
 {
+    // bake the barycentre into a variable
+    glm::vec3 sum(0.0f, 0.0f, 0.0f);
+    for (unsigned int i = 0; i < vertices.size(); i++) {
+        sum+=vertices[i].position;
+    }
+    m_barycentre=sum/static_cast<float>(vertices.size());
+
     glCreateVertexArrays(1, &m_vao);
     glCreateBuffers(1, &m_vbo);
     glCreateBuffers(1, &m_ebo);

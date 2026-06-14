@@ -243,6 +243,7 @@ void AnimatedMesh::parseMeshes() {
     m_globalInverseTransform = glm::inverse(aiMat4ToGlmMat4(m_scene->mRootNode->mTransformation));
     unsigned int baseVertex = 0;
     Log::info("scene " + (!std::string(m_scene->mName.data).empty() ? std::string(m_scene->mName.data) : "Untitled") + " : ");
+    unsigned int count = 0;
     for (unsigned int i = 0; i < m_scene->mNumMeshes; i++) {
         const aiMesh* mesh = m_scene->mMeshes[i];
         Log::info("mesh " + std::string(mesh->mName.data) + " : ");
@@ -296,7 +297,6 @@ void AnimatedMesh::parseMeshes() {
         }
         baseVertex += mesh->mNumVertices;
     }
-
     m_indexCount = static_cast<GLsizei>(m_indices.size());
 }
 

@@ -22,6 +22,7 @@
 #include <unordered_map>
 #include <glm/glm.hpp>
 
+#include "ShaderManager.h"
 #include "core/Log.h"
 
 /**
@@ -31,6 +32,7 @@ enum class PassTag {
     Generic,
     Shadow, // influences the shadow cast pass (not implemented but it's an example)
     MeshID, // can be selected
+    KAF,
     Final,  // can be rendered
     Hybrid, // select and render in a texure
 };
@@ -41,6 +43,7 @@ inline std::string PassTagToString(PassTag tag) {
         case PassTag::Shadow:  return "Shadow Render Pass";
         case PassTag::MeshID:  return "Mesh ID Render Pass";
         case PassTag::Final:   return "Final Render Pass";
+        case PassTag::KAF:    return "KAF Render Pass";
         case PassTag::Hybrid:   return "Hybrid Render Pass";
         default:               return "Unknown Pass";
     }
@@ -150,6 +153,119 @@ public:
 
 };
 
+class KAFRenderPass final : public RenderPass {
+    unsigned int m_fbo = 0;
+    // first pass
+    unsigned int m_fboTex1 = 0; // buffer 1
+    ShaderKey m_sk1;
+    ShaderHandle m_sh1;
+    // second pass
+    unsigned int m_fboTex2 = 0; // buffer 2
+    ShaderKey m_sk2;
+    ShaderHandle m_sh2;
+    // third pass
+    ShaderKey m_sk3;
+    ShaderHandle m_sh3;
+public:
+
+    KAFRenderPass() : RenderPass() {
+        tag = PassTag::KAF;
+    }
+
+    explicit KAFRenderPass(std::string suffix) : RenderPass(std::move(suffix)) {
+        tag = PassTag::KAF;
+    }
+
+    void setup(unsigned window_w, unsigned window_h) override;
+
+    void execute() override;
+
+    void clear() override;
+
+    unsigned fbo() override;
+
+    std::vector<unsigned int> fboTexs() override;
+
+    std::string name() override {
+        return !m_suffix.empty() ? PassTagToString(tag) + " " + m_suffix : PassTagToString(tag);
+    }
+
+    std::vector<ShaderHandle> shaderHandles() {
+        return {m_sh1, m_sh2, m_sh3};
+    }
+};
+
+/**
+ * @brief Render pass that draws what is on the screen.
+ */
+class FinalRenderPass final : public RenderPass {
+    ShaderHandle m_finalPassShaderHandle = 0;
+    ShaderKey m_finalPassShaderKey = {"final.vert","final.frag"};
+public:
+    explicit FinalRenderPass(std::string suffix) : RenderPass(std::move(suffix)) {
+        tag = PassTag::Final;
+    };
+
+    FinalRenderPass() : RenderPass() {
+        tag = PassTag::Final;
+    }
+
+    void setup(unsigned window_w, unsigned window_h) override;
+
+    void execute() override ;
+
+    void clear() override;
+
+    void onResize(unsigned int window_w, unsigned int window_h) override;
+
+    unsigned int fbo() override {
+        //return default framebuffer
+        return 0;
+    }
+
+    std::vector<unsigned int> fboTexs() override{
+        return {0};
+    }
+
+    std::string name() {
+        return !m_suffix.empty() ? PassTagToString(tag) + " " + m_suffix : PassTagToString(tag);
+    }
+
+    unsigned int fboTex() {
+        return 0;
+    }
+
+    [[nodiscard]] ShaderHandle shaderHandle() const {
+        return m_finalPassShaderHandle;
+    }
+};
+
+/**
+ * @brief Applies different render passes to fill the buffers.
+ */
+class RenderPipeline {
+    std::unordered_map<std::string, std::shared_ptr<RenderPass>> mapRenderPasses;
+public:
+    void addPass(const std::shared_ptr<RenderPass> &pass);
+
+    void setup(unsigned int window_w, unsigned int window_h) const;
+
+    /**
+     * bind the corresponding framebuffer
+     */
+    void execute(const std::string& name);
+
+    void clear(const std::string& name);
+
+    void onResize(unsigned int window_w, unsigned int window_h) const;
+
+    unsigned int getPassFbo(const std::string &name);
+
+    std::vector<unsigned int> getPassFboTexs(const std::string &name);
+
+    std::shared_ptr<RenderPass> getPass(const std::string &name);
+};
+
 
 /**
  * @brief Render pass that draws a mesh ID texture map to make mesh selection easier.
@@ -188,69 +304,4 @@ public:
     void clear() override;
 
     void onResize(unsigned int window_w, unsigned int window_h) override;
-};
-
-/**
- * @brief Render pass that draws what is on the screen.
- */
-class FinalRenderPass final : public RenderPass {
-public:
-    explicit FinalRenderPass(std::string suffix) : RenderPass(suffix) {
-        tag = PassTag::Final;
-    };
-
-    FinalRenderPass() : RenderPass() {
-        tag = PassTag::Final;
-    }
-
-    void setup(unsigned window_w, unsigned window_h) override;
-
-    void execute() override ;
-
-    void clear() override;
-
-    void onResize(unsigned int window_w, unsigned int window_h) override;
-
-    unsigned int fbo() override {
-        //return default framebuffer
-        return 0;
-    }
-
-    std::vector<unsigned int> fboTexs() override{
-        return {0};
-    }
-
-    std::string name() {
-        return !m_suffix.empty() ? PassTagToString(tag) + " " + m_suffix : PassTagToString(tag);
-    }
-
-    unsigned int fboTex() {
-        return 0;
-    }
-};
-
-/**
- * @brief Applies different render passes to fill the buffers.
- */
-class RenderPipeline {
-    std::unordered_map<std::string, std::shared_ptr<RenderPass>> mapRenderPasses;
-public:
-    void addPass(const std::shared_ptr<RenderPass> &pass);
-
-    void setup(unsigned int window_w, unsigned int window_h) const;
-
-    /**
-     * bind the corresponding framebuffer
-     */
-    void execute(const std::string& name);
-
-    void clear(const std::string& name);
-
-    void onResize(unsigned int window_w, unsigned int window_h) const;
-
-    unsigned int getPassFbo(const std::string &name);
-
-    std::vector<unsigned int> getPassFboTexs(const std::string &name);
-
-
 };

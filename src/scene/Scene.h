@@ -51,8 +51,6 @@ struct Scene {
     Camera main_camera;
     std::vector<Light>  lights;
     std::vector<Object> objects;
-    ShaderHandle finalRenderPassShaderHandle; //shaders that will be used in the final render pass
-                                              //which is a post-processing render pass
     unsigned int lights_ssbo = 0;
     /**
      * @brief Sets up the other objects of the scene, typically the lights.

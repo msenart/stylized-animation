@@ -31,6 +31,7 @@ void Renderer::setup(Scene *scene, const Window *window, const AssetManager &ass
     m_renderPipeline.addPass(std::make_shared<MeshIDRenderPass>());
     m_renderPipeline.addPass(std::make_shared<FinalRenderPass>());
     m_renderPipeline.addPass(std::make_shared<HybridRenderPass>());
+    m_renderPipeline.addPass(std::make_shared<KAFRenderPass>());
     // Setting up the rendering pipeline and the renderer
     int w, h;
     window->getSize(w,h);
@@ -80,13 +81,13 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
         shader.set("viewPos",scene->main_camera.position);
         shader.set("view",scene->main_camera.view());
         shader.set("projection",scene->main_camera.projection(aspect));
+        // shader.set("objectBarycentre",glm::vec3(obj.transform.matrix()*glm::vec4(mesh.pseudo_barycentre(),1.0f)));
         shader.set("objectColor",obj.material.color);
         shader.set("meshId",static_cast<unsigned int>(i+1));
         mesh.uploadUniforms(shader, ctx);
         mesh.draw();
         ++m_drawCalls;
     }
-
 
     glDisable(GL_DEPTH_TEST);
 
@@ -121,51 +122,13 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
     //     ShaderHandle handle = it->second;
     //     if (handle == 0) {continue;}
 
-    //     const Mesh& mesh = assets.get(obj.meshHandle);
-
-    //     const Shader& shader = ShaderManager::get(handle);
-    //     shader.bind();
-    //     shader.set("model",obj.transform.matrix());
-    //     shader.set("view",scene->main_camera.view());
-    //     shader.set("projection",scene->main_camera.projection(aspect));
-    //     shader.set("meshID",static_cast<unsigned int>(i+1));
-    //     mesh.uploadUniforms(shader, ctx);
-    //     mesh.draw();
-    //     ++m_drawCalls;
-    // }
-
-    // old Screen pass
-    // m_renderPipeline.clear("Final Render Pass");
-    // m_renderPipeline.execute("Final Render Pass");
-    // for (const Object& obj : scene->objects) {
-    //     auto it = obj.passTagShaderHandle.find(PassTag::Final);
-    //     if (it == obj.passTagShaderHandle.end()) continue;
-
-    //     ShaderHandle handle = it->second;
-    //     if (handle == 0) continue;
-
-    //     const Mesh& mesh = assets.get(obj.meshHandle);
-
-    //     const Shader& shader = ShaderManager::get(handle);
-    //     shader.bind();
-    //     shader.set("model",obj.transform.matrix());
-    //     shader.set("viewPos",scene->main_camera.position);
-    //     shader.set("view",scene->main_camera.view());
-    //     shader.set("projection",scene->main_camera.projection(aspect));
-    //     shader.set("objectColor",obj.material.color);
-    //     mesh.uploadUniforms(shader, ctx);
-    //     mesh.draw();
-    //     ++m_drawCalls;
-    // }
-
-    //Screen pass
-    //we draw a squad and fill it according to the shader
+    // Screen pass
+    //we draw a quad and fill it according to the shader
     //and the texture which comes from the hybrid render pass
     m_renderPipeline.clear("Final Render Pass");
     m_renderPipeline.execute("Final Render Pass");
     //find and bind shader
-    ShaderHandle handle = scene->finalRenderPassShaderHandle;
-    if (handle == 0) {Log::error("Scene's mesh handle is null ");}
+    ShaderHandle handle = std::static_pointer_cast<FinalRenderPass>(m_renderPipeline.getPass("Final Render Pass"))->shaderHandle();
     const Shader& shader = ShaderManager::get(handle);
     shader.bind();
     //now we bind the texture which comes from the previous framebuffer to the texture unit 0
@@ -174,6 +137,7 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
         Log::error("hybrid render pass' fbo should have exactly 2 color attachments (textures), but it has "
             +std::to_string(hybridFboTexs.size())+" color attachments");
     }
+
     unsigned int texture = hybridFboTexs[0];
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture);
@@ -199,7 +163,6 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
     p_screen_mesh->uploadUniforms(shader, ctx);
     p_screen_mesh->draw();
 
-    glActiveTexture(GL_TEXTURE0);
     ++m_drawCalls;
 }
 
@@ -210,3 +173,52 @@ void Renderer::onResize(int width, int height) {
 int Renderer::drawCalls() const {
     return m_drawCalls;
 }
+
+
+
+// Mesh ID pass
+// m_renderPipeline.clear("Mesh ID Render Pass");
+// m_renderPipeline.execute("Mesh ID Render Pass");
+// for (unsigned int i = 0; i < scene->objects.size(); i++) {
+//     auto obj = scene->objects[i];
+//     auto it = obj.passTagShaderHandle.find(PassTag::MeshID);
+//     if (it == obj.passTagShaderHandle.end()) {continue;}
+//     ShaderHandle handle = it->second;
+//     if (handle == 0) {continue;}
+
+//     const Mesh& mesh = assets.get(obj.meshHandle);
+
+//     const Shader& shader = ShaderManager::get(handle);
+//     shader.bind();
+//     shader.set("model",obj.transform.matrix());
+//     shader.set("view",scene->main_camera.view());
+//     shader.set("projection",scene->main_camera.projection(aspect));
+//     shader.set("meshID",static_cast<unsigned int>(i+1));
+//     mesh.uploadUniforms(shader, ctx);
+//     mesh.draw();
+//     ++m_drawCalls;
+// }
+
+// old Screen pass
+// m_renderPipeline.clear("Final Render Pass");
+// m_renderPipeline.execute("Final Render Pass");
+// for (const Object& obj : scene->objects) {
+//     auto it = obj.passTagShaderHandle.find(PassTag::Final);
+//     if (it == obj.passTagShaderHandle.end()) continue;
+
+//     ShaderHandle handle = it->second;
+//     if (handle == 0) continue;
+
+//     const Mesh& mesh = assets.get(obj.meshHandle);
+
+//     const Shader& shader = ShaderManager::get(handle);
+//     shader.bind();
+//     shader.set("model",obj.transform.matrix());
+//     shader.set("viewPos",scene->main_camera.position);
+//     shader.set("view",scene->main_camera.view());
+//     shader.set("projection",scene->main_camera.projection(aspect));
+//     shader.set("objectColor",obj.material.color);
+//     mesh.uploadUniforms(shader, ctx);
+//     mesh.draw();
+//     ++m_drawCalls;
+// }
