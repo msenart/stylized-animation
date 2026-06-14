@@ -1,9 +1,9 @@
 #version 460 core
 
 
-uniform float deformation = 0.02; //0.05
-uniform float space_noise_scale = 15.0; //10
-uniform vec3 background_color = vec3(0.1, 0.9, 0.1);
+uniform float deformation = 0.03; //0.05 //0.02
+uniform float space_noise_scale = 12.0; //10 //15
+
 
 #include "perlin_noise.glsl"
 
@@ -22,8 +22,10 @@ out vec4 fragColor;
 
 void main() {
     
-
-    vec2 noise = noise3D_to_2D(vec3(texCoord, time), space_noise_scale)*deformation;
+    
+    vec2 noise = noise3D_to_2D(vec3(texCoord, time), space_noise_scale);
+    vec3 background = vec3(noise.x, noise.y, 1.0);
+    noise = noise*deformation;
     //noise = vec2(0.1, 0.1);
     vec2 newTexCoord = texCoord + noise; //deformed texCoord
     // newTexCoord.x = clamp(newTexCoord.x, 0.0, 1.0);
@@ -31,7 +33,7 @@ void main() {
 
     if (newTexCoord.x >1.0 || newTexCoord.y <0.0 ||newTexCoord.y >1.0 || newTexCoord.y <0.0){
         //if texCoord is outside the texture, set background
-        fragColor = vec4(background_color, 1.0); //find a better solution ? (scale the image to have what is outside)
+        fragColor = vec4(background, 1.0); //find a better solution ? (scale the image to have what is outside)
                                                 //pixelisé mais tant pis? ou alors meileur resolution du framebuffer d'avant mais
                                                 //ça devient compliqué
     }
@@ -40,7 +42,7 @@ void main() {
         uvec4 metadata = texture(metadataTexture, newTexCoord);
         uint meshId = metadata.x;
         if(meshId == 0){
-            fragColor = vec4(background_color, 1.0);
+            fragColor = vec4(background, 1.0);
         }
         else{
             fragColor = vec4(texture(sceneTexture, newTexCoord).rgb, 1.0);
