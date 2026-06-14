@@ -161,6 +161,10 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
     //this texture is actually the one of the previous framebuffer
     shader.set("sceneTexture", 0);
     shader.set("metadataTexture", 1);
+    int window_w, window_h;
+    window->getSize(window_w, window_h);
+    shader.set("window_w", window_w);//for final_contours.frag
+    shader.set("window_h", window_h);//for final_contours.frag
     //others uniforms
     shader.set("time", time/max_time); //for final_perlin_background.frag
     //draw mesh

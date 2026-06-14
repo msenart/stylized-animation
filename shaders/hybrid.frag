@@ -119,5 +119,6 @@ void main() {
 
         FragColor0 = vec4(pow(FragColor0.rgb, vec3(1.0/2.2)), 1.0);
     }
-
+    
+    //depth = gl_FragCoord.z
 }
