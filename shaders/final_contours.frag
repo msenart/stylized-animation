@@ -26,10 +26,17 @@ void main() {
 
     
 
-    if(isContourFromMeshId(metadataTexture, texCoord, window_w, window_h)){
-        fragColor = vec4(1.0, 0.0, 0.0, 1.0);
+    // if(isContourFromMeshId(metadataTexture, texCoord, window_w, window_h)){
+    //     fragColor = vec4(1.0, 0.0, 0.0, 1.0);
+    // }
+    // else{
+    //     fragColor = vec4(0.0, 1.0, 0.0, 1.0);
+    // }
+    if (isContourFromMeshId(metadataTexture, texCoord, window_w, window_h)){
+        fragColor = vec4(1.0, 1.0, 1.0, 1.0);
     }
     else{
-        fragColor = vec4(0.0, 1.0, 0.0, 1.0);
+        fragColor = vec4(0.0, 0.0, 0.0, 1.0);
     }
+    
 }
