@@ -156,11 +156,15 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
     texture = hybridFboTexs[1];
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, texture); 
+    texture = hybridFboTexs[2];
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, texture); 
     //glActiveTexture(GL_TEXTURE0);
     //we tell the shader that the texture named sceneTexture is in the texture unit 0
     //this texture is actually the one of the previous framebuffer
     shader.set("sceneTexture", 0);
     shader.set("metadataTexture", 1);
+    shader.set("normalTexture", 2);
     int window_w, window_h;
     window->getSize(window_w, window_h);
     shader.set("window_w", window_w);//for final_contours.frag

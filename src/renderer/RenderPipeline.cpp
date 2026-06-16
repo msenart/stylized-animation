@@ -58,9 +58,9 @@ void HybridRenderPass::setup(unsigned int window_w, unsigned int window_h) {
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, window_w, window_h);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthrenderbuffer);
 
-    // attach the 2 color attachment to the framebuffer
-    GLenum attachments[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
-    glDrawBuffers(2, attachments);
+    // attach the 3 color attachment to the framebuffer
+    GLenum attachments[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
+    glDrawBuffers(3, attachments);
 
     //why ???
     glBindTexture(GL_TEXTURE_2D, 0);

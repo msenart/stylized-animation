@@ -6,6 +6,7 @@ uniform sampler2D sceneTexture; //the scene has been renderered in this texture
 uniform usampler2D metadataTexture; //the metadata has been renderered in this texture
                                     //notice the u before "sampler2D" that indicates that
                                     //sampler type is uvec
+uniform sampler2D normalTexture;
 uniform int window_w;
 uniform int window_h;
 
@@ -38,5 +39,6 @@ void main() {
     else{
         fragColor = vec4(0.0, 0.0, 0.0, 1.0);
     }
+    fragColor = vec4(texture(normalTexture, texCoord).rgb, 1.0);
     
 }
