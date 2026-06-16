@@ -1,7 +1,9 @@
 //this file contains function to detect contours
 uniform float depthThreshold = 0.00394;
 uniform float depthMult = 100.0;
-uniform float normalThreshold = 0.01;
+uniform float normalThreshold = 0.5;
+
+
 
 
 ivec2 getTexelFromTexCoord(vec2 texCoord, int window_w, int window_h){
@@ -10,7 +12,7 @@ ivec2 getTexelFromTexCoord(vec2 texCoord, int window_w, int window_h){
     return ivec2(texCoord);
 }
 
-bool isContourFromMeshId(usampler2D metadataTexture, vec2 texCoord, int window_w, int window_h){
+float isContourFromMeshId(usampler2D metadataTexture, vec2 texCoord, int window_w, int window_h){
     
     ivec2 texel = getTexelFromTexCoord(texCoord, window_w, window_h);
     uint texelMeshId = texelFetch(metadataTexture, texel, 0).x;
@@ -27,7 +29,7 @@ bool isContourFromMeshId(usampler2D metadataTexture, vec2 texCoord, int window_w
                     uint neighborMeshId = texelFetch(metadataTexture, neighborTexel, 0).x;
                     if(neighborMeshId!=0){
                         //sum = sum+1.0;
-                        return true;
+                        return 1.0;
                     }
                 }
             }
@@ -47,7 +49,7 @@ bool isContourFromMeshId(usampler2D metadataTexture, vec2 texCoord, int window_w
         //return clamp(0.1*sum, 0.0, 1.0);
     }
     
-    return false;
+    return 0.0;
     
 }
 
@@ -91,22 +93,28 @@ float isContourFromDepth(sampler2D normalTexture, vec2 texCoord, int window_w, i
 
 float isContourFromNormal(sampler2D normalTexture, vec2 texCoord, int window_w, int window_h){
     ivec2 texel = getTexelFromTexCoord(texCoord, window_w, window_h);
-    vec3 normal = texelFetch(normalTexture, texel, 0).rgb;
+    vec3 normal = texelFetch(normalTexture, texel, 0).rgb*2 - 1.0;
+    int sum = 0;
     if(normal!=vec3(0.0, 0.0, 0.0)){
         int x = texel.x;
         int y = texel.y;
-        float sum = 0.0;
         for(int i=-1; i<=1; i++){
             for(int j=-1; j<=1; j++){
                 if(i!=0 && j!=0){
                     ivec2 neighborTexel = ivec2(x+i, y+j);
-                    vec3 neighborNormal = texelFetch(normalTexture, neighborTexel, 0).rgb;
-                    if(dot(normal, neighborNormal)<normalThreshold){
-                        return 1.0;
+                    vec3 neighborNormal = texelFetch(normalTexture, neighborTexel, 0).rgb*2 - 1.0;
+                    if(dot(normal, neighborNormal)<normalThreshold && normal.z<neighborNormal.z ){//permet d'avoir un trai moins gros
+                        sum = sum+1;
+                        //return 0.5;
                     }
+                    //sum = sum+1;
                 }
             }
         }
+        //sum = 1;
+    }
+    if(sum>=1){
+        return 1.0;
     }
     
     return 0.0;

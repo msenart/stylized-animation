@@ -11,5 +11,7 @@ vec4 getFragColor2(vec3 normal, float z){
     // if(z!=0.0){
     //     depth = 1/z;
     // }
+    //becuase -1.0<normal<1.0 and it will clamp to 0.0, 1.0
+    normal = (normal+1.0)/2;
     return vec4(normal, z);
 }
