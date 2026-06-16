@@ -39,6 +39,6 @@ void main() {
     else{
         fragColor = vec4(0.0, 0.0, 0.0, 1.0);
     }
-    fragColor = vec4(texture(normalTexture, texCoord).rgb, 1.0);
+    fragColor = vec4((texture(normalTexture, texCoord).a-0.9)*10, 0.0, 0.0, 1.0);
     
 }
