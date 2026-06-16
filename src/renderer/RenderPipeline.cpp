@@ -90,8 +90,12 @@ void HybridRenderPass::clear() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     //used to clear the buffer of 1 omponent
-    GLuint clearValue[4] = {0, 0, 0, 0};
-    glClearBufferuiv(GL_COLOR, 1, clearValue); //second arg : drawBuffer -> refers to color attachment
+    GLuint uclearValue[4] = {0, 0, 0, 0};
+    glClearBufferuiv(GL_COLOR, 1, uclearValue); //second arg : drawBuffer -> refers to color attachment
+
+    //clear the normal buffer 
+    GLfloat clearValue[4] = {0.0, 0.0, 0.0, 0.0};
+    glClearBufferfv(GL_COLOR, 2, clearValue);
 }
 
 // MeshIDRenderPass implementation
