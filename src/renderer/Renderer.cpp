@@ -146,7 +146,7 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
     shader.bind();
     //now we bind the texture which comes from the previous framebuffer to the texture unit 0
     std::vector<unsigned int> hybridFboTexs = m_renderPipeline.getPassFboTexs("Hybrid Render Pass");
-    if(hybridFboTexs.size() != 2){
+    if(hybridFboTexs.size() != 3){
         Log::error("hybrid render pass' fbo should have exactly 2 color attachments (textures), but it has "
             +std::to_string(hybridFboTexs.size())+" color attachments");
     }

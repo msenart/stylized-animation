@@ -113,6 +113,7 @@ class HybridRenderPass final : public RenderPass {
     unsigned int m_fbo = 0;
     unsigned int m_fboTex1 = 0; //scene
     unsigned int m_fboTex2 = 0; //meshId
+    unsigned int m_fboTex3 = 0; //normal and depth buffer
 public:
     unsigned int fbo() override {
         return m_fbo;
@@ -131,7 +132,7 @@ public:
     }
 
     std::vector<unsigned int> fboTexs() override{
-        return {m_fboTex1, m_fboTex2};
+        return {m_fboTex1, m_fboTex2, m_fboTex3};
     }
 
     HybridRenderPass(std::string suffix) : RenderPass(std::move(suffix)) {

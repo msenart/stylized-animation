@@ -39,6 +39,18 @@ void HybridRenderPass::setup(unsigned int window_w, unsigned int window_h) {
     //GL_COLOR_ATTACHMENT1 : 2ème emplacement pour la texture
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, m_fboTex2, 0);
 
+    
+    // creating texture 3 (for normals -> used for contours detection)
+    glGenTextures(1, &m_fboTex3);
+    glBindTexture(GL_TEXTURE_2D, m_fboTex3);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, window_w, window_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    //GL_COLOR_ATTACHMENT2 : 3ème emplacement pour la texture
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, m_fboTex3, 0);
+
     //create a depth buffer
     GLuint depthrenderbuffer;
     glGenRenderbuffers(1, &depthrenderbuffer);

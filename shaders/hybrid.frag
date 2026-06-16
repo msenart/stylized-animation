@@ -20,6 +20,7 @@ const float PI = 3.14159265358979323846;
 // 2 output values : one for each color attachment
 layout(location = 0) out vec4 FragColor0; //scene
 layout(location = 1) out uvec4 FragColor1; //meshId
+layout(location = 2) out vec4 FragColor2; //normal buffer
 
 const uint MAX_NUM_BONES_PER_VERTEX = 16;
 const uint MAX_LIGHTS = 1;
@@ -64,6 +65,9 @@ void main() {
 
     //Write in color attachment 1 (MeshId)
     FragColor1 = getFragColor1(meshId);
+
+    //write in normal buffer
+    FragColor2 = getFragColor2(normalO, gl_FragCoord.z);
 
     //write in color attachment 2 (scene)
     FragColor0 = vec4(0);

@@ -5,3 +5,7 @@ uvec4 getFragColor1(uint meshId){
     //b, a : libre
     return uvec4(meshId, 0, 0, 0);
 }
+
+vec4 getFragColor2(vec3 normal, float depth){
+    return vec4(normal, depth);
+}
