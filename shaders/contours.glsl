@@ -1,5 +1,6 @@
 //this file contains function to detect contours
-uniform float depthThreshold = 0.00394;
+//uniform float depthThreshold = 0.00394; //with depth of z non linear
+uniform float depthThreshold = 0.5;
 uniform float depthMult = 100.0;
 uniform float normalThreshold = 0.5;
 
@@ -62,19 +63,12 @@ float isContourFromDepth(sampler2D normalTexture, vec2 texCoord, int window_w, i
     // }
     int x = texel.x;
     int y = texel.y;
-    float sum = 0.0;
+    //float sum = 0.0;
     for(int i=-1; i<=1; i++){
         for(int j=-1; j<=1; j++){
             if(i!=0 && j!=0){
                 ivec2 neighborTexel = ivec2(x+i, y+j);
                 float neighborDepth = texelFetch(normalTexture, neighborTexel, 0).a;
-                // if(neighborDepth - depth > depthThreshold && neighborDepth!=0.0 && depth!=0.0){
-                //     return 1.0;
-                // }
-                
-                // if(neighborDepth==0.0){
-                //     continue;
-                // }
                 if(neighborDepth - depth> depthThreshold){
                     return 1.0;
                 }
@@ -82,12 +76,9 @@ float isContourFromDepth(sampler2D normalTexture, vec2 texCoord, int window_w, i
             }
         }
     }
+    
     return 0.0;
-    if(sum>0.0){
-        return 1.0;
-    }
-    return 0.0;
-    return clamp(depthMult*sum, 0.0, 1.0);
+    //return clamp(depthMult*sum, 0.0, 1.0);
 }
 
 
@@ -117,5 +108,29 @@ float isContourFromNormal(sampler2D normalTexture, vec2 texCoord, int window_w, 
         return 1.0;
     }
     
+    return 0.0;
+}
+
+
+float testDepth(sampler2D normalTexture, vec2 texCoord, int window_w, int window_h){
+    ivec2 texel = getTexelFromTexCoord(texCoord, window_w, window_h);
+    float depth = texelFetch(normalTexture, texel, 0).a;
+    // if(depth==0.0){
+    //     return 0.0;
+    // }
+    int x = texel.x;
+    int y = texel.y;
+    float sum = 0.0;
+    for(int i=-1; i<=1; i++){
+        for(int j=-1; j<=1; j++){
+            if(i!=0 && j!=0){
+                ivec2 neighborTexel = ivec2(x+i, y+j);
+                float neighborDepth = texelFetch(normalTexture, neighborTexel, 0).a;
+                if(neighborDepth != depth){
+                    return 1.0;
+                }
+            }
+        }
+    }
     return 0.0;
 }

@@ -10,6 +10,7 @@
 in vec3 normalO;
 in vec3 localPosO;
 in vec3 fragPos;
+in float realZ;
 flat in uint vertexID;
 
 uniform uint meshId = 1;
@@ -67,7 +68,8 @@ void main() {
     FragColor1 = getFragColor1(meshId);
 
     //write in normal buffer
-    FragColor2 = getFragColor2(normalO, gl_FragCoord.z);
+    //FragColor2 = getFragColor2(normalO, gl_FragCoord.z);
+    FragColor2 = getFragColor2(normalO, realZ);
 
     //write in color attachment 2 (scene)
     FragColor0 = vec4(0);

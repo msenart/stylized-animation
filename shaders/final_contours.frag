@@ -46,6 +46,21 @@ void main() {
     
     // fragColor = vec4(normal.x, 0.0, 0.0, 1.0);
     //fragColor = vec4(texture(sceneTexture, texCoord).rgb, 1.0);
-    fragColor = vec4(contour_m, contour_d, contour_n, 1.0);
+    //fragColor = vec4(contour_m, contour_d, contour_n, 1.0);
+    fragColor = vec4(0.0, contour_d, 0.0, 1.0);
+    //float depth = testDepth(normalTexture, texCoord, window_w, window_h);
+    //fragColor = vec4(depth, depth, depth, 1.0);
+
+    // float depth = texture(normalTexture, texCoord).a;
+    // if(depth == 0.0 ){
+    //     fragColor = vec4(0.0, 0.0, 0.0, 1.0);
+    // }
+    // else if(depth<-5.0){
+    //     fragColor = vec4(0.0, 1.0, 0.0, 1.0);
+    // }
+    // else{
+    //     fragColor = vec4(1.0, 0.0, 0.0, 1.0);
+    // }
+
     
 }
