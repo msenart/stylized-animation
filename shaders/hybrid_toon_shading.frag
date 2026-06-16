@@ -13,6 +13,7 @@
 in vec3 normalO;
 in vec3 localPosO;
 in vec3 fragPos;
+in float realZ;
 flat in uint vertexID;
 
 uniform uint meshId = 1;
@@ -23,6 +24,7 @@ uniform uint lightsNumber;
 // 2 output values : one for each color attachment
 layout(location = 0) out vec4 FragColor0; //scene
 layout(location = 1) out uvec4 FragColor1; //meshId
+layout(location = 2) out vec4 FragColor2; //normal buffer
 
 const uint MAX_NUM_BONES_PER_VERTEX = 16;
 
@@ -47,6 +49,9 @@ void main() {
 
     //Write in color attachment 1 (MeshId)
     FragColor1 = getFragColor1(meshId);
+
+    //write in normal buffer
+    FragColor2 = getFragColor2(normalO, realZ);
 
     FragColor0 = vec4(0);
     // Bone highlighting
