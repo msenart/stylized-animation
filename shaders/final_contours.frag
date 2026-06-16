@@ -39,6 +39,9 @@ void main() {
     else{
         fragColor = vec4(0.0, 0.0, 0.0, 1.0);
     }
-    fragColor = vec4((texture(normalTexture, texCoord).a-0.9)*10, 0.0, 0.0, 1.0);
+    //fragColor = vec4((texture(normalTexture, texCoord).a-0.9)*10, 0.0, 0.0, 1.0);
+    //float contour = isContourFromNormal(normalTexture, texCoord, window_w, window_h);
+    float contour = isContourFromDepth(normalTexture, texCoord, window_w, window_h);
+    fragColor = vec4(contour, contour, contour, 1.0);
     
 }

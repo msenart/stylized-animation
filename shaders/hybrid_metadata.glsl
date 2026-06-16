@@ -6,6 +6,10 @@ uvec4 getFragColor1(uint meshId){
     return uvec4(meshId, 0, 0, 0);
 }
 
-vec4 getFragColor2(vec3 normal, float depth){
-    return vec4(normal, depth);
+vec4 getFragColor2(vec3 normal, float z){
+    // float depth = 0.0;
+    // if(z!=0.0){
+    //     depth = 1/z;
+    // }
+    return vec4(normal, z);
 }
