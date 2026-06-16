@@ -43,7 +43,7 @@ void HybridRenderPass::setup(unsigned int window_w, unsigned int window_h) {
     // creating texture 3 (for normals -> used for contours detection)
     glGenTextures(1, &m_fboTex3);
     glBindTexture(GL_TEXTURE_2D, m_fboTex3);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, window_w, window_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr); //test GL_FLOAT ?
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, window_w, window_h, 0, GL_RGBA, GL_FLOAT, nullptr); //use RGBA16F and GL_FLOAT 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);

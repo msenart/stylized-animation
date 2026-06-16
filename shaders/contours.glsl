@@ -93,7 +93,7 @@ float isContourFromDepth(sampler2D normalTexture, vec2 texCoord, int window_w, i
 
 float isContourFromNormal(sampler2D normalTexture, vec2 texCoord, int window_w, int window_h){
     ivec2 texel = getTexelFromTexCoord(texCoord, window_w, window_h);
-    vec3 normal = texelFetch(normalTexture, texel, 0).rgb*2 - 1.0;
+    vec3 normal = texelFetch(normalTexture, texel, 0).rgb;//*2 - 1.0;
     int sum = 0;
     if(normal!=vec3(0.0, 0.0, 0.0)){
         int x = texel.x;
@@ -102,7 +102,7 @@ float isContourFromNormal(sampler2D normalTexture, vec2 texCoord, int window_w, 
             for(int j=-1; j<=1; j++){
                 if(i!=0 && j!=0){
                     ivec2 neighborTexel = ivec2(x+i, y+j);
-                    vec3 neighborNormal = texelFetch(normalTexture, neighborTexel, 0).rgb*2 - 1.0;
+                    vec3 neighborNormal = texelFetch(normalTexture, neighborTexel, 0).rgb;//*2 - 1.0;
                     if(dot(normal, neighborNormal)<normalThreshold && normal.z<neighborNormal.z ){//permet d'avoir un trai moins gros
                         sum = sum+1;
                         //return 0.5;

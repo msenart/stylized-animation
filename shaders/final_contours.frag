@@ -29,21 +29,20 @@ void main() {
     float contour_m = isContourFromMeshId(metadataTexture, texCoord, window_w, window_h);
     float contour_d = isContourFromDepth(normalTexture, texCoord, window_w, window_h);
     float contour_n = isContourFromNormal(normalTexture, texCoord, window_w, window_h);
-    //vec3 normal = texture(normalTexture, texCoord).rgb;
-    // if(normal == vec3(0.0, 0.0, 0.0)){
-    //     fragColor = vec4(0.0, 0.0, 0.0, 1.0);
-    // }
-    // else{
-    //     normal = normal*2.0 - 1.0;
-    //     fragColor = vec4(contour, contour, contour, 1.0);
+    vec3 normal = texture(normalTexture, texCoord).rgb;
+    if(normal == vec3(0.0, 0.0, 0.0)){
+        fragColor = vec4(0.0, 0.0, 0.0, 1.0);
+    }
+    else{
+        //normal = normal*2.0 - 1.0;
         
-    //     if(normal.x<0.0 || normal.y<0.0 || normal.z<0.0){
-    //         fragColor = vec4(1.0, 0.0, 0.0, 1.0);
-    //     }
-    //     else{
-    //         fragColor = vec4(0.0, 0.0, 1.0, 1.0);
-    //     }
-    // }
+        if(normal.x<0.0 || normal.y<0.0 || normal.z<0.0){
+            fragColor = vec4(1.0, 0.0, 0.0, 1.0);
+        }
+        else{
+            fragColor = vec4(0.0, 0.0, 1.0, 1.0);
+        }
+    }
     
     // fragColor = vec4(normal.x, 0.0, 0.0, 1.0);
     //fragColor = vec4(texture(sceneTexture, texCoord).rgb, 1.0);
