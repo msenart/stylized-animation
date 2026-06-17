@@ -126,13 +126,6 @@ void main() {
         FragColor0 = vec4(pow(FragColor0.rgb, vec3(1.0/2.2)), 1.0);
     }
 
-
-    if(normalO.x<0.0 || normalO.y<0.0 || normalO.z<0.0){
-        FragColor0 = vec4(1.0, 0.0, 0.0, 1.0);
-    }
-    else{
-        FragColor0 = vec4(0.0, 0.0, 1.0, 1.0);
-    }
     
     //depth = gl_FragCoord.z
 }

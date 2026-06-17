@@ -1,6 +1,7 @@
 #version 460 core
 
 #include "contours.glsl"
+#include "perlin_noise.glsl"
 
 uniform sampler2D sceneTexture; //the scene has been renderered in this texture
 uniform usampler2D metadataTexture; //the metadata has been renderered in this texture

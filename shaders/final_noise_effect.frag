@@ -3,6 +3,7 @@
 
 uniform float deformation = 0.03; //0.05 //0.02
 uniform float space_noise_scale = 12.0; //10 //15
+uniform float time_noise_scale = 3.0; //10 //15
 
 
 #include "perlin_noise.glsl"
@@ -23,7 +24,7 @@ out vec4 fragColor;
 void main() {
     
     
-    vec2 noise = noise3D_to_2D(vec3(texCoord, time), space_noise_scale);
+    vec2 noise = noise3D_to_2D(vec3(texCoord, time), space_noise_scale, time_noise_scale);
     vec3 background = vec3(noise.x, noise.y, 1.0);
     noise = noise*deformation;
     //noise = vec2(0.1, 0.1);

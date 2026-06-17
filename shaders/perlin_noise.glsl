@@ -43,9 +43,9 @@ vec3 random3D_from_seed(vec3 uvw, PerlinNoiseSeed seed){
 
 
 //take a vec3 and return a 1D noise (basic perlin noise)
-float noise3D_from_seed(vec3 uvw, float noise_scale, PerlinNoiseSeed seed){
-	float time_noise_scale = 3.0; //must be an integer for the time loop texture to be correct
-	uvw.xy *= noise_scale; //time component remain the same
+float noise3D_from_seed(vec3 uvw, float space_noise_scale, float time_noise_scale,  PerlinNoiseSeed seed){
+	time_noise_scale = floor(time_noise_scale); //must be an integer for the time loop texture to be correct //3.0
+	uvw.xy *= space_noise_scale; //time component remain the same
 	uvw.z *= time_noise_scale;
 	//uvw += noise_transform;
 	
@@ -116,13 +116,13 @@ float noise3D_from_seed(vec3 uvw, float noise_scale, PerlinNoiseSeed seed){
 }
 
 //classic perlin NOise
-float noise3D_to_1D(vec3 uvw, float noise_scale){
-	return noise3D_from_seed(uvw, noise_scale, seed1);
+float noise3D_to_1D(vec3 uvw, float space_noise_scale, float time_noise_scale){
+	return noise3D_from_seed(uvw, space_noise_scale, time_noise_scale, seed1);
 }
 
 //perlin Noise that returns a vec2
-vec2 noise3D_to_2D(vec3 uvw, float noise_scale){
-	float x = noise3D_from_seed(uvw, noise_scale, seed1);
-	float y = noise3D_from_seed(uvw, noise_scale, seed2);
+vec2 noise3D_to_2D(vec3 uvw, float space_noise_scale, float time_noise_scale){
+	float x = noise3D_from_seed(uvw, space_noise_scale, time_noise_scale, seed1);
+	float y = noise3D_from_seed(uvw, space_noise_scale, time_noise_scale, seed2);
 	return vec2(x, y);
 }
