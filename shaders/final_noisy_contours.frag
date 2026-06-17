@@ -17,13 +17,9 @@ out vec4 fragColor;
 
 void main() {
 
+    float contour = isContourFromDepth(normalTexture, texCoord, window_w, window_h);
     
-    //float contour_m = isContourFromMeshId(metadataTexture, texCoord, window_w, window_h);
-    float contour_d = isContourFromDepth(normalTexture, texCoord, window_w, window_h);
-    //float contour_n = isContourFromNormal(normalTexture, texCoord, window_w, window_h);
-    
-    //fragColor = vec4(contour_m, contour_d, contour_n, 1.0);
-    fragColor = vec4(contour_d, contour_d, contour_d, 1.0);
+    fragColor = vec4(vec3(contour), 1.0);
     
 
     
