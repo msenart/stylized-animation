@@ -5,6 +5,7 @@
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
+#include <streambuf>
 
 #include "core/Log.h"
 #include "core/Window.h"
@@ -35,7 +36,14 @@ static void setupGLDebugCallback() {
        }, nullptr);
 }
 
+
 int main(int argc, char *argv[]) {
+  // TODO direct some of the output to a file
+  // const char* outFilename = "output.txt";
+  // std::string outFile(outFilename);
+  // std::streambuf* coutbuf = std::cout.rdbuf();
+  // termbuf = std::cout
+
   cxxopts::Options options("Stylized Animation", "A stylized animation engine");
   options.add_options()
     ("s,save-video", "save video with ffmpeg")
@@ -72,10 +80,15 @@ int main(int argc, char *argv[]) {
   // creating the scene
   Scene scene;
 
+  // HACK test just to see if shader compiles correctly
+  ShaderKey testShaderKey = ShaderKey{ "hybrid_smear.vert", "hybrid_debug_deltas.frag"};
+  ShaderManager::load(testShaderKey);
+  ShaderKey debugBoneShaderKey = ShaderKey{ "debug_bone.vert", "debug_bone.frag"};
+  ShaderManager::load(debugBoneShaderKey);
   // MeshHandle meshHandle = assets.add(std::make_unique<AnimatedMesh>("assets/meshes/Standing Death Left 01.fbx"));
   MeshHandle meshHandle = assets.add(std::make_unique<SmearMesh>("assets/meshes/Standing Death Left 01.fbx"));
   auto sk = assets.get(meshHandle).shaderKeysMap();
-  sk[PassTag::Hybrid] = ShaderKey{"animated_mesh.vert","hybrid.frag"};
+  sk[PassTag::Hybrid] = ShaderKey{ "hybrid_smear.vert", "hybrid_debug_deltas.frag"};
   Object obj = Object{sk};
   obj.meshHandle =meshHandle;
   obj.material.color = {0.8f, 0.3f, 0.2f};
