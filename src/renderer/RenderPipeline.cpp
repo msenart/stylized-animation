@@ -153,8 +153,8 @@ void KAFRenderPass::setup(unsigned window_w, unsigned window_h) {
 
 void KAFRenderPass::execute() {
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
 }
 
 void KAFRenderPass::clear() {
