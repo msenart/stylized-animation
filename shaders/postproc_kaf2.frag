@@ -6,9 +6,9 @@ layout(location = 0) out vec4 fragColor;
 
 uniform sampler2D tensorTexture; // sortie de la Pass 1
 uniform vec2 screenSize;
-uniform float sigma = 2.0f; // ex: 2.0
+uniform float sigma = 5.0f; // ex: 2.0
 
-const int RADIUS = 5;
+const int RADIUS = 2;
 
 void main() {
     vec2 texel = 1.0 / screenSize;
