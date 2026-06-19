@@ -55,6 +55,9 @@ void AnimatedMesh::uploadUniforms(const Shader& shader, const RenderContext& ctx
     std::vector<glm::mat4> transforms;
     getBoneTransforms(transforms);
     for (unsigned int i = 0; i < m_bonesInfo.size(); i++) {
+      m_bonesInfo[i].finalTransformationMatrix = transforms[i];
+    }
+    for (unsigned int i = 0; i < m_bonesInfo.size(); i++) {
       transforms[i] *= m_bonesInfo[i].offsetMatrix;
     }
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, bones_data_ssbo);
