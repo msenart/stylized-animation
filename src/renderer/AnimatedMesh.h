@@ -1,4 +1,6 @@
 #pragma once
+#include <iostream>
+#include <unordered_map>
 #include <vector>
 #include <array>
 #include <map>
@@ -9,6 +11,7 @@
 #include <glm/glm.hpp>
 #include <glad/glad.h>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/string_cast.hpp>
 
 #include "RenderPipeline.h"
 #include "core/Timer.h"
@@ -91,6 +94,7 @@ protected:
 
     mutable std::map<std::string, int> m_boneNameToIndexMap; // NOTE here you have the list of bone names and idx
     mutable std::vector<BoneInfo> m_bonesInfo; // NOTE can do m_bonesInfo[boneIdx]
+    std::unordered_map<std::string, const aiNode*> m_nodeMap; // to search fast for nodes by their name (which is equal to their bone's name)
 
     int getBoneID(const aiBone* bone);
 
@@ -102,12 +106,14 @@ protected:
 
     const aiNodeAnim* getNodeAnimFromNode(const aiNode* node) const;
 
-    void readNodeHierarchy(const double& animationTicks,const aiNode* node, const glm::mat4& parentTransformation) const;
+    void buildNodeMap(const aiNode* node, int h);
+    void calculateGlobalTransformsAtTick(const double& animationTicks,const aiNode* node, const glm::mat4& parentTransformation, std::vector<glm::mat4> &outBoneGlobalTransform) const;
     void getBoneTransforms(std::vector<glm::mat4>& transforms) const;
     void parseMeshes();
     void populateBuffers();
     void setTimer(const double& minTime, const double& maxTime);
 
-    void getBonePosition(const aiNode *currentNode, glm::vec3 &c_r, glm::vec3 &c_t, glm::vec3 &length);
-    glm::mat4 getBoneGlobalTransformByName(std::string name);
+    void getBonePosition(const aiNode *currentNode, const std::vector<glm::mat4> &transforms, glm::vec3 &c_r, glm::vec3 &c_t);
+    void getChildrenBones(const aiNode* currentNode, std::vector<const aiNode*> &outChildrenBones);
+    const aiNode* getParentBone(const aiNode* currentNode);
 };
