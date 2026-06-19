@@ -157,14 +157,15 @@ class KAFRenderPass final : public RenderPass {
     unsigned int m_fbo = 0;
     // first pass
     unsigned int m_fboTex1 = 0; // buffer 1
-    ShaderKey m_sk1;
+    ShaderKey m_sk1 = {"final.vert","postproc_kaf1.frag"};
     ShaderHandle m_sh1;
     // second pass
     unsigned int m_fboTex2 = 0; // buffer 2
-    ShaderKey m_sk2;
+    ShaderKey m_sk2 = {"final.vert","postproc_kaf2.frag"};
     ShaderHandle m_sh2;
     // third pass
-    ShaderKey m_sk3;
+    unsigned int m_fboTex3 = 0; // buffer 3
+    ShaderKey m_sk3 = {"final.vert","postproc_kaf3.frag"};
     ShaderHandle m_sh3;
 public:
 

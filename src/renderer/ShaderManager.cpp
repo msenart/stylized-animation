@@ -1,7 +1,5 @@
 #include "renderer/ShaderManager.h"
 
-#include <atomic>
-
 #include "renderer/Shader.h"
 #include "core/Log.h"
 #include <imgui.h>
@@ -11,12 +9,7 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
-#include "core/MegaWindowContext.h"
 #include <set>
-#include <unordered_set>
-
-#include "GLFW/glfw3.h"
-#include "scene/Scene.h"
 
 // ---------------------------------------------------------------------------
 // Internal types
@@ -117,26 +110,6 @@ ShaderHandle ShaderManager::getShaderHandleWithKey(const ShaderKey& shaderKey) {
     return 0;
 }
 
-static ShaderHandle acquireHandle(const ShaderKey& key)
-{
-    auto it = g_keyToHandle.find(key);
-    if (it != g_keyToHandle.end())
-        return it->second;
-
-    ShaderHandle handle = g_next++;
-    g_keyToHandle[key]  = handle;
-    g_entries[handle].key = key;
-    return handle;
-}
-
-static void releaseHandle(ShaderHandle handle)
-{
-    auto it = g_entries.find(handle);
-    if (it == g_entries.end()) return;
-
-    g_keyToHandle.erase(it->second.key);
-    g_entries.erase(it);
-}
 
 const Shader& ShaderManager::get(ShaderHandle handle) {
     auto it = g_entries.find(handle);
@@ -145,49 +118,12 @@ const Shader& ShaderManager::get(ShaderHandle handle) {
     return *it->second.shader;
 }
 
-static std::atomic<ShaderHandle> g_nextHandle = 0;
-
 void ShaderManager::reloadAll()
 {
-    GLFWwindow* window = glfwGetCurrentContext();
-    if (!window) {
-        Log::error("ShaderManager: No active GLFW context.");
-        return;
-    }
-
-    auto* ctx = static_cast<MegaWindowContext*>(glfwGetWindowUserPointer(window));
-    if (!ctx || !ctx->scene) {
-        Log::error("ShaderManager: Window context or Scene is missing.");
-        return;
-    }
-
-    struct PendingAssignment {
-        Object*      obj;
-        PassTag      tag;
-        ShaderHandle handle;
-    };
-
-    std::vector<PendingAssignment>   assignments;
-    std::unordered_set<ShaderHandle> activeHandles;
-    std::unordered_set<ShaderHandle> handlesToReload;
-
-    for (auto& obj : ctx->scene->objects) {
-        for (const auto& [tag, key] : obj.passTagShaderSpecifications) {
-            ShaderHandle handle = acquireHandle(key);
-            activeHandles.insert(handle);
-            handlesToReload.insert(handle);
-            assignments.push_back({ &obj, tag, handle });
-        }
-    }
-    ShaderHandle handle = ctx->scene->finalRenderPassShaderHandle;
-    activeHandles.insert(handle);
-    handlesToReload.insert(handle);
-
-    std::unordered_map<ShaderHandle, std::unique_ptr<Shader>> compiled;
     int ok = 0, fail = 0;
 
-    for (ShaderHandle handle : handlesToReload) {
-        ShaderKey& key = g_entries[handle].key;
+    for (auto& [handle, entry] : g_entries) {
+        ShaderKey& key = entry.key;
         try {
             std::unique_ptr<Shader> newShader;
             if (key.isCompute())
@@ -195,7 +131,8 @@ void ShaderManager::reloadAll()
             else
                 newShader = std::make_unique<Shader>(Shader::fromFiles(
                     key.defines, key.vert, key.frag, key.geom, key.tesc, key.tese));
-            compiled[handle] = std::move(newShader);
+            entry.shader = std::move(newShader);
+            entry.valid  = true;
             ++ok;
         }
         catch (const std::exception& e) {
@@ -204,31 +141,6 @@ void ShaderManager::reloadAll()
                 "ShaderManager: reload failed for '" + (key.isCompute() ? key.comp : key.vert) + "'. "
                 "Keeping previous shader. Error: " + e.what()
             );
-        }
-    }
-
-    for (auto& [handle, newShader] : compiled) {
-        auto& entry  = g_entries[handle];
-        entry.shader = std::move(newShader);
-        entry.valid  = true;
-    }
-
-    for (ShaderHandle handle : handlesToReload) {
-        if (!compiled.count(handle) && !g_entries[handle].shader)
-            g_entries[handle].valid = false;
-    }
-
-    for (const auto& a : assignments) {
-        a.obj->passTagShaderHandle[a.tag] = a.handle;
-        a.obj->passTagShaderSpecifications[a.tag].defines = g_entries[a.handle].key.defines;
-    }
-
-    for (auto it = g_entries.begin(); it != g_entries.end(); ) {
-        if (!activeHandles.count(it->first)) {
-            g_keyToHandle.erase(it->second.key); // ← sync g_keyToHandle
-            it = g_entries.erase(it);
-        } else {
-            ++it;
         }
     }
 

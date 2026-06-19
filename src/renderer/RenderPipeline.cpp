@@ -118,7 +118,7 @@ void KAFRenderPass::setup(unsigned window_w, unsigned window_h) {
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_fboTex1, 0);
 
     // buffer 2
-    glGenTextures(1, &m_fboTex1);
+    glGenTextures(1, &m_fboTex2);
     glBindTexture(GL_TEXTURE_2D, m_fboTex2);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, window_w, window_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -127,6 +127,17 @@ void KAFRenderPass::setup(unsigned window_w, unsigned window_h) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, m_fboTex2, 0);
+
+    // buffer 3
+    glGenTextures(1, &m_fboTex3);
+    glBindTexture(GL_TEXTURE_2D, m_fboTex3);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, window_w, window_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, m_fboTex3, 0);
 
     auto fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (fboStatus != GL_FRAMEBUFFER_COMPLETE) {
@@ -158,7 +169,7 @@ unsigned KAFRenderPass::fbo() {
 
 std::vector<unsigned int> KAFRenderPass::fboTexs() {
     return {
-        m_fboTex1,m_fboTex2
+        m_fboTex1,m_fboTex2,m_fboTex3
     };
 }
 
