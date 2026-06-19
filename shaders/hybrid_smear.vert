@@ -15,10 +15,12 @@ out vec3 fragPos;
 flat out uint vertexID;
 
 const uint MAX_NUM_BONES_PER_VERTEX = 16;
+const uint MAX_NUM_BONES = 128;
 
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
+uniform mat4 gBones[MAX_NUM_BONES];
 
 struct VertexBoneData {
     uint ids[MAX_NUM_BONES_PER_VERTEX];
@@ -92,28 +94,26 @@ void main() {
     float beta = currentDelta * betaMax;
     int baseFrame = currentFrame + int(floor(beta));
     float t = beta - floor(beta);
-    vec3 p0 = getSkinnedPosition(baseFrame - 1);
-    vec3 p1 = getSkinnedPosition(baseFrame);
-    vec3 p2 = getSkinnedPosition(baseFrame + 1);
-    vec3 p3 = getSkinnedPosition(baseFrame + 2);
+    vec3 p0 = getSkinnedPosition(currentFrame - 1);
+    vec3 p1 = getSkinnedPosition(currentFrame);
+    vec3 p2 = getSkinnedPosition(currentFrame + 1);
+    vec3 p3 = getSkinnedPosition(currentFrame + 2);
 
     vec3 smearedLocalPos = catmullRom(p0, p1, p2, p3, t);
-    // fragPos = vec3(model * vec4(smearedLocalPos, 1.0));
-    // sanity check
-    // fragPos = vec3(model * vec4(p1, 1.0));
-    // gl_Position = projection * view * vec4(fragPos, 1.0);
+    fragPos = vec3(model * vec4(smearedLocalPos, 1.0));
+    gl_Position = projection * view * vec4(fragPos, 1.0);
 
-    mat4 boneTransform = mat4(0.0f);
-    VertexBoneData vertexBoneData = allVertexBoneData[gl_VertexID];
-    for (int i = 0; i < MAX_NUM_BONES_PER_VERTEX; i++){
-        uint bone_id = vertexBoneData.ids[i];
-        float weight = vertexBoneData.weights[i];
-        int idx = baseFrame * boneStride + int(bone_id);
-        boneTransform += gBones[bone_id]*weight;
-    }
-    vec4 localPos = boneTransform*vec4(position,1.0);
-    fragPos = vec3(model*localPos);
-    gl_Position = projection*view*vec4(fragPos,1.0);
+    // mat4 boneTransform = mat4(0.0f);
+    // VertexBoneData vertexBoneData = allVertexBoneData[gl_VertexID];
+    // for (int i = 0; i < MAX_NUM_BONES_PER_VERTEX; i++){
+    //     uint bone_id = vertexBoneData.ids[i];
+    //     float weight = vertexBoneData.weights[i];
+    //     int idx = currentFrame * boneStride + int(bone_id);
+    //     boneTransform += allFramesBones[idx]*weight;
+    // }
+    // vec4 localPos = boneTransform*vec4(position,1.0);
+    // fragPos = vec3(model*localPos);
+    // gl_Position = projection*view*vec4(fragPos,1.0);
 
     mat4 baseBoneTransform = getSkinnedMatrix(baseFrame);
     normalO = vec3(transpose(inverse(baseBoneTransform)) * vec4(normal, 0.0));
