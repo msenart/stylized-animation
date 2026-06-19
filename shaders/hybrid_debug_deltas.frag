@@ -13,18 +13,20 @@
 in vec3 normalO;
 in vec3 localPosO;
 in vec3 fragPos;
-in float realZ;
 flat in uint vertexID;
 
 uniform uint meshId = 1;
 uniform vec3 viewPos;
 uniform uint activationBoneID = 7;
 uniform uint lightsNumber;
+uniform int totalVertices;
+uniform int currentFrame;
+uniform vec3 debug_c_r;
+uniform vec3 debug_c_t;
 
 // 2 output values : one for each color attachment
 layout(location = 0) out vec4 FragColor0; //scene
 layout(location = 1) out uvec4 FragColor1; //meshId
-layout(location = 2) out vec4 FragColor2; //normal buffer
 
 const uint MAX_NUM_BONES_PER_VERTEX = 16;
 
@@ -36,6 +38,9 @@ struct VertexBoneData {
 layout(std430, binding = 2) readonly buffer BoneBuffer {
     VertexBoneData allVertexBoneData[];
 };
+layout(std430, binding = 3) readonly buffer MotionOffsets { // NOTE do I have only to bind it once and it works here in the fragment shader as well?
+    float deltas[];
+};
 
 uniform vec4 not_influenced_vertex_color = vec4(0.0, 0.0, 1.0, 1.0);
 uniform vec4 influenced_vertex_color = vec4(1.0, 0.0, 0.0, 1.0);
@@ -45,13 +50,19 @@ vec3 ACESFilm(vec3 x) {
     return clamp((x*(a*x+b))/(x*(c*x+d)+e), 0.0, 1.0);
 }
 
+float distToLineSegment(vec3 p, vec3 a, vec3 b) {
+    vec3 pa = p - a;
+    vec3 ba = b - a;
+    float h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);
+    return length(pa - ba * h);
+}
+
 void main() {
+    uint deltaIdx = (currentFrame * totalVertices) + vertexID;
+    float currentDelta = deltas[deltaIdx];
 
     //Write in color attachment 1 (MeshId)
     FragColor1 = getFragColor1(meshId);
-
-    //write in normal buffer
-    FragColor2 = getFragColor2(normalO, realZ);
 
     FragColor0 = vec4(0);
     // Bone highlighting
@@ -112,7 +123,27 @@ void main() {
     // naive HDR processing
     FragColor0.rgb = ACESFilm(FragColor0.rgb);
 
+// DEBUG: Draw the bone
+    // float distToBone = distToLineSegment(fragPos, debug_c_r, debug_c_t);
+
+    // float boneThickness = 70.5;
+
+    // vec3 colorDeltaNeg = vec3(0.2, 0.3, 0.8);
+    // vec3 colorDeltaPos = vec3(0.8, 0.3, 0.2);
+    // vec3 deltaColor = mix(colorDeltaNeg, colorDeltaPos, currentDelta);
+
+    // if (distToBone < boneThickness) {
+    //     FragColor0 = vec4(0.0, 1.0, 0.0, 1.0);
+    //     gl_FragDepth = 0.0;
+    // } else {
+    //     FragColor0 = vec4(deltaColor, 1.0);
+    // }
 
 //    FragColor0 = vec4(halftone(gl_FragCoord.xy,0.05f, 0.5f));
     FragColor0 = vec4(pow(FragColor0.rgb, vec3(1.0/2.2)), 1.0);
+    vec3 colorDeltaNeg = vec3(0.2, 0.3, 0.8);
+    vec3 colorDeltaPos = vec3(0.8, 0.3, 0.2);
+    vec3 deltaColor = mix(colorDeltaNeg, colorDeltaPos, currentDelta);
+
+    FragColor0 = vec4(deltaColor, 1.0);
 }
