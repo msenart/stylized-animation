@@ -1,5 +1,10 @@
+#include <climits>
+#include <cstdlib>
 #include <string>
+#include <fstream>
+#include <filesystem>
 #include <unistd.h>
+#include <random>
 #include "SmearMesh.h"
 #include "assimp/anim.h"
 #include "glm/ext/quaternion_geometric.hpp"
@@ -10,7 +15,7 @@
 
 SmearMesh::SmearMesh(const std::string &path) : AnimatedMesh(path) {
   computeVertexSets();
-  generateDeltasSSBO();
+  generateDeltasSSBO(path);
 
   // DEBUG
   glCreateVertexArrays(1, &m_debugVao);
@@ -20,6 +25,50 @@ SmearMesh::SmearMesh(const std::string &path) : AnimatedMesh(path) {
   glVertexArrayAttribFormat(m_debugVao, 0, 3, GL_FLOAT, GL_FALSE, 0);
   glVertexArrayAttribBinding(m_debugVao, 0, 0);
 }
+
+std::string SmearMesh::getDeltasFilePath(const std::string &meshPath) const {
+  std::filesystem::path p(meshPath);
+  std::string filename = p.stem().string();
+  return "assets/deltas/" + filename + ".txt";
+}
+
+bool SmearMesh::readFromDeltasFile(const std::string &path,
+                                   std::vector<float> &outDeltas,
+                                   int &outTotalFrames) const {
+  std::ifstream f(path);
+  if(!f.is_open()) return false;
+  if (!(f >> outTotalFrames)) return false;
+  size_t expectedSize = outTotalFrames * m_vertices.size();
+  outDeltas.reserve(expectedSize);
+  float val;
+  while (f >> val) {
+    outDeltas.push_back(val);
+  }
+  f.close();
+  if (outDeltas.size() != expectedSize) {
+    Log::warn("Cache file " + path + " is corrupted or incomplete. Recalculating...");
+    outDeltas.clear();
+    return false;
+  }
+  return true;
+}
+
+void SmearMesh::writeToDeltasFile(const std::string &path,
+                                  const std::vector<float> &deltas,
+                                  int totalFrames) const {
+  std::filesystem::create_directory("assets/deltas");
+  std::ofstream f(path);
+  if (!f.is_open()) {
+    Log::warn("Could not open file to write deltas: " + path);
+    return;
+  }
+  f << totalFrames << "\n";
+  for (float d : deltas) {
+    f << d << "\n";
+  }
+  f.close();
+}
+
 
 // builds V_kr and V_kt
 void SmearMesh::computeVertexSets() {
@@ -72,13 +121,16 @@ void SmearMesh::computeVertexSets() {
   }
 }
 
-void SmearMesh::generateDeltasSSBO() {
-  // PSEUDOCODE
-  // for (frame in frames) {
-  //   calculateFrameDeltas(frame, frameDeltas);
-  //   animationDeltas[i] = frameDeltas;
-// }
-// createAnimationDeltasSSBO(animationDeltas);
+void SmearMesh::generateDeltasSSBO(const std::string& meshPath) {
+  std::string deltasPath = getDeltasFilePath(meshPath);
+  std::vector<float> flatDeltas;
+  int loadedFrames = 0;
+  bool loaded = readFromDeltasFile(deltasPath, flatDeltas, loadedFrames);
+  if (loaded) {
+    m_totalFrames = loadedFrames;
+    Log::info("Loaded deltas from : " + deltasPath);
+  }
+
   double ticksPerSecond = m_scene->mAnimations[0]->mTicksPerSecond != 0 ? m_scene->mAnimations[0]->mTicksPerSecond : 25.0f;
   double tickStep = ticksPerSecond / m_Fps;
   double totalDuration = m_scene->mAnimations[0]->mDuration;
@@ -88,6 +140,7 @@ void SmearMesh::generateDeltasSSBO() {
   std::vector<std::vector<float>> animationDeltas;
   std::vector<glm::mat4> flatAnimationBonesTransforms;
 
+  int frameCounter = 0;
   for (double currentTick = 0; currentTick < totalDuration; currentTick += tickStep) {
     double nextTick = currentTick + tickStep;
     if (nextTick > totalDuration) {
@@ -102,13 +155,20 @@ void SmearMesh::generateDeltasSSBO() {
     }
     flatAnimationBonesTransforms.insert(flatAnimationBonesTransforms.end(), frameSkinnedBones.begin(), frameSkinnedBones.end());
 
-    std::vector<float> frameDeltas;
-    getFrameDeltas(currentTransforms, nextTransforms, frameSkinnedBones, frameDeltas);
-    animationDeltas.push_back(frameDeltas);
-    Log::info("Deltas generated for frame at tick " + std::to_string(currentTick));
+    if (!loaded) {
+      std::vector<float> frameDeltas;
+      getFrameDeltas(currentTransforms, nextTransforms, frameSkinnedBones, frameDeltas);
+      animationDeltas.push_back(frameDeltas);
+      flatDeltas.insert(flatDeltas.end(), frameDeltas.begin(), frameDeltas.end());
+      Log::info("Deltas generated for frame at tick " + std::to_string(currentTick));
+    }
+    frameCounter++;
   }
-  m_totalFrames = animationDeltas.size();
-  std::vector<float> flatDeltas;
+  if (!loaded) {
+    m_totalFrames = frameCounter;
+    writeToDeltasFile(deltasPath, flatDeltas, m_totalFrames);
+    Log::info("Saved deltas to: " + deltasPath);
+  }
   flatDeltas.reserve(
       m_totalFrames *
       m_vertices
@@ -193,15 +253,15 @@ void SmearMesh::getFrameDeltas(std::vector<glm::mat4> currentTransforms,
     glm::vec3 vt = next_ct - ct;
     float vtLen = glm::length(vt);
     float vrLen = glm::length(vr);
-    if (vrLen < 1e-5f && vtLen < 1e-5f) continue;
+    if (vrLen < 1e-8f && vtLen < 1e-8f) continue;
     // TODO maybe not the best fallback
     // consider that tip is moving like the root or vice-versa as fallback
-    glm::vec3 vr_norm = vrLen > 1e-5f ? vr / vrLen : glm::vec3(0.0001);
-    glm::vec3 vt_norm = vtLen > 1e-5f ? vt / vtLen : glm::vec3(0.0001);
-    glm::vec3 b = ct - cr; // TEST inverse because I'm inverting it in the getBonePosition
-    if (glm::length(b) < 1e-5f) continue;
+    glm::vec3 vr_norm = glm::normalize(vr);
+    glm::vec3 vt_norm = glm::normalize(vt);
+    glm::vec3 b = ct - cr;
+    if (glm::length(b) < 1e-8f) continue;
     glm::vec3 b_norm = glm::normalize(b);
-    float omega = glm::acos(glm::clamp(glm::dot(vt_norm, vr_norm), -1.0f, 1.0f));
+    float omega = glm::acos(glm::dot(vt_norm, vr_norm));
     auto S = [](const float x) -> float {
       float y = glm::clamp(x, 0.0f, 1.0f);
       return 3 * pow(y, 2) - 2 * pow(y, 3);
@@ -213,7 +273,8 @@ void SmearMesh::getFrameDeltas(std::vector<glm::mat4> currentTransforms,
       glm::mat4 skinMatrix = glm::mat4(0.0f);
       for (int j = 0; j < MAX_NUM_BONES_PER_VERTEX; ++j) {
         if (v.weights[j] > 0.0f) {
-          skinMatrix += currentTransforms[v.bonesIDs[j]] * m_bonesInfo[v.bonesIDs[j]].offsetMatrix * v.weights[j];
+          glm::mat4 boneTransform = currentTransforms[v.bonesIDs[j]] * m_bonesInfo[v.bonesIDs[j]].offsetMatrix;
+          skinMatrix += boneTransform * v.weights[j];
         }
       }
       glm::vec3 p_i = glm::vec3(skinMatrix * glm::vec4(v.position, 1.0f));
@@ -233,15 +294,25 @@ void SmearMesh::getFrameDeltas(std::vector<glm::mat4> currentTransforms,
     };
 
     // calculate max delta for normalization
-    float maxRootDelta = 0.0001f;
+    float maxRootDelta = 0.05f;
     for (int vertexIdx : m_V_kr[boneIdx]) {
       float delta = calculateDelta_ik(vertexIdx);
       if (glm::abs(delta) > maxRootDelta) maxRootDelta = delta;
     }
-    float maxTipDelta = 0.0001f;
+    float maxTipDelta = 0.05f;
     for (int vertexIdx : m_V_kt[boneIdx]) {
       float delta = calculateDelta_ik(vertexIdx);
       if (glm::abs(delta) > maxTipDelta) maxTipDelta = delta;
+    }
+    // TEST calculate max delta for a whole bone
+    float maxDelta = 0.05f;
+    for (int i = 0; i < m_vertices.size(); ++i) {
+      for (int j = 0; j < MAX_NUM_BONES_PER_VERTEX; ++j) {
+        if (m_vertices[i].bonesIDs[j] == boneIdx && m_vertices[i].weights[j] > 0.0f) {
+          float delta = calculateDelta_ik(i);
+          if (glm::abs(delta) > maxDelta) maxDelta = delta;
+        }
+      }
     }
 
     for (int i = 0; i < m_vertices.size(); ++i) {
@@ -249,15 +320,29 @@ void SmearMesh::getFrameDeltas(std::vector<glm::mat4> currentTransforms,
       float weight = 0.0f;
       for (int j = 0; j < MAX_NUM_BONES_PER_VERTEX; ++j) {
         if (m_vertices[i].bonesIDs[j] == boneIdx && m_vertices[i].weights[j] > 0.0f) {
-          weight = m_vertices[i].weights[j];
+          // int originalBoneIdx = m_vertices[i].bonesIDs[j];
+          // int effectiveBoneIdx = getPrunedBoneIdx(m_vertices[i].bonesIDs[j]);
+          // if (effectiveBoneIdx == originalBoneIdx) {
+          //   weight += m_vertices[i].weights[j];
+          //   break;
+          // }
+          weight += m_vertices[i].weights[j];
           break;
         }
       }
       if (weight == 0) continue;
 
+      // TODO solve this duplication
       const AnimatedVertex& vertex = m_vertices[i];
-      // BUG is it that I am not taking the cr of the correct bone????
-      float u_ik = S(glm::dot(vertex.position - cr, b_norm) / glm::length(b));
+      glm::mat4 skinMatrix = glm::mat4(0.0f);
+      for (int j = 0; j < MAX_NUM_BONES_PER_VERTEX; ++j) {
+        if (vertex.weights[j] > 0.0f) {
+          glm::mat4 boneTransform = currentTransforms[vertex.bonesIDs[j]] * m_bonesInfo[vertex.bonesIDs[j]].offsetMatrix;
+          skinMatrix += boneTransform * vertex.weights[j];
+        }
+      }
+      glm::vec3 p_i = glm::vec3(skinMatrix * glm::vec4(vertex.position, 1.0f));
+      float u_ik = S(glm::dot(p_i - cr, b_norm) / glm::length(b));
       glm::vec3 v_norm;
       if (omega < 0.1f) {
           v_norm = glm::normalize(glm::mix(vr_norm, vt_norm, u_ik));
@@ -268,9 +353,15 @@ void SmearMesh::getFrameDeltas(std::vector<glm::mat4> currentTransforms,
       glm::vec3 n = v_norm - (glm::dot(v_norm, b_norm)) * b_norm;
       glm::vec3 n_norm = glm::normalize(n);
       float w_coll = 1.0f - pow(glm::dot(v_norm, b_norm), 2);
-      float delta_ik = glm::dot(vertex.position - cr, n_norm);
+      float delta_ik = glm::dot(p_i - cr, n_norm);
       float M_ik = (u_ik * glm::abs(maxTipDelta)) + ((1.0f - u_ik) * glm::abs(maxRootDelta));
-      float delta_ik_norm = w_coll * (delta_ik / M_ik);
+      // TEST use per-bone max delta
+      M_ik = (u_ik * glm::abs(maxDelta)) + ((1.0f - u_ik) * glm::abs(maxDelta));
+      float delta_ik_norm = 0;
+      if (M_ik > 0.05) {
+        delta_ik_norm = w_coll * (delta_ik / M_ik);
+      }
+      // delta_ik_norm = delta_ik;
       outFrameDeltas[i] += weight * delta_ik_norm;
     }
   }
@@ -306,8 +397,34 @@ int SmearMesh::getCurrentFrame() {
   double ticks_per_second = m_scene->mAnimations[0]->mTicksPerSecond != 0 ? m_scene->mAnimations[0]->mTicksPerSecond : 25.0f;
   double currentTick = fmod(time * ticks_per_second, m_scene->mAnimations[0]->mDuration);
   double tickStep = ticks_per_second / m_Fps;
-  // BUG
   return static_cast<int>(currentTick / tickStep) % m_totalFrames;
 }
 
+// given a bone index, return its closest ancestor which is not pruned
+int SmearMesh::getPrunedBoneIdx(int boneIdx) {
+    std::string boneName = "";
+    for (const auto& pair : m_boneNameToIndexMap) {
+        if (pair.second == boneIdx) {
+            boneName = pair.first;
+            break;
+        }
+    }
+    bool isPruned = false;
+    for (const std::string& pruned : m_pruneBoneRoots) {
+        if (boneName.find(pruned) != std::string::npos) {
+            isPruned = true;
+            break;
+        }
+    }
+    if (!isPruned) {
+        return boneIdx;
+    }
+    const aiNode* currentNode = m_nodeMap[boneName];
+    const aiNode* parentNode = getParentBone(currentNode);
+    if (parentNode) {
+        int parentIdx = m_boneNameToIndexMap[parentNode->mName.C_Str()];
+        return getPrunedBoneIdx(parentIdx);
+    }
+    return boneIdx;
+}
 // helpers

@@ -38,10 +38,12 @@ class SmearMesh : public AnimatedMesh {
     GLuint m_debugVao = 0;
     GLuint m_debugVbo = 0;
 
-    int m_Fps = 12; // TODO get this information from main.cpp
+    int m_Fps = 24; // TODO get this information from main.cpp
     int m_totalFrames;
     std::vector<std::vector<int>> m_V_kr;
     std::vector<std::vector<int>> m_V_kt;
+    // TODO put this as artist's input as they do in SMEAR's implementation
+    std::vector<std::string> m_pruneBoneRoots = {"mixamorig:RightHand", "mixamorig:LeftHand", "mixamorig:RightFoot", "mixamorig:LeftFoot"};
 
     const std::map<PassTag, ShaderKey> shaderKeysMap() const override {
       return std::map<PassTag, ShaderKey> {
@@ -54,6 +56,7 @@ class SmearMesh : public AnimatedMesh {
     void writeToDeltasFile(const std::string& path, const std::vector<float>& deltas, int totalFrames) const;
     void getFrameDeltas(std::vector<glm::mat4> currentTransforms, std::vector<glm::mat4> nextTransforms, std::vector<glm::mat4> frameSkinnedBones, std::vector<float> &outFrameDeltas);
     void createDeltasSSBO();
+    int getPrunedBoneIdx(int boneIdx);
 };
 
 #endif // SMEARMESH_H_
