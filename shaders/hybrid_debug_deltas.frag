@@ -13,6 +13,7 @@
 in vec3 normalO;
 in vec3 localPosO;
 in vec3 fragPos;
+in vec3 debugColor; // DEBUG
 flat in uint vertexID;
 
 uniform uint meshId = 1;
@@ -146,4 +147,5 @@ void main() {
     vec3 deltaColor = mix(colorDeltaNeg, colorDeltaPos, currentDelta);
 
     FragColor0 = vec4(deltaColor, 1.0);
+    // FragColor0 = vec4(debugColor, 1.0);
 }

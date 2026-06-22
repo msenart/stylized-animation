@@ -12,6 +12,7 @@ uniform float betaMax;
 out vec3 normalO;
 out vec3 localPosO;
 out vec3 fragPos;
+out vec3 debugColor; // DEBUG
 flat out uint vertexID;
 
 const uint MAX_NUM_BONES_PER_VERTEX = 16;
@@ -121,6 +122,9 @@ void main() {
 
     localPosO = position;
     vertexID = gl_VertexID;
+
+    float normBeta = (beta + 5.0) / 10.0;
+    debugColor = vec3(1.0 - normBeta, normBeta, 0.0);
 
     // mat4 boneTransform = mat4(0.0f);
     // VertexBoneData vertexBoneData = allVertexBoneData[gl_VertexID];
