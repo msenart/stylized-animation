@@ -253,7 +253,7 @@ int main(int argc, char *argv[]) {
     ImGui::NewFrame();
     selectionManager.draw();
     console.draw();
-    stats.draw(window, renderer.drawCalls(), assets.meshCount(), fps);
+    stats.draw(window, renderer.drawCalls(), assets.meshCount(), fps, assets.get(meshHandle).getCurrentFrame());
     ShaderManager::drawUI();
 
     ImGui::Render();

@@ -7,11 +7,12 @@
 #include "GLFW/glfw3.h"
 #include "scene/CameraController.h"
 
-void RenderStats::draw(const Window& window, int drawCalls, std::size_t meshCount, float fps) {
+void RenderStats::draw(const Window& window, int drawCalls, std::size_t meshCount, float fps, int currentFrame) {
     MegaWindowContext* window_context = static_cast<MegaWindowContext*>(glfwGetWindowUserPointer(window.handle()));
     ImGui::Begin("Render Stats");
 
     ImGui::Text("FPS        %.1f",    fps);
+    ImGui::Text("Current frame        %d",    currentFrame);
     ImGui::Text("Frame time %.2f ms", fps > 0.f ? 1000.f / fps : 0.f);
 
     ImGui::Separator();
