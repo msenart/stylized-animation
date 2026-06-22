@@ -27,6 +27,7 @@ class SmearMesh : public AnimatedMesh {
     void uploadUniforms(const Shader &shader,
                         const RenderContext &ctx) const override;
     void drawDebugBones(const Shader& shader, const RenderContext& ctx) const;
+    int getCurrentFrame() override;
 
   private:
     GLuint m_deltas_ssbo = 0;
@@ -37,7 +38,7 @@ class SmearMesh : public AnimatedMesh {
     GLuint m_debugVao = 0;
     GLuint m_debugVbo = 0;
 
-    int m_Fps = 30; // TODO get this information from main.cpp
+    int m_Fps = 12; // TODO get this information from main.cpp
     int m_totalFrames;
     std::vector<std::vector<int>> m_V_kr;
     std::vector<std::vector<int>> m_V_kt;
@@ -47,7 +48,10 @@ class SmearMesh : public AnimatedMesh {
       {PassTag::Hybrid, ShaderKey{"hybrid_smear.vert", "hybrid.frag"}}};
     }
     void computeVertexSets();
-    void generateDeltasSSBO();
+    void generateDeltasSSBO(const std::string& meshPath);
+    std::string getDeltasFilePath(const std::string& meshPath) const;
+    bool readFromDeltasFile(const std::string& path, std::vector<float>& outDeltas, int& outTotalFrames) const;
+    void writeToDeltasFile(const std::string& path, const std::vector<float>& deltas, int totalFrames) const;
     void getFrameDeltas(std::vector<glm::mat4> currentTransforms, std::vector<glm::mat4> nextTransforms, std::vector<glm::mat4> frameSkinnedBones, std::vector<float> &outFrameDeltas);
     void createDeltasSSBO();
 };

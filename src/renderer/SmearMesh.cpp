@@ -300,3 +300,14 @@ void SmearMesh::drawDebugBones(const Shader& shader, const RenderContext& ctx) c
     glDrawArrays(GL_LINES, 0, static_cast<GLsizei>(lineVertices.size()));
     glBindVertexArray(0);
 }
+
+int SmearMesh::getCurrentFrame() {
+  double time = timer.getCurrentValue();
+  double ticks_per_second = m_scene->mAnimations[0]->mTicksPerSecond != 0 ? m_scene->mAnimations[0]->mTicksPerSecond : 25.0f;
+  double currentTick = fmod(time * ticks_per_second, m_scene->mAnimations[0]->mDuration);
+  double tickStep = ticks_per_second / m_Fps;
+  // BUG
+  return static_cast<int>(currentTick / tickStep) % m_totalFrames;
+}
+
+// helpers
