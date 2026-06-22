@@ -68,82 +68,12 @@ void main() {
     FragColor0 = vec4(0);
     // Bone highlighting
     float weight = 0.0;
-    VertexBoneData vertex_bone_data = allVertexBoneData[vertexID];
-    for (int i = 0; i < MAX_NUM_BONES_PER_VERTEX; i++) {
-        if (vertex_bone_data.ids[i] == activationBoneID) {
-            weight = vertex_bone_data.weights[i];
-            break;
-        }
-    }
-    vec3 baseColor = mix(not_influenced_vertex_color, influenced_vertex_color, weight).rgb;
-    vec3 N = normalize(normalO);
-    vec3 V = normalize(viewPos - fragPos);
-    float k_ambient = 0.05f;
-    float k_diffuse = 1.0f;
-    float k_specular = 0.3f;
-    float k_rim = 0.5f;
-    #ifdef TOON_SHADING_AMBIENT
-    FragColor0.rgb += baseColor*k_ambient;
-    #endif
 
-    // Toon shading diffuse implementation
-    for (int i= 0; i < lightsNumber; i++){
-        Light light = allLights[i];
-        vec3 L = normalize(light.position-fragPos); // To change !
-        vec3 R = normalize(reflect(L,N));
-
-        #ifdef TOON_SHADING_DIFFUSE
-//        FragColor0.rgb += light.color*baseColor*(1-k_ambient)*sin_smoothstep(dot(N, L), 0.5f);
-//        FragColor0.rgb += light.color*baseColor*(1-k_ambient)*sin_smoothstep(dot(N, L), -0.3f, 0.3f);
-//        FragColor0.rgb += light.color*baseColor*(1-k_ambient)*halftone(gl_FragCoord.xy,0.1f, sin_smoothstep(NdotL, 0.5f));
-        float NdotL = dot(N, L);
-        float shadow_to_midtone = sin_smoothstep(NdotL,-0.2f, 0.05f)*crosshatching(gl_FragCoord.xy,0.1f,mix(NdotL,0.0f, 0.1f));
-        float midtone_to_light = sin_smoothstep(NdotL,0.35f, 0.5f);
-        FragColor0.rgb += k_diffuse*light.color*baseColor*(1-k_ambient)*(max(shadow_to_midtone,midtone_to_light));
-        #endif
-
-        #ifdef TOON_SHADING_SPECULAR
-        FragColor0.rgb += k_specular*light.color*halftone(gl_FragCoord.xy,0.15f,sin_smoothstep(2*pow(max(dot(V,-R),0)*max(dot(N,L),0),2)-1,-1.0f,1.0f));
-//        FragColor0.rgb += light.color*pow(sin_smoothstep(dot(-V,R),2),0.5f);
-        #endif
-
-        #ifdef TOON_SHADING_RIM_LIGHTING
-        float rimDot = 1 - dot(V, N);
-        FragColor0.rgb += k_rim*light.color*k_ambient*(1-sin_smoothstep(1-rimDot*pow(max(dot(N,L),0.001f),0.1f),0.0f, 0.5f));
-        #endif
-    }
-
-    #ifdef CONTOURS
-    float epsilon = 0.3;
-
-    if (max(dot(N, V), 0.0) < epsilon) {
-        FragColor0.rgb *= 0;
-    }
-    #endif
-
-    // naive HDR processing
-    FragColor0.rgb = ACESFilm(FragColor0.rgb);
-
-// DEBUG: Draw the bone
-    // float distToBone = distToLineSegment(fragPos, debug_c_r, debug_c_t);
-
-    // float boneThickness = 70.5;
-
-    // vec3 colorDeltaNeg = vec3(0.2, 0.3, 0.8);
-    // vec3 colorDeltaPos = vec3(0.8, 0.3, 0.2);
-    // vec3 deltaColor = mix(colorDeltaNeg, colorDeltaPos, currentDelta);
-
-    // if (distToBone < boneThickness) {
-    //     FragColor0 = vec4(0.0, 1.0, 0.0, 1.0);
-    //     gl_FragDepth = 0.0;
-    // } else {
-    //     FragColor0 = vec4(deltaColor, 1.0);
-    // }
-
-//    FragColor0 = vec4(halftone(gl_FragCoord.xy,0.05f, 0.5f));
-    FragColor0 = vec4(pow(FragColor0.rgb, vec3(1.0/2.2)), 1.0);
-    vec3 colorDeltaNeg = vec3(0.2, 0.3, 0.8);
-    vec3 colorDeltaPos = vec3(0.8, 0.3, 0.2);
+    vec3 colorDeltaNeg = vec3(0.1, 0.1, 0.9);
+    vec3 colorDeltaPos = vec3(0.9, 0.1, 0.1);
+    vec3 white = vec3(1.0, 1.0, 1.0);
+    vec3 deltaColorRed = mix(white, colorDeltaPos, currentDelta);
+    vec3 deltaColorBlue = mix(white, colorDeltaNeg, currentDelta);
     vec3 deltaColor = mix(colorDeltaNeg, colorDeltaPos, currentDelta);
 
     FragColor0 = vec4(deltaColor, 1.0);
