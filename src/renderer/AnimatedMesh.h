@@ -89,7 +89,7 @@ protected:
     GLuint m_vao = 0, m_vbo = 0, m_ebo = 0;
     GLuint bones_data_ssbo = 0;
     GLsizei m_indexCount = 0;
-    Timer timer = Timer(0,100);
+    Timer timer = Timer(0,1000000);
     glm::mat4 m_globalInverseTransform;
 
     mutable std::map<std::string, int> m_boneNameToIndexMap; // NOTE here you have the list of bone names and idx
