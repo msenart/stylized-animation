@@ -41,7 +41,8 @@ layout(std430, binding = 4) readonly buffer AnimationBones {
 };
 
 int wrapFrame(int frame) {
-    return frame % totalFrames;
+    int r = frame % totalFrames;
+    return r < 0 ? r + totalFrames : r;
 }
 
 vec3 getSkinnedPosition(int frameIdx) {
