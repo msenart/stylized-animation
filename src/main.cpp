@@ -79,6 +79,21 @@ int main(int argc, char *argv[]) {
 
   // creating the scene
   Scene scene;
+  MeshHandle meshHandle = 0;
+  std::map<PassTag, ShaderKey> sk;
+
+  // creating the skybox
+  auto [vertices, indices] = Geometry::makeCube();
+  meshHandle = assets.add(std::make_unique<StaticMesh>(vertices, indices));
+  sk[PassTag::Hybrid] = ShaderKey{"static_mesh.vert", "hybrid_skybox.frag"};
+  Object sb = Object{sk};
+  sb.meshHandle = meshHandle;
+  scene.m_skybox = &sb;
+
+  // creating the scene assets
+  meshHandle = assets.add(std::make_unique<AnimatedMesh>("assets/meshes/Standing Death Left 01.fbx"));
+  sk = assets.get(meshHandle).shaderKeysMap();
+  sk[PassTag::Hybrid] = ShaderKey{"animated_mesh.vert","hybrid_toon_shading.frag"};
 
   // HACK test just to see if shader compiles correctly
   ShaderKey testShaderKey = ShaderKey{ "hybrid_smear.vert", "hybrid.frag"};
@@ -86,9 +101,10 @@ int main(int argc, char *argv[]) {
   ShaderKey debugBoneShaderKey = ShaderKey{ "debug_bone.vert", "debug_bone.frag"};
   ShaderManager::load(debugBoneShaderKey);
   // MeshHandle meshHandle = assets.add(std::make_unique<AnimatedMesh>("assets/meshes/Standing Death Left 01.fbx"));
-  MeshHandle meshHandle = assets.add(std::make_unique<SmearMesh>("assets/meshes/Standing Death Left 01.fbx"));
-  auto sk = assets.get(meshHandle).shaderKeysMap();
+  meshHandle = assets.add(std::make_unique<SmearMesh>("assets/meshes/Standing Death Left 01.fbx"));
+  sk = assets.get(meshHandle).shaderKeysMap();
   sk[PassTag::Hybrid] = ShaderKey{ "hybrid_smear.vert", "hybrid.frag"};
+
   Object obj = Object{sk};
   obj.meshHandle =meshHandle;
   obj.material.color = {0.8f, 0.3f, 0.2f};
@@ -113,6 +129,14 @@ int main(int argc, char *argv[]) {
   SelectionManager selectionManager{&scene,renderer.renderPipeline()};
 
   // Compiling shaders
+  // specially for the skybox
+  for (auto& pair : scene.m_skybox->passTagShaderSpecifications) {
+    auto& render_pass = pair.first;
+    auto& shader_key = pair.second;
+    scene.m_skybox->passTagShaderHandle[render_pass] = ShaderManager::load(shader_key);
+  }
+
+  // the rest of the meshes
   for (auto& object : scene.objects) {
     for (auto& pair : object.passTagShaderSpecifications) {
       auto& render_pass = pair.first;

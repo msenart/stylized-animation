@@ -57,6 +57,28 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
     // Hybrid pass
     m_renderPipeline.clear("Hybrid Render Pass");
     m_renderPipeline.execute("Hybrid Render Pass");
+
+    // render the skybox
+    auto skybox = scene->m_skybox;
+    auto it = skybox->passTagShaderHandle.find(PassTag::Hybrid);
+    if (it == skybox->passTagShaderHandle.end()){
+        Log::error("Did not find shader handle for Hybrid Render Pass for object whose meshHandle is "+std::to_string(skybox->meshHandle));
+    }
+    else {
+        auto handle = it->second;
+        const Shader& shader = ShaderManager::get(handle);
+        shader.bind();
+        shader.set("model", glm::translate(glm::mat4(1.0f),scene->main_camera.position));
+        shader.set("view", scene->main_camera.view());
+        shader.set("projection", scene->main_camera.projection(aspect));
+        const Mesh& mesh = assets.get(skybox->meshHandle);
+        glDisable(GL_CULL_FACE);
+        glDisable(GL_DEPTH_TEST);
+        mesh.draw();
+        glEnable(GL_CULL_FACE);
+        glEnable(GL_DEPTH_TEST);
+    }
+    // render the rest of the meshes
     for (unsigned int i = 0; i < scene->objects.size(); i++) {
         auto obj = scene->objects[i];
         auto it = obj.passTagShaderHandle.find(PassTag::Hybrid);
@@ -138,46 +160,59 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
     }
     std::vector<unsigned int> kafFboTexs = kaf_render_pass->fboTexs();
 
-    int w,h;
-    window->getSize(w,h);
-    // 1st pass
-
-    shader0.bind();
-    // read the hybrid buffer
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, hybridFboTexs[0]);
-    shader0.set("screenSize",glm::vec2(w,h));
-    shader0.set("screenTexture",0);
-    // draw on the first attachment texture
-    glDrawBuffer(GL_COLOR_ATTACHMENT0);
-    p_screen_mesh->draw();
-
-    // 2nd pass
-
-    shader1.bind();
-    // read the previous buffer
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, kafFboTexs[0]);
-    shader1.set("screenSize",glm::vec2(w,h));
-    shader1.set("tensorTexture",0);
-    // draw on the second attachment texture
-    glDrawBuffer(GL_COLOR_ATTACHMENT1);
-    p_screen_mesh->draw();
-
-    // 3rd pass
-
-    shader2.bind();
-    // read the previous buffer
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, hybridFboTexs[0]); // read the raw rendering
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, kafFboTexs[1]); // read the smoothed tensor texture
-    shader2.set("screenSize",glm::vec2(w,h));
-    shader2.set("screenTexture",0);
-    shader2.set("tensorTexture", 1);
-    // draw on the third attachment texture
-    glDrawBuffer(GL_COLOR_ATTACHMENT2);
-    p_screen_mesh->draw();
+    // // Post-processing pass - Kuwahara Anisotropic Filtering
+    // m_renderPipeline.clear("KAF Render Pass");
+    // m_renderPipeline.execute("KAF Render Pass");
+    // std::vector<unsigned int> hybridFboTexs = m_renderPipeline.getPassFboTexs("Hybrid Render Pass");
+    // std::shared_ptr<KAFRenderPass> kaf_render_pass = std::static_pointer_cast<KAFRenderPass>(m_renderPipeline.getPass("KAF Render Pass"));
+    // auto shaderHandles = kaf_render_pass->shaderHandles();
+    // auto fboTexs = kaf_render_pass->fboTexs();
+    // const Shader& shader0 = ShaderManager::get(shaderHandles[0]);
+    // const Shader& shader1 = ShaderManager::get(shaderHandles[1]);
+    // const Shader& shader2 = ShaderManager::get(shaderHandles[2]);
+    //
+    // std::vector<unsigned int> kafFboTexs = kaf_render_pass->fboTexs();
+    //
+    // int w,h;
+    // window->getSize(w,h);
+    // // 1st pass
+    //
+    // shader0.bind();
+    // // read the hybrid buffer
+    // glActiveTexture(GL_TEXTURE0);
+    // glBindTexture(GL_TEXTURE_2D, hybridFboTexs[0]);
+    // shader0.set("screenSize",glm::vec2(w,h));
+    // shader0.set("screenTexture",0);
+    // // draw on the first attachment texture
+    // glDrawBuffer(GL_COLOR_ATTACHMENT0);
+    // p_screen_mesh->draw();
+    //
+    // // 2nd pass
+    //
+    // shader1.bind();
+    // // read the previous buffer
+    // glActiveTexture(GL_TEXTURE0);
+    // glBindTexture(GL_TEXTURE_2D, kafFboTexs[0]);
+    // shader1.set("screenSize",glm::vec2(w,h));
+    // shader1.set("tensorTexture",0);
+    // // draw on the second attachment texture
+    // glDrawBuffer(GL_COLOR_ATTACHMENT1);
+    // p_screen_mesh->draw();
+    //
+    // // 3rd pass
+    //
+    // shader2.bind();
+    // // read the previous buffer
+    // glActiveTexture(GL_TEXTURE0);
+    // glBindTexture(GL_TEXTURE_2D, hybridFboTexs[0]); // read the raw rendering
+    // glActiveTexture(GL_TEXTURE1);
+    // glBindTexture(GL_TEXTURE_2D, kafFboTexs[1]); // read the smoothed tensor texture
+    // shader2.set("screenSize",glm::vec2(w,h));
+    // shader2.set("screenTexture",0);
+    // shader2.set("tensorTexture", 1);
+    // // draw on the third attachment texture
+    // glDrawBuffer(GL_COLOR_ATTACHMENT2);
+    // p_screen_mesh->draw();
 
     // Screen pass
     //we draw a quad and fill it according to the shader
@@ -189,7 +224,7 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
     const Shader& shader = ShaderManager::get(handle);
     //now we bind the texture which comes from the previous framebuffer to the texture unit 0
 
-    unsigned int texture = kafFboTexs[2]; // <-------------- Screen texture
+    unsigned int texture = hybridFboTexs[0]; // <-------------- Screen texture
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture);
     texture = hybridFboTexs[1];
@@ -201,6 +236,7 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
     //glActiveTexture(GL_TEXTURE0);
     //we tell the shader that the texture named sceneTexture is in the texture unit 0
     //this texture is actually the one of the previous framebuffer
+    shader.bind();
     shader.set("sceneTexture", 0);
     shader.set("metadataTexture", 1);
     shader.set("normalTexture", 2);
@@ -224,52 +260,3 @@ void Renderer::onResize(int width, int height) {
 int Renderer::drawCalls() const {
     return m_drawCalls;
 }
-
-
-
-// Mesh ID pass
-// m_renderPipeline.clear("Mesh ID Render Pass");
-// m_renderPipeline.execute("Mesh ID Render Pass");
-// for (unsigned int i = 0; i < scene->objects.size(); i++) {
-//     auto obj = scene->objects[i];
-//     auto it = obj.passTagShaderHandle.find(PassTag::MeshID);
-//     if (it == obj.passTagShaderHandle.end()) {continue;}
-//     ShaderHandle handle = it->second;
-//     if (handle == 0) {continue;}
-
-//     const Mesh& mesh = assets.get(obj.meshHandle);
-
-//     const Shader& shader = ShaderManager::get(handle);
-//     shader.bind();
-//     shader.set("model",obj.transform.matrix());
-//     shader.set("view",scene->main_camera.view());
-//     shader.set("projection",scene->main_camera.projection(aspect));
-//     shader.set("meshID",static_cast<unsigned int>(i+1));
-//     mesh.uploadUniforms(shader, ctx);
-//     mesh.draw();
-//     ++m_drawCalls;
-// }
-
-// old Screen pass
-// m_renderPipeline.clear("Final Render Pass");
-// m_renderPipeline.execute("Final Render Pass");
-// for (const Object& obj : scene->objects) {
-//     auto it = obj.passTagShaderHandle.find(PassTag::Final);
-//     if (it == obj.passTagShaderHandle.end()) continue;
-
-//     ShaderHandle handle = it->second;
-//     if (handle == 0) continue;
-
-//     const Mesh& mesh = assets.get(obj.meshHandle);
-
-//     const Shader& shader = ShaderManager::get(handle);
-//     shader.bind();
-//     shader.set("model",obj.transform.matrix());
-//     shader.set("viewPos",scene->main_camera.position);
-//     shader.set("view",scene->main_camera.view());
-//     shader.set("projection",scene->main_camera.projection(aspect));
-//     shader.set("objectColor",obj.material.color);
-//     mesh.uploadUniforms(shader, ctx);
-//     mesh.draw();
-//     ++m_drawCalls;
-// }

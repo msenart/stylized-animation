@@ -18,7 +18,6 @@ public:
     /**
      * @brief gives a point that is representative of the mesh barycentre, meaning there is only one constant translation from the barycentre.
      */
-    virtual glm::vec3 pseudo_barycentre() const = 0;
     virtual void draw() const = 0;
     virtual void uploadUniforms(const Shader& shader, const RenderContext& ctx) const;
     virtual ~Mesh() = default;

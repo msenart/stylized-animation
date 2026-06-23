@@ -63,6 +63,9 @@ void Object::draw(bool *p_open) {
 }
 
 void Scene::setup() {
+    if (!m_skybox) {
+        Log::error("No skybox defined");
+    }
     glCreateBuffers(1, &lights_ssbo);
     glNamedBufferData(lights_ssbo, lights.size() * sizeof(Light), lights.data(), GL_STATIC_DRAW);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, lights_ssbo);

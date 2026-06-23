@@ -29,10 +29,6 @@ public:
 
     GLsizei indexCount() const;
 
-    [[nodiscard]] glm::vec3 pseudo_barycentre() const override {
-        return m_barycentre;
-    }
-
     //TODO! check if this shaders work
     [[nodiscard]] const std::map<PassTag, ShaderKey> shaderKeysMap() const override{
         std::map<PassTag, ShaderKey> key_map ={
