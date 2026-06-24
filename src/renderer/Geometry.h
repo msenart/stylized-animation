@@ -25,6 +25,9 @@ namespace Geometry {
      * 24 vertices (4 per face for correct per-face normals) and 36 indices.
      * @return MeshData ready to be passed to the Mesh constructor.
      */
+
+    StaticMeshData makePlane();
+
     StaticMeshData makeCube();
 
     std::vector<StaticMeshData> loadStaticMeshFromFile( const std::string& pFile);

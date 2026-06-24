@@ -71,10 +71,10 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
         shader.set("model", glm::translate(glm::mat4(1.0f),scene->main_camera.position));
         shader.set("view", scene->main_camera.view());
         shader.set("projection", scene->main_camera.projection(aspect));
-        const Mesh& mesh = assets.get(skybox->meshHandle);
+        const Mesh* mesh = assets.get(skybox->meshHandle);
         glDisable(GL_CULL_FACE);
         glDisable(GL_DEPTH_TEST);
-        mesh.draw();
+        mesh->draw();
         glEnable(GL_CULL_FACE);
         glEnable(GL_DEPTH_TEST);
     }
@@ -93,7 +93,7 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
             continue;
         };
 
-        const Mesh& mesh = assets.get(obj.meshHandle);
+        const Mesh* mesh = assets.get(obj.meshHandle);
 
         const Shader& shader = ShaderManager::get(handle);
         shader.bind();
@@ -105,8 +105,8 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
         // shader.set("objectBarycentre",glm::vec3(obj.transform.matrix()*glm::vec4(mesh.pseudo_barycentre(),1.0f)));
         shader.set("objectColor",obj.material.color);
         shader.set("meshId",static_cast<unsigned int>(i+1));
-        mesh.uploadUniforms(shader, ctx);
-        mesh.draw();
+        mesh->uploadUniforms(shader, ctx);
+        mesh->draw();
         ++m_drawCalls;
     }
 

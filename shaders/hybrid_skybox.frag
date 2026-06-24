@@ -4,17 +4,16 @@ out vec4 fragColor;
 
 in vec3 fragPos;
 
-const float theta = 6;
-
+const float theta = 0;
 uniform vec3 sunDir = vec3(sin(theta),cos(theta),0);
 
 const vec4 daySkyColor = vec4(174,237,255,1)/255;
 const vec4 dayDiffuseSunColor = 0.1*vec4(195,241,255,1)/255;
-const vec4 daySpecularSunColor = 0.1*vec4(219,245,255,1)/255;
+const vec4 daySpecularSunColor = 0.3*vec4(219,245,255,1)/255;
 
-const vec4 nightSkyColor = vec4(106,13,131,1)/255;
+const vec4 nightSkyColor = vec4(25,7,65,1)/255;
 const vec4 nightDiffuseSunColor = 0.1*vec4(238,93,108,1)/255;
-const vec4 nightSpecularSunColor = 0.1*vec4(238,175,97,1)/255;
+const vec4 nightSpecularSunColor = 0.3*vec4(238,175,97,1)/255;
 
 vec4 skyColor = mix(daySkyColor,nightSkyColor,1-(cos(theta)+1)/2);
 vec4 diffuseSunColor = mix(dayDiffuseSunColor,nightDiffuseSunColor,1-(cos(theta)+1)/2);

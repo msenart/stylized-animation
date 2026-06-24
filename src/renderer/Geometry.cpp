@@ -7,6 +7,22 @@
 
 namespace Geometry {
 
+    StaticMeshData makePlane() {
+        std::vector<StaticVertex> vertices = {
+            {{-0.5f,  0.f,  0.5f}, { 0,  1,  0}},
+            {{0.5f, 0.f, 0.5f}, {0, 1, 0}},
+            {{0.5f, 0.f, -0.5f}, {0, 1, 0}},
+            {{-0.5f, 0.f, -0.5f}, {0, 1, 0}},
+        };
+
+        std::vector<uint32_t> indices = {
+            1,3,0,2,3,1,
+            0,3,1,1,3,2
+        };
+
+        return StaticMeshData{vertices, indices};
+    }
+
     StaticMeshData makeCube() {
         std::vector<StaticVertex> vertices = {
             // Front  (+Z)

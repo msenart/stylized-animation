@@ -29,7 +29,7 @@ public:
      * @return reference to the mesh.
      * @throws std::runtime_error if the handle is unknown.
      */
-    Mesh& get(MeshHandle handle) const;
+    Mesh* get(MeshHandle handle) const;
 
     /// @brief Returns the total number of meshes currently stored.
     std::size_t meshCount() const;

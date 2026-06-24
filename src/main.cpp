@@ -77,14 +77,15 @@ int main(int argc, char *argv[]) {
   // creating the assets manager (to not have two meshes duplicated in memory)
   AssetManager assets;
 
-  // creating the scene
+  // creating the scene and initializing memory space once.
   Scene scene;
   MeshHandle meshHandle = 0;
   std::map<PassTag, ShaderKey> sk;
+  StaticMeshData staticMeshData;
 
   // creating the skybox
-  auto [vertices, indices] = Geometry::makeCube();
-  meshHandle = assets.add(std::make_unique<StaticMesh>(vertices, indices));
+  staticMeshData = Geometry::makeCube();
+  meshHandle = assets.add(std::make_unique<StaticMesh>(staticMeshData.vertices, staticMeshData.indices));
   sk[PassTag::Hybrid] = ShaderKey{"static_mesh.vert", "hybrid_skybox.frag"};
   Object sb = Object{sk};
   sb.meshHandle = meshHandle;
@@ -92,7 +93,7 @@ int main(int argc, char *argv[]) {
 
   // creating the scene assets
   meshHandle = assets.add(std::make_unique<AnimatedMesh>("assets/meshes/Standing Death Left 01.fbx"));
-  sk = assets.get(meshHandle).shaderKeysMap();
+  sk = assets.get(meshHandle)->shaderKeysMap();
   sk[PassTag::Hybrid] = ShaderKey{"animated_mesh.vert","hybrid_toon_shading.frag"};
 
   // HACK test just to see if shader compiles correctly
@@ -108,8 +109,18 @@ int main(int argc, char *argv[]) {
   Object obj = Object{sk};
   obj.meshHandle =meshHandle;
   obj.material.color = {0.8f, 0.3f, 0.2f};
-  obj.transform.scale = glm::vec3(0.05f);
+  obj.transform.scale = glm::vec3(0.01f);
   scene.objects.push_back(obj);
+
+  staticMeshData = Geometry::makePlane();
+  meshHandle = assets.add(std::make_unique<StaticMesh>(staticMeshData.vertices, staticMeshData.indices));
+  sk[PassTag::Hybrid] = ShaderKey{"static_mesh.vert","final_static_mesh.frag"};
+  obj = Object{sk};
+  obj.meshHandle =meshHandle;
+  obj.material.color = {0.8f, 0.3f, 0.2f};
+  obj.transform.scale = glm::vec3(100.f);
+  scene.objects.push_back(obj);
+
 
   Light light;
 
@@ -247,18 +258,21 @@ int main(int argc, char *argv[]) {
       ShaderManager::reloadAll();
     }
     prevF2 = f2;
-
     // F3 - Pause animation
     bool f3 = glfwGetKey(window.handle(), GLFW_KEY_F3) == GLFW_PRESS;
     if (f3 && !prevF3) {
-      auto& animated_mesh = dynamic_cast<AnimatedMesh&>(assets.get(meshHandle));
-      auto timer = animated_mesh.getTimer();
-      paused = !paused;
-      if (paused) {
-        timer->pause();
-      }
-      else {
-        timer->start();
+      for (auto& obj : scene.objects) {
+        auto animated_mesh = dynamic_cast<AnimatedMesh*>(assets.get(obj.meshHandle));
+        if (animated_mesh) {
+          auto timer = animated_mesh->getTimer();
+          paused = !paused;
+          if (paused) {
+            timer->pause();
+          }
+          else {
+            timer->start();
+          }
+        }
       }
     }
     prevF3 = f3;

@@ -8,11 +8,11 @@ MeshHandle AssetManager::add(std::unique_ptr<Mesh> mesh) {
     return handle;
 }
 
-Mesh& AssetManager::get(MeshHandle handle) const {
+Mesh* AssetManager::get(MeshHandle handle) const {
     auto it = m_meshes.find(handle);
     if (it == m_meshes.end())
         throw std::runtime_error("AssetManager: unknown MeshHandle");
-    return *it->second;
+    return it->second.get();
 }
 
 std::size_t AssetManager::meshCount() const {
