@@ -8,6 +8,8 @@ struct Light {
     float intensity;
 };
 
+uniform uint lightsNumber;
+
 layout(std430, binding = 1) readonly buffer LightBuffer {
     Light allLights[];
 };

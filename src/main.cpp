@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
 
   staticMeshData = Geometry::makePlane();
   meshHandle = assets.add(std::make_unique<StaticMesh>(staticMeshData.vertices, staticMeshData.indices));
-  sk[PassTag::Hybrid] = ShaderKey{"static_mesh.vert","final_static_mesh.frag"};
+  sk[PassTag::Hybrid] = ShaderKey{"static_mesh.vert","final_chessboard_mesh.frag"};
   obj = Object{sk};
   obj.meshHandle =meshHandle;
   obj.material.color = {0.8f, 0.3f, 0.2f};

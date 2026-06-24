@@ -17,10 +17,9 @@ in vec3 fragPos;
 in float realZ;
 flat in uint vertexID;
 
-uniform uint meshId = 1;
+uniform uint meshId;
 uniform vec3 viewPos;
 uniform uint activationBoneID = 7;
-uniform uint lightsNumber;
 //uniform vec3 objectBarycentre;
 uniform mat4 view;
 uniform mat4 projection;
@@ -43,11 +42,6 @@ layout(std430, binding = 2) readonly buffer BoneBuffer {
 
 uniform vec4 not_influenced_vertex_color = vec4(0.0, 0.0, 1.0, 1.0);
 uniform vec4 influenced_vertex_color = vec4(1.0, 0.0, 0.0, 1.0);
-
-vec3 ACESFilm(vec3 x) {
-    float a = 2.51, b = 0.03, c = 2.43, d = 0.59, e = 0.14;
-    return clamp((x*(a*x+b))/(x*(c*x+d)+e), 0.0, 1.0);
-}
 
 void main() {
 

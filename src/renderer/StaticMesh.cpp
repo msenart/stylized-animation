@@ -6,17 +6,11 @@
 
 static constexpr unsigned int POSITION_LOCATION = 0;
 static constexpr unsigned int NORMAL_LOCATION   = 1;
+static constexpr unsigned int UV_LOCATION       = 2;
 
 StaticMesh::StaticMesh(const std::vector<StaticVertex>& vertices, const std::vector<uint32_t>& indices)
     : m_indexCount(static_cast<GLsizei>(indices.size()))
 {
-    // bake the barycentre into a variable
-    glm::vec3 sum(0.0f, 0.0f, 0.0f);
-    for (unsigned int i = 0; i < vertices.size(); i++) {
-        sum+=vertices[i].position;
-    }
-    m_barycentre=sum/static_cast<float>(vertices.size());
-
     glCreateVertexArrays(1, &m_vao);
     glCreateBuffers(1, &m_vbo);
     glCreateBuffers(1, &m_ebo);
@@ -34,6 +28,10 @@ StaticMesh::StaticMesh(const std::vector<StaticVertex>& vertices, const std::vec
     glEnableVertexArrayAttrib (m_vao, NORMAL_LOCATION);
     glVertexArrayAttribFormat (m_vao, NORMAL_LOCATION, 3, GL_FLOAT, GL_FALSE, offsetof(StaticVertex, normal));
     glVertexArrayAttribBinding(m_vao, NORMAL_LOCATION, 0);
+
+    glEnableVertexArrayAttrib (m_vao, UV_LOCATION);
+    glVertexArrayAttribFormat (m_vao, UV_LOCATION, 2, GL_FLOAT, GL_FALSE, offsetof(StaticVertex, uv));
+    glVertexArrayAttribBinding(m_vao, UV_LOCATION, 0);
 }
 
 StaticMesh::~StaticMesh() {

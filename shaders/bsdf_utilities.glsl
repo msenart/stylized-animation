@@ -32,3 +32,8 @@ float getGGXSpecular(in vec3 L, in vec3 N, in vec3 V, in float roughness) {
 
     return (D * G) / max(4.0 * NdotL * NdotV, 0.001);
 }
+
+vec3 ACESFilm(vec3 x) {
+    float a = 2.51, b = 0.03, c = 2.43, d = 0.59, e = 0.14;
+    return clamp((x*(a*x+b))/(x*(c*x+d)+e), 0.0, 1.0);
+}

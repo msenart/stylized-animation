@@ -14,6 +14,7 @@ enum class PassTag;
 struct StaticVertex {
     glm::vec3 position;
     glm::vec3 normal;
+    glm::vec2 uv;
 };
 
 class StaticMesh : public Mesh {
@@ -40,5 +41,4 @@ private:
     // const static std::map<MeshPassTag,ShaderKey> SHADER_KEYS_MAP; Must define SHADER_KEYS_MAP ! Don't forget !
     GLuint  m_vao = 0, m_vbo = 0, m_ebo = 0;
     GLsizei m_indexCount = 0;
-    glm::vec3 m_barycentre;
 };
