@@ -233,6 +233,18 @@ int main(int argc, char *argv[]) {
     ffmpeg = popen(cmd, "w");
     vidBuffer = new int[vid_w * vid_h];
   }
+
+
+  //restart
+  printf("program ready\n");
+  for (auto& obj : scene.objects) {
+    auto animated_mesh = dynamic_cast<AnimatedMesh*>(assets.get(obj.meshHandle));
+    if (animated_mesh) {
+      animated_mesh->restartTimer();
+    }
+  }
+
+
   while (!window.shouldClose() && (frames <= 0 || currentFrame < frames)) {
     window.pollEvents();
 

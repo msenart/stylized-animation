@@ -70,6 +70,10 @@ public:
     Timer* getTimer() {
         return &timer;
     }
+    void restartTimer(){
+        timer.reset();
+        timer.start();
+    }
 
 protected:
 
