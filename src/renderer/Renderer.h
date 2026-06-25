@@ -1,6 +1,7 @@
 #pragma once
 #include "RenderPipeline.h"
 #include "scene/Scene.h"
+#include "scene/Cinematic.h"
 #include "core/AssetManager.h"
 #include "core/Window.h"
 #include "renderer/Types_renderer.h"
@@ -32,7 +33,7 @@ public:
      * @param aspect Viewport width / height for the projection matrix.
      * @param dt elapsed time since last frame
      */
-    void render(Scene* scene, Window* window, const AssetManager& assets, float aspect, float dt);
+    void render(Scene* scene, Window* window, Cinematic* cinematic, const AssetManager& assets, float aspect, float dt);
 
     void onResize(int width, int height);
 
@@ -46,8 +47,9 @@ public:
     bool useKuwahara = false;
 
 private:
-    const float max_time = 2.0; //toutes les duex secondes
-    float time=0; //time since the begining of the programm, modulo max_time
+    const float max_time = 2.0; //toutes les deux secondes
+    float time_modulo=0.0; //time since the begining of the programm, modulo max_time
+    float time = 0.0;      //time since the begining of the program
     std::unique_ptr<StaticMesh> p_screen_mesh; //used to render a rect on which to draw for the final render pass
     RenderPipeline m_renderPipeline;
     int m_drawCalls = 0;

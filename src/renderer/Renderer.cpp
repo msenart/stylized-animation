@@ -40,7 +40,7 @@ void Renderer::setup(Scene *scene, const Window *window, const AssetManager &ass
     scene->setup();
 }
 
-void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, float aspect, float dt) {
+void Renderer::render(Scene* scene,Window* window, Cinematic* cinematic, const AssetManager& assets, float aspect, float dt) {
     RenderContext ctx{};
     ctx.camera = &scene->main_camera;
     ctx.scene = scene;
@@ -49,9 +49,10 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
     m_drawCalls = 0;
 
     //time
+    time_modulo = time_modulo + dt;
     time = time + dt;
-    while(time>max_time){
-        time -= max_time;
+    while(time_modulo>max_time){
+        time_modulo -= max_time;
     }
 
     // Hybrid pass
@@ -211,9 +212,12 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
     shader.set("normalTexture", 2);
     int window_w, window_h;
     window->getSize(window_w, window_h);
-    shader.set("window_w", window_w);
-    shader.set("window_h", window_h);
-    shader.set("time", time/max_time);
+    shader.set("window_w", window_w);//for final_contours.frag
+    shader.set("window_h", window_h);//for final_contours.frag
+    //others uniforms
+    shader.set("time", time_modulo/max_time); //for final_perlin_background.frag
+    //draw mesh
+    cinematic->uploadUniforms(shader, time);
     p_screen_mesh->uploadUniforms(shader, ctx);
     p_screen_mesh->draw();
 

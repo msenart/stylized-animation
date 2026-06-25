@@ -47,6 +47,7 @@ set(sources
     ${SOURCE_DIR}/scene/Transform.cpp
     ${SOURCE_DIR}/scene/Camera.cpp
     ${SOURCE_DIR}/scene/CameraController.cpp
+    ${SOURCE_DIR}/scene/Cinematic.cpp
     ${SOURCE_DIR}/renderer/Mesh.cpp
     ${SOURCE_DIR}/renderer/Shader.cpp
     ${SOURCE_DIR}/renderer/StaticMesh.cpp
