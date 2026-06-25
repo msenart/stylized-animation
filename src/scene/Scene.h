@@ -17,6 +17,8 @@
 #include "renderer/RenderPipeline.h"
 #include "renderer/ShaderManager.h"
 
+class Mesh;
+
 
 /**
  * @brief Surface appearance properties for an object.
@@ -39,7 +41,7 @@ struct Object {
     std::map<PassTag, ShaderHandle> passTagShaderHandle; // don't touch, filled up at runtime from passTagShaderSpecifications in main.c with ShaderManager.load()
     explicit Object(const std::map<PassTag, ShaderKey>& passTagSpecifications) : passTagShaderSpecifications(passTagSpecifications) {}
 
-    void draw(bool* p_open = nullptr);
+    void draw(Mesh* mesh = nullptr, bool* p_open = nullptr);
 };
 
 /**

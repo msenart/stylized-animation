@@ -1,4 +1,5 @@
 #include "Scene.h"
+#include "renderer/Mesh.h"
 
 #include "glad/glad.h"
 
@@ -16,7 +17,7 @@ static void ShaderDefinesDisplay(const std::set<std::string>& defines)
     }
 }
 
-void Object::draw(bool *p_open) {
+void Object::draw(Mesh* mesh, bool *p_open) {
     if (!ImGui::Begin("Object Inspector", p_open)) {
         ImGui::End();
         return;
@@ -59,6 +60,10 @@ void Object::draw(bool *p_open) {
 
             ImGui::PopID();
         }
+    }
+
+    if (mesh && ImGui::CollapsingHeader("Mesh", ImGuiTreeNodeFlags_DefaultOpen)) {
+        mesh->drawMeshUI();
     }
 
     ImGui::End();

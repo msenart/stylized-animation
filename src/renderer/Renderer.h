@@ -43,6 +43,8 @@ public:
     /// @brief Returns the number of draw calls issued during the last render().
     int drawCalls() const;
 
+    bool useKuwahara = false;
+
 private:
     const float max_time = 2.0; //toutes les duex secondes
     float time=0; //time since the begining of the programm, modulo max_time

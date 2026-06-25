@@ -8,6 +8,7 @@
 #include <cstring>
 #include <glm/gtx/quaternion.hpp>
 #include <functional>
+#include <imgui.h>
 
 #include "RenderPipeline.h"
 
@@ -170,7 +171,7 @@ glm::mat4 AnimatedMesh::calculateInterpolatedScale(const double& animationTicks,
 const aiNodeAnim* AnimatedMesh::getNodeAnimFromNode(const aiNode* node) const {
   std::string nodeName = node->mName.data;
 
-  const aiAnimation* animation = m_scene->mAnimations[0]; // TODO adapt for more animations
+  const aiAnimation* animation = m_scene->mAnimations[m_currentAnimIndex];
   for (unsigned int i = 0; i < animation->mNumChannels; i++) {
     const aiNodeAnim* animation_node_i = animation->mChannels[i];
     if (std::string(animation_node_i->mNodeName.data) == nodeName) {
@@ -222,8 +223,9 @@ void AnimatedMesh::calculateGlobalTransformsAtTick(
 void AnimatedMesh::getBoneTransforms(std::vector<glm::mat4> &transforms) const {
     if (m_scene->HasAnimations()) {
         double time = timer.getCurrentValue();
-        double ticks_per_second = m_scene->mAnimations[0]->mTicksPerSecond != 0 ? m_scene->mAnimations[0]->mTicksPerSecond : 25.0f;
-        double ticks = fmod(time*ticks_per_second,m_scene->mAnimations[0]->mDuration);
+        const aiAnimation* anim = m_scene->mAnimations[m_currentAnimIndex];
+        double ticks_per_second = anim->mTicksPerSecond != 0 ? anim->mTicksPerSecond : 25.0;
+        double ticks = fmod(time * ticks_per_second, anim->mDuration);
         transforms.resize(m_bonesInfo.size());
 
         auto identity = glm::identity<glm::mat4>();
@@ -519,5 +521,28 @@ void AnimatedMesh::loadAlbedoTexture(const std::string& meshPath) {
             Log::info("AnimatedMesh: loaded albedo texture from '" + texStr + "'");
         else
             Log::warn("AnimatedMesh: could not load texture '" + texStr + "'");
+    }
+}
+
+void AnimatedMesh::drawMeshUI() {
+    if (!m_scene || m_scene->mNumAnimations == 0) {
+        ImGui::TextDisabled("No animations.");
+        return;
+    }
+
+    ImGui::Text("Animations");
+    ImGui::Separator();
+    for (int i = 0; i < static_cast<int>(m_scene->mNumAnimations); i++) {
+        const aiAnimation* anim = m_scene->mAnimations[i];
+        std::string label = std::string(anim->mName.C_Str());
+        if (label.empty()) label = "Animation " + std::to_string(i);
+        bool selected = (m_currentAnimIndex == i);
+        if (ImGui::Selectable(label.c_str(), selected)) {
+            m_currentAnimIndex = i;
+            double tps = anim->mTicksPerSecond > 0 ? anim->mTicksPerSecond : 25.0;
+            setTimer(0.0, anim->mDuration / tps);
+            timer.start();
+        }
+        if (selected) ImGui::SetItemDefaultFocus();
     }
 }

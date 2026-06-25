@@ -68,6 +68,7 @@ public:
     AnimatedMesh& operator=(const AnimatedMesh&) = delete;
     void uploadUniforms(const Shader& shader, const RenderContext& ctx) const override;
     void draw() const override;
+    void drawMeshUI() override;
     Timer* getTimer() {
         return &timer;
     }
@@ -90,6 +91,7 @@ protected:
     GLuint m_vao = 0, m_vbo = 0, m_ebo = 0;
     GLuint bones_data_ssbo = 0;
     GLuint m_textureID = 0;
+    int m_currentAnimIndex = 0;
     GLsizei m_indexCount = 0;
 
     Timer timer = Timer(0,100000.);

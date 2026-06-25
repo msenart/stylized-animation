@@ -2,6 +2,7 @@
 // Created by mathi on 16/05/2026.
 //
 #include "SelectionManager.h"
+#include "renderer/Mesh.h"
 #include "core/MegaWindowContext.h"
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
@@ -102,6 +103,7 @@ void SelectionManager::select(glm::vec2 mousePos, unsigned int window_h) {
 
 void SelectionManager::draw() {
     if (m_selection != nullptr) {
-        m_selection->draw();
+        Mesh* mesh = m_assets ? m_assets->get(m_selection->meshHandle) : nullptr;
+        m_selection->draw(mesh);
     }
 }

@@ -9,6 +9,7 @@
 #include <glm/glm.hpp>
 
 #include "renderer/RenderPipeline.h"
+#include "core/AssetManager.h"
 class Mesh;
 class Camera;
 class Scene;
@@ -21,8 +22,10 @@ class SelectionManager {
     Object* m_selection = nullptr;
     Scene* m_scene = nullptr;
     RenderPipeline* m_render_pipeline = nullptr;
+    AssetManager* m_assets = nullptr;
 public:
-    SelectionManager(Scene* scene, RenderPipeline* render_pipeline) : m_scene(scene), m_render_pipeline(render_pipeline) {}
+    SelectionManager(Scene* scene, RenderPipeline* render_pipeline, AssetManager* assets)
+        : m_scene(scene), m_render_pipeline(render_pipeline), m_assets(assets) {}
     
     /**
      * @brief read inside the fbo used for the first rendering pass, and return the object drawn at this pos

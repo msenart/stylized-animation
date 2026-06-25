@@ -1,3 +1,4 @@
+#include "renderer/Renderer.h"   // must come before GLFW to keep glad first
 #include "ui/RenderStats.h"
 #include "scene/Scene.h"
 #include <imgui.h>
@@ -34,5 +35,10 @@ void RenderStats::draw(const Window& window, int drawCalls, std::size_t meshCoun
 
     CameraController* camCtrl = window_context->cameraController;
     ImGui::SliderFloat("Camera speed", &camCtrl->speed, 0.0f, 10.0f);
+
+    ImGui::Separator();
+    ImGui::Text("Post-processing");
+    ImGui::Checkbox("Kuwahara Filter", &window_context->renderer->useKuwahara);
+
     ImGui::End();
 }

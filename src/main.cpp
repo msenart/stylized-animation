@@ -116,6 +116,15 @@ int main(int argc, char *argv[]) {
   obj.transform.scale = glm::vec3(100.f);
   scene.objects.push_back(obj);
 
+  meshHandle = assets.add(std::make_unique<AnimatedMesh>("assets/meshes/tai lung melee with anim/tai lung melee with anim.fbx"));
+  sk = assets.get(meshHandle)->shaderKeysMap();
+  sk[PassTag::Hybrid] = ShaderKey{"animated_mesh.vert", "hybrid_toon_shading.frag"};
+  Object tailung = Object{sk};
+  tailung.meshHandle = meshHandle;
+  tailung.material.color = {0.85f, 0.7f, 0.55f};
+  tailung.transform.scale = glm::vec3(0.01f);
+  tailung.transform.position = glm::vec3(2.f, 0.f, 0.f);
+  scene.objects.push_back(tailung);
 
   Light light;
 
@@ -132,7 +141,7 @@ int main(int argc, char *argv[]) {
   CameraController camCtrl;
   DebugConsole     console;
   RenderStats      stats;
-  SelectionManager selectionManager{&scene,renderer.renderPipeline()};
+  SelectionManager selectionManager{&scene, renderer.renderPipeline(), &assets};
 
   // Compiling shaders
   // specially for the skybox
