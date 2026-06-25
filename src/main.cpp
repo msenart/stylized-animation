@@ -91,40 +91,36 @@ int main(int argc, char *argv[]) {
   sb.meshHandle = meshHandle;
   scene.m_skybox = &sb;
 
-  // HACK test just to see if shader compiles correctly
-  ShaderKey testShaderKey = ShaderKey{ "hybrid_smear.vert", "hybrid.frag"};
-  ShaderManager::load(testShaderKey);
   ShaderKey debugBoneShaderKey = ShaderKey{ "debug_bone.vert", "debug_bone.frag"};
   ShaderManager::load(debugBoneShaderKey);
-  // MeshHandle meshHandle = assets.add(std::make_unique<AnimatedMesh>("assets/meshes/Standing Death Left 01.fbx"));
-  meshHandle = assets.add(std::make_unique<SmearMesh>("assets/meshes/Standing Death Left 01.fbx"));
-  sk = assets.get(meshHandle)->shaderKeysMap();
-  sk[PassTag::Hybrid] = ShaderKey{ "hybrid_smear.vert", "hybrid_toon_shading.frag"};
-
-  Object obj = Object{sk};
-  obj.meshHandle =meshHandle;
-  obj.material.color = {0.8f, 0.3f, 0.2f};
-  obj.transform.scale = glm::vec3(0.01f);
-  scene.objects.push_back(obj);
 
   staticMeshData = Geometry::makePlane();
   meshHandle = assets.add(std::make_unique<StaticMesh>(staticMeshData.vertices, staticMeshData.indices));
   sk[PassTag::Hybrid] = ShaderKey{"static_mesh.vert","final_chessboard_mesh.frag"};
-  obj = Object{sk};
+  Object obj = Object{sk};
   obj.meshHandle =meshHandle;
   obj.material.color = {0.8f, 0.3f, 0.2f};
   obj.transform.scale = glm::vec3(100.f);
   scene.objects.push_back(obj);
 
-  meshHandle = assets.add(std::make_unique<AnimatedMesh>("assets/meshes/tai lung melee with anim/tai lung melee with anim.fbx"));
+  meshHandle = assets.add(std::make_unique<SmearMesh>("assets/meshes/tai lung melee with anim/tai lung melee with anim.fbx"));
   sk = assets.get(meshHandle)->shaderKeysMap();
-  sk[PassTag::Hybrid] = ShaderKey{"animated_mesh.vert", "hybrid_toon_shading.frag"};
-  Object tailung = Object{sk};
-  tailung.meshHandle = meshHandle;
-  tailung.material.color = {0.85f, 0.7f, 0.55f};
-  tailung.transform.scale = glm::vec3(0.01f);
-  tailung.transform.position = glm::vec3(2.f, 0.f, 0.f);
-  scene.objects.push_back(tailung);
+  sk[PassTag::Hybrid] = ShaderKey{"hybrid_smear.vert", "hybrid_toon_shading.frag"};
+  {
+    constexpr int   GRID    = 5;
+    constexpr float SPACING = 2.0f;
+    constexpr float OFFSET  = (GRID - 1) * SPACING * 0.5f;
+    for (int row = 0; row < GRID; row++) {
+      for (int col = 0; col < GRID; col++) {
+        Object o = Object{sk};
+        o.meshHandle       = meshHandle;
+        o.material.color   = {0.85f, 0.7f, 0.55f};
+        o.transform.scale  = glm::vec3(0.01f);
+        o.transform.position = glm::vec3(col * SPACING - OFFSET, 0.f, row * SPACING - OFFSET);
+        scene.objects.push_back(o);
+      }
+    }
+  }
 
   Light light;
 

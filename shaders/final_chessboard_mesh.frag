@@ -27,7 +27,15 @@ void main() {
     FragColor1 = getFragColor1(meshId);
 
     // fill the render buffer
-    FragColor0 = vec4(vec3(chessboard(uvO*10)), 1.0);
+    float isWhite = chessboard(uvO*10);
+    if (isWhite == 1.f){
+        FragColor0 = vec4(1.0);
+        FragColor0.xyz = vec3(0.8);
+    }
+    else{
+        FragColor0 = vec4(1.0);
+        FragColor0.xyz = vec3(0.2);
+    }
     vec3 N = fragNorm;
     vec3 V = normalize(viewPos-fragPos);
 

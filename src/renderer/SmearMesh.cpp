@@ -26,26 +26,23 @@ SmearMesh::SmearMesh(const std::string &path) : AnimatedMesh(path) {
   glVertexArrayAttribBinding(m_debugVao, 0, 0);
 }
 
-std::string SmearMesh::getDeltasFilePath(const std::string &meshPath) const {
+std::string SmearMesh::getDeltasFilePath(const std::string &meshPath, int animIdx) const {
   std::filesystem::path p(meshPath);
   std::string filename = p.stem().string();
-  return "assets/deltas/" + filename + ".txt";
+  return "assets/deltas/" + filename + "_anim" + std::to_string(animIdx) + ".txt";
 }
 
 bool SmearMesh::readFromDeltasFile(const std::string &path,
                                    std::vector<float> &outDeltas,
-                                   int &outTotalFrames) const {
-  std::ifstream f(path);
-  if(!f.is_open()) return false;
-  if (!(f >> outTotalFrames)) return false;
-  size_t expectedSize = outTotalFrames * m_vertices.size();
-  outDeltas.reserve(expectedSize);
-  float val;
-  while (f >> val) {
-    outDeltas.push_back(val);
-  }
-  f.close();
-  if (outDeltas.size() != expectedSize) {
+                                   int &outFrameCount) const {
+  std::ifstream f(path, std::ios::binary);
+  if (!f.is_open()) return false;
+  if (!f.read(reinterpret_cast<char*>(&outFrameCount), sizeof(int)) || outFrameCount <= 0)
+    return false;
+
+  size_t expectedSize = static_cast<size_t>(outFrameCount) * m_vertices.size();
+  outDeltas.resize(expectedSize);
+  if (!f.read(reinterpret_cast<char*>(outDeltas.data()), expectedSize * sizeof(float))) {
     Log::warn("Cache file " + path + " is corrupted or incomplete. Recalculating...");
     outDeltas.clear();
     return false;
@@ -55,18 +52,19 @@ bool SmearMesh::readFromDeltasFile(const std::string &path,
 
 void SmearMesh::writeToDeltasFile(const std::string &path,
                                   const std::vector<float> &deltas,
-                                  int totalFrames) const {
+                                  int frameCount) const {
   std::filesystem::create_directory("assets/deltas");
-  std::ofstream f(path);
-  if (!f.is_open()) {
-    Log::warn("Could not open file to write deltas: " + path);
-    return;
+  std::string tmp = path + ".tmp";
+  {
+    std::ofstream f(tmp, std::ios::binary);
+    if (!f.is_open()) {
+      Log::warn("Could not open file to write deltas: " + tmp);
+      return;
+    }
+    f.write(reinterpret_cast<const char*>(&frameCount), sizeof(int));
+    f.write(reinterpret_cast<const char*>(deltas.data()), deltas.size() * sizeof(float));
   }
-  f << totalFrames << "\n";
-  for (float d : deltas) {
-    f << d << "\n";
-  }
-  f.close();
+  std::filesystem::rename(tmp, path);
 }
 
 
@@ -122,96 +120,106 @@ void SmearMesh::computeVertexSets() {
 }
 
 void SmearMesh::generateDeltasSSBO(const std::string& meshPath) {
-  std::string deltasPath = getDeltasFilePath(meshPath);
+  int numAnims = static_cast<int>(m_scene->mNumAnimations);
+  m_animTotalFrames.resize(numAnims);
+
   std::vector<float> flatDeltas;
-  int loadedFrames = 0;
-  bool loaded = readFromDeltasFile(deltasPath, flatDeltas, loadedFrames);
-  if (loaded) {
-    m_totalFrames = loadedFrames;
-    Log::info("Loaded deltas from : " + deltasPath);
-  }
+  std::vector<glm::mat4> flatBonesTransforms;
 
-  double ticksPerSecond = m_scene->mAnimations[0]->mTicksPerSecond != 0 ? m_scene->mAnimations[0]->mTicksPerSecond : 25.0f;
-  double tickStep = ticksPerSecond / m_Fps;
-  double totalDuration = m_scene->mAnimations[0]->mDuration;
+  for (int animIdx = 0; animIdx < numAnims; animIdx++) {
+    m_currentAnimIndex = animIdx;
+    const aiAnimation* anim = m_scene->mAnimations[animIdx];
+    double tps = anim->mTicksPerSecond > 0 ? anim->mTicksPerSecond : 25.0;
+    double tickStep = tps / m_Fps;
 
-  std::vector<glm::mat4> currentTransforms(m_bonesInfo.size());
-  std::vector<glm::mat4> nextTransforms(m_bonesInfo.size());
-  std::vector<std::vector<float>> animationDeltas;
-  std::vector<glm::mat4> flatAnimationBonesTransforms;
+    std::string deltasPath = getDeltasFilePath(meshPath, animIdx);
+    std::vector<float> animDeltas;
+    int loadedFrames = 0;
+    bool loaded = readFromDeltasFile(deltasPath, animDeltas, loadedFrames);
 
-  int frameCounter = 0;
-  for (double currentTick = 0; currentTick < totalDuration; currentTick += tickStep) {
-    double nextTick = currentTick + tickStep;
-    if (nextTick > totalDuration) {
-      nextTick = fmod(nextTick, totalDuration); // loop over
+    if (loaded) {
+      m_animTotalFrames[animIdx] = loadedFrames;
+      Log::info("SmearMesh: loaded anim " + std::to_string(animIdx) + " from cache");
+    } else {
+      Log::info("SmearMesh: baking anim " + std::to_string(animIdx) + " \"" + anim->mName.C_Str() + "\"");
     }
-    calculateGlobalTransformsAtTick(currentTick, m_scene->mRootNode, glm::mat4(1.0f), currentTransforms);
-    calculateGlobalTransformsAtTick(nextTick, m_scene->mRootNode, glm::mat4(1.0f), nextTransforms);
 
-    std::vector<glm::mat4> frameSkinnedBones = currentTransforms;
-    for (int i = 0; i < m_bonesInfo.size(); ++i) {
-      frameSkinnedBones[i] *= m_bonesInfo[i].offsetMatrix;
+    std::vector<glm::mat4> cur(m_bonesInfo.size()), nxt(m_bonesInfo.size());
+    int frameCount = 0;
+    int targetFrames = loaded ? loadedFrames : INT_MAX;
+
+    for (double tick = 0; ; tick += tickStep) {
+      if (loaded ? (frameCount >= targetFrames) : (tick >= anim->mDuration)) break;
+      double nextTick = fmod(tick + tickStep, anim->mDuration);
+
+      calculateGlobalTransformsAtTick(tick, m_scene->mRootNode, glm::mat4(1.0f), cur);
+      calculateGlobalTransformsAtTick(nextTick, m_scene->mRootNode, glm::mat4(1.0f), nxt);
+
+      std::vector<glm::mat4> skinned = cur;
+      for (int i = 0; i < (int)m_bonesInfo.size(); i++)
+        skinned[i] *= m_bonesInfo[i].offsetMatrix;
+      flatBonesTransforms.insert(flatBonesTransforms.end(), skinned.begin(), skinned.end());
+
+      if (!loaded) {
+        std::vector<float> fd;
+        getFrameDeltas(cur, nxt, skinned, fd);
+        animDeltas.insert(animDeltas.end(), fd.begin(), fd.end());
+      }
+      frameCount++;
     }
-    flatAnimationBonesTransforms.insert(flatAnimationBonesTransforms.end(), frameSkinnedBones.begin(), frameSkinnedBones.end());
 
     if (!loaded) {
-      std::vector<float> frameDeltas;
-      getFrameDeltas(currentTransforms, nextTransforms, frameSkinnedBones, frameDeltas);
-      animationDeltas.push_back(frameDeltas);
-      flatDeltas.insert(flatDeltas.end(), frameDeltas.begin(), frameDeltas.end());
-      Log::info("Deltas generated for frame at tick " + std::to_string(currentTick));
+      m_animTotalFrames[animIdx] = frameCount;
+      writeToDeltasFile(deltasPath, animDeltas, frameCount);
+      Log::info("SmearMesh: saved anim " + std::to_string(animIdx) + " to " + deltasPath);
     }
-    frameCounter++;
+
+    flatDeltas.insert(flatDeltas.end(), animDeltas.begin(), animDeltas.end());
   }
-  if (!loaded) {
-    m_totalFrames = frameCounter;
-    writeToDeltasFile(deltasPath, flatDeltas, m_totalFrames);
-    Log::info("Saved deltas to: " + deltasPath);
+  m_currentAnimIndex = 0;
+
+  m_animFrameOffsets.resize(numAnims);
+  int offset = 0;
+  for (int i = 0; i < numAnims; i++) {
+    m_animFrameOffsets[i] = offset;
+    offset += m_animTotalFrames[i];
   }
-  flatDeltas.reserve(
-      m_totalFrames *
-      m_vertices
-          .size()); // reserve() makes element insertion easier with insert()
-  for (const auto &frameDeltas : animationDeltas) {
-    flatDeltas.insert(flatDeltas.end(), frameDeltas.begin(), frameDeltas.end());
-  }
+
   glCreateBuffers(1, &m_deltas_ssbo);
   glNamedBufferData(m_deltas_ssbo, flatDeltas.size() * sizeof(float),
                     flatDeltas.data(), GL_STATIC_DRAW);
-
-  // NOTE maybe either change the function's name or do that somewhere else
-  // because it can be confusing later to find where I create the transforms
-  // SSBO
   glCreateBuffers(1, &m_animation_bones_transforms_ssbo);
   glNamedBufferData(m_animation_bones_transforms_ssbo,
-                    flatAnimationBonesTransforms.size() * sizeof(glm::mat4),
-                    flatAnimationBonesTransforms.data(), GL_STATIC_DRAW);
+                    flatBonesTransforms.size() * sizeof(glm::mat4),
+                    flatBonesTransforms.data(), GL_STATIC_DRAW);
 }
 
-// TODO add another uniform (SSBO) for the deltas and all the data needed for the smear frames;
 void SmearMesh::uploadUniforms(const Shader& shader, const RenderContext& ctx) const {
-    AnimatedMesh::uploadUniforms(shader,ctx);
+    AnimatedMesh::uploadUniforms(shader, ctx);
 
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, m_deltas_ssbo);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, m_animation_bones_transforms_ssbo);
 
-    double time = timer.getCurrentValue();
-    double ticks_per_second = m_scene->mAnimations[0]->mTicksPerSecond != 0 ? m_scene->mAnimations[0]->mTicksPerSecond : 25.0f;
-    double currentTick = fmod(time * ticks_per_second, m_scene->mAnimations[0]->mDuration);
-    double tickStep = ticks_per_second / m_Fps;
-    int currentFrame = static_cast<int>(currentTick / tickStep) % m_totalFrames;
+    int animIdx = glm::clamp(m_currentAnimIndex, 0, (int)m_animTotalFrames.size() - 1);
+    int animTotalFrames = m_animTotalFrames[animIdx];
+    int frameOffset     = m_animFrameOffsets[animIdx];
 
-    shader.set("currentFrame", currentFrame);
+    const aiAnimation* anim = m_scene->mAnimations[animIdx];
+    double tps      = anim->mTicksPerSecond > 0 ? anim->mTicksPerSecond : 25.0;
+    double tick     = fmod(timer.getCurrentValue() * tps, anim->mDuration);
+    double tickStep = tps / m_Fps;
+    int localFrame  = static_cast<int>(tick / tickStep) % animTotalFrames;
+
+    shader.set("currentFrame",  localFrame);
     shader.set("totalVertices", static_cast<int>(m_vertices.size()));
-    shader.set("totalFrames", m_totalFrames);
-    shader.set("betaMax", 1.0f);
-    shader.set("boneStride", static_cast<int>(m_bonesInfo.size())); // in the shader the max number of bones is hardcoded
+    shader.set("totalFrames",   animTotalFrames);
+    shader.set("frameOffset",   frameOffset);
+    shader.set("betaMax",       1.0f);
+    shader.set("boneStride",    static_cast<int>(m_bonesInfo.size()));
 
     std::vector<glm::mat4> currentTransforms;
     getBoneTransforms(currentTransforms);
 
-    std::string boneName = "mixamorig:RightForeArm";
     auto it = m_nodeMap.find("mixamorig:RightForeArm");
     if (it != m_nodeMap.end()) {
       const aiNode* debugNode = it->second;
@@ -393,11 +401,13 @@ void SmearMesh::drawDebugBones(const Shader& shader, const RenderContext& ctx) c
 }
 
 int SmearMesh::getCurrentFrame() {
-  double time = timer.getCurrentValue();
-  double ticks_per_second = m_scene->mAnimations[0]->mTicksPerSecond != 0 ? m_scene->mAnimations[0]->mTicksPerSecond : 25.0f;
-  double currentTick = fmod(time * ticks_per_second, m_scene->mAnimations[0]->mDuration);
-  double tickStep = ticks_per_second / m_Fps;
-  return static_cast<int>(currentTick / tickStep) % m_totalFrames;
+  if (m_animTotalFrames.empty()) return 0;
+  int animIdx = glm::clamp(m_currentAnimIndex, 0, (int)m_animTotalFrames.size() - 1);
+  const aiAnimation* anim = m_scene->mAnimations[animIdx];
+  double tps      = anim->mTicksPerSecond > 0 ? anim->mTicksPerSecond : 25.0;
+  double tick     = fmod(timer.getCurrentValue() * tps, anim->mDuration);
+  double tickStep = tps / m_Fps;
+  return static_cast<int>(tick / tickStep) % m_animTotalFrames[animIdx];
 }
 
 // given a bone index, return its closest ancestor which is not pruned

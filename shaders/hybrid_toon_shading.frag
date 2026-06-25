@@ -1,10 +1,10 @@
 #version 460 core
 
-//#define TOON_SHADING_DIFFUSE
-//#define TOON_SHADING_SPECULAR
+#define TOON_SHADING_DIFFUSE
+#define TOON_SHADING_SPECULAR
 #define TOON_SHADING_RIM_LIGHTING
 #define TOON_SHADING_AMBIENT
-#define GGX_BSDF
+//#define GGX_BSDF
 
 #include "hybrid_metadata.glsl"
 #include "light.glsl"
@@ -95,7 +95,7 @@ void main() {
         #endif
         #ifndef GGX_BSDF
         float shininess = 2.f;
-        diffuse = getPhongDiffuse(L,N);
+        diffuse = 1.2f*getPhongDiffuse(L,N);
         specular = getPhongSpecular(L,N,V,shininess);
         #endif
 

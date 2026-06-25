@@ -539,8 +539,7 @@ void AnimatedMesh::drawMeshUI() {
         bool selected = (m_currentAnimIndex == i);
         if (ImGui::Selectable(label.c_str(), selected)) {
             m_currentAnimIndex = i;
-            double tps = anim->mTicksPerSecond > 0 ? anim->mTicksPerSecond : 25.0;
-            setTimer(0.0, anim->mDuration / tps);
+            setTimer(0.0, 100000.0);
             timer.start();
         }
         if (selected) ImGui::SetItemDefaultFocus();

@@ -7,6 +7,7 @@ layout(location = 2) in vec2 uv;
 uniform int currentFrame;
 uniform int totalVertices; // or just calculate it some other way
 uniform int totalFrames;
+uniform int frameOffset;   // global start frame for the active animation in the flat SSBOs
 uniform int boneStride;
 uniform float betaMax;
 
@@ -50,7 +51,7 @@ int wrapFrame(int frame) {
 }
 
 vec3 getSkinnedPosition(int frameIdx) {
-    int frame = wrapFrame(frameIdx);
+    int globalFrame = frameOffset + wrapFrame(frameIdx);
     mat4 boneTransform = mat4(0.0f);
     VertexBoneData vertexBoneData = allVertexBoneData[gl_VertexID];
 
@@ -58,7 +59,7 @@ vec3 getSkinnedPosition(int frameIdx) {
         uint bone_id = vertexBoneData.ids[i];
         float weight = vertexBoneData.weights[i];
         if (weight > 0.0) {
-            int flatIdx = (frame * boneStride) + int(bone_id);
+            int flatIdx = (globalFrame * boneStride) + int(bone_id);
             boneTransform += allFramesBones[flatIdx] * weight;
         }
     }
@@ -66,14 +67,14 @@ vec3 getSkinnedPosition(int frameIdx) {
 }
 
 mat4 getSkinnedMatrix(int frameIdx) {
-    int frame = wrapFrame(frameIdx);
+    int globalFrame = frameOffset + wrapFrame(frameIdx);
     mat4 boneTransform = mat4(0.0f);
     VertexBoneData vertexBoneData = allVertexBoneData[gl_VertexID];
 
     for (int i = 0; i < MAX_NUM_BONES_PER_VERTEX; i++) {
         uint bone_id = vertexBoneData.ids[i];
         float weight = vertexBoneData.weights[i];
-        int flatIdx = (frame * boneStride) + int(bone_id);
+        int flatIdx = (globalFrame * boneStride) + int(bone_id);
         boneTransform += allFramesBones[flatIdx] * weight;
     }
     return boneTransform;
@@ -93,7 +94,7 @@ vec3 catmullRom(vec3 p0, vec3 p1, vec3 p2, vec3 p3, float t) {
 
 
 void main() {
-    int deltaIdx = (currentFrame * totalVertices) + gl_VertexID;
+    int deltaIdx = ((frameOffset + currentFrame) * totalVertices) + gl_VertexID;
     float currentDelta = deltas[deltaIdx];
     vec3 posCurrent = getSkinnedPosition(currentFrame);
     vec3 posNext = getSkinnedPosition(currentFrame + 1);

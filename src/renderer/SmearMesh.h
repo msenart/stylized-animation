@@ -39,7 +39,8 @@ class SmearMesh : public AnimatedMesh {
     GLuint m_debugVbo = 0;
 
     int m_Fps = 24; // TODO get this information from main.cpp
-    int m_totalFrames;
+    std::vector<int> m_animTotalFrames;   // frame count per animation
+    std::vector<int> m_animFrameOffsets;  // global start frame per animation in the flat SSBOs
     std::vector<std::vector<int>> m_V_kr;
     std::vector<std::vector<int>> m_V_kt;
     // TODO put this as artist's input as they do in SMEAR's implementation
@@ -51,9 +52,9 @@ class SmearMesh : public AnimatedMesh {
     }
     void computeVertexSets();
     void generateDeltasSSBO(const std::string& meshPath);
-    std::string getDeltasFilePath(const std::string& meshPath) const;
-    bool readFromDeltasFile(const std::string& path, std::vector<float>& outDeltas, int& outTotalFrames) const;
-    void writeToDeltasFile(const std::string& path, const std::vector<float>& deltas, int totalFrames) const;
+    std::string getDeltasFilePath(const std::string& meshPath, int animIdx) const;
+    bool readFromDeltasFile(const std::string& path, std::vector<float>& outDeltas, int& outFrameCount) const;
+    void writeToDeltasFile(const std::string& path, const std::vector<float>& deltas, int frameCount) const;
     void getFrameDeltas(std::vector<glm::mat4> currentTransforms, std::vector<glm::mat4> nextTransforms, std::vector<glm::mat4> frameSkinnedBones, std::vector<float> &outFrameDeltas);
     void createDeltasSSBO();
     int getPrunedBoneIdx(int boneIdx);
