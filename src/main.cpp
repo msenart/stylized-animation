@@ -15,6 +15,7 @@
 #include "renderer/SmearMesh.h"
 #include "scene/Scene.h"
 #include "scene/CameraController.h"
+#include "scene/Cinematic.h"
 #include "renderer/Geometry.h"
 #include "renderer/Renderer.h"
 #include "renderer/Shader.h"
@@ -116,16 +117,21 @@ int main(int argc, char *argv[]) {
   obj.transform.scale = glm::vec3(100.f);
   scene.objects.push_back(obj);
 
-
+  //Light
   Light light;
-
   light.position  = {0.f, 0.f, 5.f};
   light.color = {1.0,1.0,0};
   light.intensity = 1.f;
   scene.lights.push_back(light);
 
+  //camera
   scene.main_camera.position = {0.f, 1.f, 5.f};
   scene.main_camera.target   = {0.f, 0.f, 0.f};
+
+
+  //cinematic
+  Cinematic cinematic;
+
 
   // instancing the necessary elements to render the scene
   Renderer         renderer;
@@ -279,7 +285,7 @@ int main(int argc, char *argv[]) {
     window.getSize(w, h);
 
     float aspect = (h > 0) ? static_cast<float>(w) / static_cast<float>(h) : 1.f;
-    renderer.render(&scene, &window, assets, aspect, dt);
+    renderer.render(&scene, &window, &cinematic, assets, aspect, dt);
 
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();

@@ -1,6 +1,7 @@
 #pragma once
 #include "RenderPipeline.h"
 #include "scene/Scene.h"
+#include "scene/Cinematic.h"
 #include "core/AssetManager.h"
 #include "core/Window.h"
 #include "renderer/Types_renderer.h"
@@ -32,7 +33,7 @@ public:
      * @param aspect Viewport width / height for the projection matrix.
      * @param dt elapsed time since last frame
      */
-    void render(Scene* scene, Window* window, const AssetManager& assets, float aspect, float dt);
+    void render(Scene* scene, Window* window, Cinematic* cinematic, const AssetManager& assets, float aspect, float dt);
 
     void onResize(int width, int height);
 
