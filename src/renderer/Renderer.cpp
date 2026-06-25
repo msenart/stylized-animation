@@ -124,8 +124,8 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
         debugShader.set("model", obj.transform.matrix());
         debugShader.set("meshId", static_cast<unsigned int>(i+1));
 
-        const Mesh& mesh = assets.get(obj.meshHandle);
-        const SmearMesh* smearMesh = dynamic_cast<const SmearMesh*>(&mesh);
+        const Mesh* mesh = assets.get(obj.meshHandle);
+        const auto* smearMesh = dynamic_cast<const SmearMesh*>(mesh);
         if (smearMesh) {
           smearMesh->drawDebugBones(debugShader, ctx);
         }

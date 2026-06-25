@@ -91,11 +91,6 @@ int main(int argc, char *argv[]) {
   sb.meshHandle = meshHandle;
   scene.m_skybox = &sb;
 
-  // creating the scene assets
-  meshHandle = assets.add(std::make_unique<AnimatedMesh>("assets/meshes/Standing Death Left 01.fbx"));
-  sk = assets.get(meshHandle)->shaderKeysMap();
-  sk[PassTag::Hybrid] = ShaderKey{"animated_mesh.vert","hybrid_toon_shading.frag"};
-
   // HACK test just to see if shader compiles correctly
   ShaderKey testShaderKey = ShaderKey{ "hybrid_smear.vert", "hybrid.frag"};
   ShaderManager::load(testShaderKey);
@@ -103,8 +98,8 @@ int main(int argc, char *argv[]) {
   ShaderManager::load(debugBoneShaderKey);
   // MeshHandle meshHandle = assets.add(std::make_unique<AnimatedMesh>("assets/meshes/Standing Death Left 01.fbx"));
   meshHandle = assets.add(std::make_unique<SmearMesh>("assets/meshes/Standing Death Left 01.fbx"));
-  sk = assets.get(meshHandle).shaderKeysMap();
-  sk[PassTag::Hybrid] = ShaderKey{ "hybrid_smear.vert", "hybrid.frag"};
+  sk = assets.get(meshHandle)->shaderKeysMap();
+  sk[PassTag::Hybrid] = ShaderKey{ "hybrid_smear.vert", "hybrid_toon_shading.frag"};
 
   Object obj = Object{sk};
   obj.meshHandle =meshHandle;
@@ -291,7 +286,7 @@ int main(int argc, char *argv[]) {
     ImGui::NewFrame();
     selectionManager.draw();
     console.draw();
-    stats.draw(window, renderer.drawCalls(), assets.meshCount(), fps, assets.get(meshHandle).getCurrentFrame());
+    stats.draw(window, renderer.drawCalls(), assets.meshCount(), fps, assets.get(meshHandle)->getCurrentFrame());
     ShaderManager::drawUI();
 
     ImGui::Render();

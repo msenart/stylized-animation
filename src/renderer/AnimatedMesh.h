@@ -82,9 +82,6 @@ protected:
         return key_map;
     }
 
-private:
-    // const static std::map<MeshPassTag, ShaderKey> SHADER_KEYS_MAP;
-
     const aiScene* m_scene = nullptr;
     Assimp::Importer m_importer;
     std::vector<AnimatedVertex> m_vertices = {};
