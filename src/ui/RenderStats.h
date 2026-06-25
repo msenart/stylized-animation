@@ -22,5 +22,5 @@ public:
      * @param meshCount  Total number of meshes in the AssetManager.
      * @param fps        Frames per second (1 / deltaTime).
      */
-    void draw(const Window& window, int drawCalls, std::size_t meshCount, float fps);
+    void draw(const Window& window, int drawCalls, std::size_t meshCount, float fps, int currentFrame);
 };

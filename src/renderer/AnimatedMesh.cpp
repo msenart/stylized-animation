@@ -8,9 +8,14 @@
 #include "core/Log.h"
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
+#include <cstring>
 #include <glm/gtx/quaternion.hpp>
+#include <functional>
 
 #include "RenderPipeline.h"
+
+// TODO globally change "node" for "bone" if the node is guaranteed to be a
+// bone. Lots of headaches because of that uncertainty.
 
 AnimatedMesh::AnimatedMesh(const std::string& path) {
     m_scene = m_importer.ReadFile(path,
@@ -30,6 +35,7 @@ AnimatedMesh::AnimatedMesh(const std::string& path) {
     }
 
     parseMeshes();
+    buildNodeMap(m_scene->mRootNode, 0);
     populateBuffers();
 }
 
@@ -48,12 +54,21 @@ void AnimatedMesh::uploadUniforms(const Shader& shader, const RenderContext& ctx
     Mesh::uploadUniforms(shader,ctx);
     std::vector<glm::mat4> transforms;
     getBoneTransforms(transforms);
+    for (unsigned int i = 0; i < m_bonesInfo.size(); i++) {
+      m_bonesInfo[i].finalTransformationMatrix = transforms[i];
+    }
+    for (unsigned int i = 0; i < m_bonesInfo.size(); i++) {
+      transforms[i] *= m_bonesInfo[i].offsetMatrix;
+    }
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, bones_data_ssbo);
     for (int i = 0 ; i < m_bonesInfo.size(); ++i) {
         shader.set(("gBones["+std::to_string(i)+"]").c_str(), transforms[i]);
     }
 }
 
+// This method adds a bone to the dictionary if it isn't already there, then
+// returns an ID. It only stores bones (and not dummy nodes) because it receives
+// a proper aiBone*
 int AnimatedMesh::getBoneID(const aiBone* bone) {
     std::string boneName(bone->mName.data);
     auto it = m_boneNameToIndexMap.find(boneName);
@@ -118,6 +133,7 @@ glm::mat4 AnimatedMesh::calculateInterpolatedPosition(const double& animationTic
     glm::vec3 out = glm::make_vec3(&start.x) + ((float)factor)*glm::make_vec3(&delta.x);
     return glm::translate(glm::mat4(1.0f), out);
 }
+
 glm::mat4 AnimatedMesh::calculateInterpolatedScale(const double& animationTicks, const aiNodeAnim* animationNode) {
 
     if (animationNode->mNumScalingKeys == 1) {
@@ -145,23 +161,43 @@ glm::mat4 AnimatedMesh::calculateInterpolatedScale(const double& animationTicks,
     return glm::scale(glm::mat4(1.0f), out);
 }
 
-void AnimatedMesh::readNodeHierarchy(const double& animationTicks, const aiNode *node, const glm::mat4 &parentTransformation) const {
-    glm::mat4 node_transformation = aiMat4ToGlmMat4(node->mTransformation);
-    std::string nodeName = node->mName.data;
+const aiNodeAnim* AnimatedMesh::getNodeAnimFromNode(const aiNode* node) const {
+  std::string nodeName = node->mName.data;
 
-    const aiAnimation* animation = m_scene->mAnimations[0];
-    const aiNodeAnim* animation_node = nullptr;
-    for (unsigned int i = 0; i < animation->mNumChannels; i++) {
-        const aiNodeAnim* animation_node_i = animation->mChannels[i];
-        if (std::string(animation_node_i->mNodeName.data) == nodeName) {
-            animation_node = animation_node_i;
-            break;
-        }
+  const aiAnimation* animation = m_scene->mAnimations[0]; // TODO adapt for more animations
+  for (unsigned int i = 0; i < animation->mNumChannels; i++) {
+    const aiNodeAnim* animation_node_i = animation->mChannels[i];
+    if (std::string(animation_node_i->mNodeName.data) == nodeName) {
+      return animation_node_i;
     }
+  }
+  return nullptr;
+}
 
-    if (animation_node) {
-        glm::mat4 translation = calculateInterpolatedPosition(animationTicks, animation_node);
-        glm::mat4 rotation = calculateInterpolatedRotation(animationTicks, animation_node);
+void AnimatedMesh::buildNodeMap(const aiNode *node, int h) {
+  if (!node) return;
+  m_nodeMap[node->mName.C_Str()] = node;
+  std::cout << "height = " << h << ": " << node->mName.C_Str() << std::endl;
+  for (int i = 0; i < node->mNumChildren; ++i) {
+    buildNodeMap(node->mChildren[i], h+1);
+  }
+}
+
+// recursive function that calculates the bones global transforms at a given
+// moment in the animation's timeline. Since the offset matrix of the bones is
+// constant, we do not need to return them.
+void AnimatedMesh::calculateGlobalTransformsAtTick(
+    const double &animationTicks, const aiNode *node,
+    const glm::mat4 &parentTransformation,
+    std::vector<glm::mat4> &outBoneGlobalTransform
+) const {
+  glm::mat4 node_transformation = aiMat4ToGlmMat4(node->mTransformation);
+  std::string nodeName = node->mName.data;
+  const aiNodeAnim *animation_node = getNodeAnimFromNode(node);
+
+  if (animation_node) {
+    glm::mat4 translation = calculateInterpolatedPosition(animationTicks, animation_node);
+          glm::mat4 rotation = calculateInterpolatedRotation(animationTicks, animation_node);
         glm::mat4 scale = calculateInterpolatedScale(animationTicks, animation_node);
         node_transformation=translation*rotation*scale;
     }
@@ -170,11 +206,10 @@ void AnimatedMesh::readNodeHierarchy(const double& animationTicks, const aiNode 
 
     if (m_boneNameToIndexMap.count(nodeName) != 0) {
         auto idx = m_boneNameToIndexMap[nodeName];
-        auto& bone = m_bonesInfo[idx];
-        bone.finalTransformationMatrix = m_globalInverseTransform*globalTransformation*bone.offsetMatrix;
+        outBoneGlobalTransform[idx] = m_globalInverseTransform * globalTransformation;
     }
     for (unsigned int i = 0; i < node->mNumChildren; i++) {
-        readNodeHierarchy(animationTicks,node->mChildren[i], globalTransformation);
+        calculateGlobalTransformsAtTick(animationTicks,node->mChildren[i], globalTransformation, outBoneGlobalTransform);
     }
 }
 
@@ -187,20 +222,20 @@ void AnimatedMesh::getBoneTransforms(std::vector<glm::mat4> &transforms) const {
 
         auto identity = glm::identity<glm::mat4>();
 
-        readNodeHierarchy(ticks, m_scene->mRootNode, identity);
-        for (unsigned int i = 0; i < m_bonesInfo.size(); i++) {
-            transforms[i] = m_bonesInfo[i].finalTransformationMatrix;
-        }
+        calculateGlobalTransformsAtTick(ticks, m_scene->mRootNode, identity, transforms);
+        // for (unsigned int i = 0; i < m_bonesInfo.size(); i++) {
+        //     transforms[i] *= m_bonesInfo[i].offsetMatrix; // BUG if something explodes look here
+        // }
     }
     else {
         transforms.resize(m_bonesInfo.size());
 
         auto identity = glm::identity<glm::mat4>();
 
-        readNodeHierarchy(0, m_scene->mRootNode, identity);
-        for (unsigned int i = 0; i < m_bonesInfo.size(); i++) {
-            transforms[i] = m_bonesInfo[i].finalTransformationMatrix;
-        }
+        calculateGlobalTransformsAtTick(0, m_scene->mRootNode, identity, transforms);
+        // for (unsigned int i = 0; i < m_bonesInfo.size(); i++) {
+        //     transforms[i] *= m_bonesInfo[i].offsetMatrix;
+        // }
     }
 }
 
@@ -312,4 +347,127 @@ void AnimatedMesh::populateBuffers() {
 
 void AnimatedMesh::setTimer(const double& minTime, const double& maxTime) {
     this->timer = Timer(minTime,maxTime);
+}
+
+// sets bone root (c_r), bone tip (c_t) and bone length
+// TODO try and invert the logic (pick the c_t first and then c_r by getting the parent)
+// VERSION THAT TAKES FIRST CHILD TO CALCULATE TIP POSITION
+// void AnimatedMesh::getBonePosition(const aiNode *currentNode,
+//                                    const std::vector<glm::mat4> &transforms,
+//                                    glm::vec3 &c_r,
+//                                    glm::vec3 &c_t
+// ) {
+//   auto getGlobalTransform = [&](const std::string &name) -> glm::mat4 {
+//     auto it = m_boneNameToIndexMap.find(name);
+//     if (it != m_boneNameToIndexMap.end()) {
+//       return transforms[it->second];
+//     }
+//     return glm::mat4();
+//   };
+//   c_r = glm::vec3(getGlobalTransform(currentNode->mName.C_Str())[3]); // root pos = position of current node
+
+//   std::vector<const aiNode*> childrenBones;
+//   getChildrenBones(currentNode, childrenBones);
+//   if (childrenBones.empty()) {
+//     // suppose length 1
+//     // TODO improve fallback by using the dummy nodes that are likely parents of the leaf node
+//     c_t = c_r + glm::vec3(.0f, .5f, .0f);
+//     return;
+//   }
+//   const aiNode* childBone = childrenBones[0];
+//   c_t = glm::vec3(getGlobalTransform(childBone->mName.C_Str())[3]);
+// }
+
+// VERSION THAT GOES REVERSE BUT DOESN'T INVERT ROOT AND TIP AFTER
+// void AnimatedMesh::getBonePosition(const aiNode *currentNode,
+//                                    const std::vector<glm::mat4> &transforms,
+//                                    glm::vec3 &c_r,
+//                                    glm::vec3 &c_t
+// ) {
+//   auto getGlobalTransform = [&](const std::string &name) -> glm::mat4 {
+//     auto it = m_boneNameToIndexMap.find(name);
+//     if (it != m_boneNameToIndexMap.end()) {
+//       return transforms[it->second];
+//     }
+//     return glm::mat4();
+//   };
+//   c_t = glm::vec3(getGlobalTransform(currentNode->mName.C_Str())[3]); // root pos = position of current node
+
+//   const aiNode* parentBone = getParentBone(currentNode);
+//   if (parentBone) {
+//     glm::vec3 parent_c_t = glm::vec3(getGlobalTransform(parentBone->mName.C_Str())[3]);
+//     c_r = parent_c_t;
+//     return;
+//   }
+//   // TODO improve fallback by using the dummy nodes that are likely parents of the leaf node
+//   c_r = c_t + glm::vec3(0, 0.1f, 0);
+// }
+
+void AnimatedMesh::getBonePosition(const aiNode *currentNode,
+                                   const std::vector<glm::mat4> &transforms,
+                                   glm::vec3 &c_r,
+                                   glm::vec3 &c_t) {
+    auto getGlobalTransform = [&](const std::string &name) -> glm::mat4 {
+        auto it = m_boneNameToIndexMap.find(name);
+        if (it != m_boneNameToIndexMap.end()) return transforms[it->second];
+        return glm::mat4(1.0f);
+    };
+
+    c_r = glm::vec3(getGlobalTransform(currentNode->mName.C_Str())[3]);
+
+    std::vector<const aiNode*> childrenBones;
+    getChildrenBones(currentNode, childrenBones);
+
+    if (!childrenBones.empty()) {
+        glm::vec3 avg_tip(0.0f);
+        for (const aiNode* child : childrenBones) {
+            avg_tip += glm::vec3(getGlobalTransform(child->mName.C_Str())[3]);
+        }
+        c_t = avg_tip / static_cast<float>(childrenBones.size());
+    } else {
+        const aiNode* parentBone = getParentBone(currentNode);
+        if (parentBone) {
+            glm::vec3 parent_pos = glm::vec3(getGlobalTransform(parentBone->mName.C_Str())[3]);
+            glm::vec3 direction = c_r - parent_pos;
+            c_t = c_r + direction; // Make the leaf bone exactly as long as its parent, pointing the same way
+        } else {
+            c_t = c_r + glm::vec3(0.0f, 0.1f, 0.0f);
+        }
+    }
+}
+
+void AnimatedMesh::getChildrenBones(const aiNode *currentNode,
+                                    std::vector<const aiNode*> &outChildrenBones) {
+  // from the current node, go down the tree until you find the first real bone
+  // from each immediate children of it
+
+  std::function<const aiNode*(const aiNode*)> getFirstBoneInSubtree = [&](const aiNode *root) -> const aiNode* {
+    // can return root itself
+    if (m_boneNameToIndexMap.count(root->mName.C_Str()) > 0) return root;
+    if (root->mNumChildren == 0) return nullptr;
+    for (int i = 0; i < root->mNumChildren; ++i) {
+      const aiNode* childBone = getFirstBoneInSubtree(root->mChildren[i]);
+      if (childBone != nullptr) {
+        return childBone;
+      }
+    }
+    return nullptr;
+  };
+
+  for (int i = 0; i < currentNode->mNumChildren; ++i) {
+    const aiNode* child = currentNode->mChildren[i];
+    const aiNode* bone = getFirstBoneInSubtree(child);
+    if (bone != nullptr) {
+      outChildrenBones.push_back(bone);
+    }
+  }
+}
+
+const aiNode *AnimatedMesh::getParentBone(const aiNode *currentNode) {
+  const aiNode* parent = currentNode->mParent;
+  // parent exists but is not bone
+  while (parent && m_boneNameToIndexMap.count(parent->mName.C_Str()) <= 0) {
+    parent = parent->mParent;
+  }
+  return parent;
 }

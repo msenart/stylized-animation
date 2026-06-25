@@ -56,6 +56,7 @@ set(sources
     ${SOURCE_DIR}/ui/DebugConsole.cpp
     ${SOURCE_DIR}/ui/RenderStats.cpp
     ${SOURCE_DIR}/renderer/AnimatedMesh.cpp
+    ${SOURCE_DIR}/renderer/SmearMesh.cpp
     ${SOURCE_DIR}/core/Timer.cpp
     ${SOURCE_DIR}/core/Timer.h
     ${SOURCE_DIR}/ui/SelectionManager.cpp

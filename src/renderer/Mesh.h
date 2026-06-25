@@ -11,7 +11,7 @@ class Mesh {
 public:
     //Meshes don't have shader Handle but only shader keys
     //shader handles of object of the scene are created at runtime in main.c
-    //and stored in the atribute passTagShaderHandle of the objects of the 
+    //and stored in the atribute passTagShaderHandle of the objects of the
     //vector "objects" of the scene
     virtual const std::map<PassTag, ShaderKey> shaderKeysMap() const = 0;
 
@@ -22,4 +22,6 @@ public:
     Mesh()                         = default;
     Mesh(const Mesh&)              = delete;
     Mesh& operator=(const Mesh&)   = delete;
+
+    virtual int getCurrentFrame();
 };

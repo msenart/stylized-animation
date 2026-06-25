@@ -4,12 +4,13 @@
 #include "renderer/Shader.h"
 #include <glad/glad.h>
 #include <map>
+#include "renderer/SmearMesh.h"
 #include "scene/Scene.h"
 #include "RenderPipeline.h"
 
 Renderer::Renderer() {
     glEnable(GL_DEPTH_TEST);
-    
+
 }
 
 void Renderer::setup(Scene *scene, const Window *window, const AssetManager &assets, float aspect) {
@@ -87,6 +88,29 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
     }
 
 
+    glDisable(GL_DEPTH_TEST);
+
+    ShaderHandle debugHandle = ShaderManager::getShaderHandleWithKey(ShaderKey{"debug_bone.vert", "debug_bone.frag"});
+    if (debugHandle != 0) {
+      const Shader& debugShader = ShaderManager::get(debugHandle);
+      debugShader.bind();
+      debugShader.set("view", scene->main_camera.view());
+      debugShader.set("projection", scene->main_camera.projection(aspect));
+
+      for (unsigned int i = 0; i < scene->objects.size(); i++) {
+        auto& obj = scene->objects[i];
+        debugShader.set("model", obj.transform.matrix());
+        debugShader.set("meshId", static_cast<unsigned int>(i+1));
+
+        const Mesh& mesh = assets.get(obj.meshHandle);
+        const SmearMesh* smearMesh = dynamic_cast<const SmearMesh*>(&mesh);
+        if (smearMesh) {
+          smearMesh->drawDebugBones(debugShader, ctx);
+        }
+      }
+    }
+
+    glEnable(GL_DEPTH_TEST);
     // Mesh ID pass
     // m_renderPipeline.clear("Mesh ID Render Pass");
     // m_renderPipeline.execute("Mesh ID Render Pass");
@@ -152,13 +176,13 @@ void Renderer::render(Scene* scene,Window* window, const AssetManager& assets, f
     }
     unsigned int texture = hybridFboTexs[0];
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture); 
+    glBindTexture(GL_TEXTURE_2D, texture);
     texture = hybridFboTexs[1];
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, texture); 
+    glBindTexture(GL_TEXTURE_2D, texture);
     texture = hybridFboTexs[2];
     glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, texture); 
+    glBindTexture(GL_TEXTURE_2D, texture);
     //glActiveTexture(GL_TEXTURE0);
     //we tell the shader that the texture named sceneTexture is in the texture unit 0
     //this texture is actually the one of the previous framebuffer
