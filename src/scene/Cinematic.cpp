@@ -1,14 +1,17 @@
 #include "scene/Cinematic.h"
 
 void Cinematic::uploadUniforms(const Shader& shader, float time){
-    if(time>1.0 && time<1.5){
-        shader.set("effect", 1);
+    //float
+    std::vector<float> keyFrames = {1.3, 1.8, 1.9, 2.0, 2.1};
+    std::vector<int> effects = {0, 2, 1, 2, 1};
+    int effect = 0;
+    for(int i=0; i<keyFrames.size(); i++){
+        if(time<keyFrames[i]){
+            effect = effects[i];
+            break;
+        }
     }
-    else if(time>1.7 && time<2.0){
-        shader.set("effect", 2);
-    }
-    else{
-        shader.set("effect", 0);
-    }
+    shader.set("effect", effect);
+
     
 }
