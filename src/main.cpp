@@ -107,7 +107,7 @@ int main(int argc, char *argv[]) {
   sk = assets.get(meshHandle)->shaderKeysMap();
   sk[PassTag::Hybrid] = ShaderKey{"hybrid_smear.vert", "hybrid_toon_shading.frag"};
   {
-    constexpr int   GRID    = 5;
+    constexpr int   GRID    = 3;//5
     constexpr float SPACING = 2.0f;
     constexpr float OFFSET  = (GRID - 1) * SPACING * 0.5f;
     for (int row = 0; row < GRID; row++) {
