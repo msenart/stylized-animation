@@ -30,11 +30,11 @@ void main() {
     float isWhite = chessboard(uvO*10);
     if (isWhite == 1.f){
         FragColor0 = vec4(1.0);
-        FragColor0.xyz = vec3(0.8);
+        FragColor0.xyz = vec3(1.1,1.1,0.5);
     }
     else{
         FragColor0 = vec4(1.0);
-        FragColor0.xyz = vec3(0.2);
+        FragColor0.xyz = vec3(0.5,0.2,0.2);
     }
     vec3 N = fragNorm;
     vec3 V = normalize(viewPos-fragPos);

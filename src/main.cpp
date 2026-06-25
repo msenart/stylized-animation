@@ -210,16 +210,18 @@ int main(int argc, char *argv[]) {
   });
 
   Log::info("Engine ready");
-  Log::info("F1 -> toggle camera control | F2 -> reload all shaders");
+  Log::info("F1 -> toggle camera control | F2 -> reload all shaders | F4 -> show/hide UI");
 
   double prevTime = glfwGetTime();
   int currentFrame = 0;
   float  fps      = 0.f;
   bool paused = false;
+  bool showUI = true;
   // Edge-trigger state for toggle keys
   bool prevF1 = false;
   bool prevF2 = false;
   bool prevF3 = false;
+  bool prevF4 = false;
 
   // Record animation
   int vid_w = 1280;
@@ -277,6 +279,11 @@ int main(int argc, char *argv[]) {
     }
     prevF3 = f3;
 
+    // F4 - show/hide UI
+    bool f4 = glfwGetKey(window.handle(), GLFW_KEY_F4) == GLFW_PRESS;
+    if (f4 && !prevF4) showUI = !showUI;
+    prevF4 = f4;
+
     // ZQSD camera movement
     camCtrl.update(scene.main_camera, window.handle(), dt);
 
@@ -289,11 +296,12 @@ int main(int argc, char *argv[]) {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
-    selectionManager.draw();
-    console.draw();
-    stats.draw(window, renderer.drawCalls(), assets.meshCount(), fps, assets.get(meshHandle)->getCurrentFrame());
-    ShaderManager::drawUI();
-
+    if (showUI) {
+      selectionManager.draw();
+      console.draw();
+      stats.draw(window, renderer.drawCalls(), assets.meshCount(), fps, assets.get(meshHandle)->getCurrentFrame());
+      ShaderManager::drawUI();
+    }
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
