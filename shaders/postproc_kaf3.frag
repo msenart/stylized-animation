@@ -6,9 +6,9 @@ in vec2 texCoord;
 uniform sampler2D screenTexture;
 uniform sampler2D tensorTexture;
 uniform vec2 screenSize;
-uniform int radius = 12;
+uniform int radius = 6;
 
-const int N_SECTORS = 12;
+const int N_SECTORS = 8;
 
 layout(location = 0) out vec4 fragColor;
 
@@ -39,7 +39,6 @@ void main() {
         sectorW   [i] = 0.0;
     }
 
-    // Garde-fous anti division par zéro
     int   safeRadius = max(radius, 2);
     float radius2    = float(safeRadius * safeRadius);
     vec2  safeScreen = max(screenSize, vec2(1.0));
@@ -70,20 +69,20 @@ void main() {
     vec3  result = vec3(0.0);
     float minVar = 1e9;
 
+    float weightSum = 0.0;
+    vec3 colorSum = vec3(0.0);
+
     for (int i = 0; i < N_SECTORS; i++) {
         if (sectorW[i] < 1e-6) continue;
         vec3  mean = sectorMean[i] / sectorW[i];
         float var  = sectorVar[i]  / sectorW[i] - dot(mean, mean);
-        if (var < minVar) {
-            minVar = var;
-            result = mean;
-        }
+
+        float w = 1.0 / (1.0 + pow(max(var, 0.0), 4.0));
+        colorSum += w * mean;
+        weightSum += w;
     }
 
-    // Fallback si aucun secteur n'a accumulé de poids
-    if (minVar >= 1e9) {
-        result = texture(screenTexture, texCoord).rgb;
-    }
+    result = colorSum / max(weightSum, 1e-6);
 
     fragColor = vec4(result, 1.0);
 }

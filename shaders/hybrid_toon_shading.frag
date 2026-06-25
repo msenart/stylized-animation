@@ -1,7 +1,7 @@
 #version 460 core
 
-#define TOON_SHADING_DIFFUSE
-#define TOON_SHADING_SPECULAR
+//#define TOON_SHADING_DIFFUSE
+//#define TOON_SHADING_SPECULAR
 #define TOON_SHADING_RIM_LIGHTING
 #define TOON_SHADING_AMBIENT
 #define GGX_BSDF
@@ -85,8 +85,8 @@ void main() {
         float specular = 0;
         #ifdef GGX_BSDF
         float roughness = 0.6f;
-        diffuse = 2*getGGXDiffuse(L,N);
-        specular = 2*getGGXSpecular(L,N,V,roughness);
+        diffuse = getGGXDiffuse(L,N);
+        specular = getGGXSpecular(L,N,V,roughness);
         #endif
         #ifndef GGX_BSDF
         float shininess = 2.f;
@@ -102,10 +102,16 @@ void main() {
         float midtone_to_light = sin_smoothstep(diffuse,0.35f, 0.5f);
         FragColor0.rgb += k_diffuse*light.color*baseColor*(1-k_ambient)*(max(shadow_to_midtone,midtone_to_light));
         #endif
+        #ifndef TOON_SHADING_DIFFUSE
+        FragColor0.rgb += k_diffuse*light.color*baseColor*diffuse;
+        #endif
 
         #ifdef TOON_SHADING_SPECULAR
         FragColor0.rgb += k_specular*light.color*halftone(patternPos,0.15f,sin_smoothstep(2*pow(specular,2)-1,-1.0f,1.0f));
 //        FragColor0.rgb += light.color*pow(sin_smoothstep(dot(-V,R),2),0.5f);
+        #endif
+        #ifndef TOON_SHADING_SPECULAR
+        FragColor0.rgb += k_specular*light.color*specular;
         #endif
 
         #ifdef TOON_SHADING_RIM_LIGHTING
