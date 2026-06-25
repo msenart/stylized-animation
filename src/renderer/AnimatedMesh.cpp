@@ -31,6 +31,8 @@ AnimatedMesh::AnimatedMesh(const std::string& path) {
         Log::error("no meshes found in path: " + path);
         return;
     }
+    double anim_duration = m_scene->mAnimations[0]->mDuration;
+    printf("anim duration : %f\n",anim_duration );
 
     parseMeshes();
     buildNodeMap(m_scene->mRootNode, 0);
