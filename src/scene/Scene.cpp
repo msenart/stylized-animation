@@ -24,7 +24,9 @@ void Object::draw(bool *p_open) {
 
     if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::DragFloat3("Position", glm::value_ptr(transform.position), 0.1f);
-        ImGui::DragFloat3("Rotation", glm::value_ptr(transform.rotation), 1.0f);
+        glm::vec3 euler = glm::degrees(glm::eulerAngles(transform.rotation));
+        if (ImGui::DragFloat3("Rotation (deg)", glm::value_ptr(euler), 1.0f))
+            transform.rotation = glm::quat(glm::radians(euler));
         ImGui::DragFloat3("Scale",    glm::value_ptr(transform.scale),    0.05f);
     }
 

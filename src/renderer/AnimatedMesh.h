@@ -30,6 +30,7 @@ static constexpr unsigned int WEIGHTS_LOCATION = 4;
 struct AnimatedVertex {
     glm::vec3 position{0};
     glm::vec3 normal{0};
+    glm::vec2 uv{0};
     std::array<unsigned int,MAX_NUM_BONES_PER_VERTEX> bonesIDs = {0,0,0,0};
     std::array<float, MAX_NUM_BONES_PER_VERTEX> weights = {0,0,0,0};
     void addBoneData(unsigned int boneID, float weight) {
@@ -88,6 +89,7 @@ protected:
     std::vector<uint32_t> m_indices = {};
     GLuint m_vao = 0, m_vbo = 0, m_ebo = 0;
     GLuint bones_data_ssbo = 0;
+    GLuint m_textureID = 0;
     GLsizei m_indexCount = 0;
 
     Timer timer = Timer(0,100000.);
@@ -118,4 +120,5 @@ protected:
     void getBonePosition(const aiNode *currentNode, const std::vector<glm::mat4> &transforms, glm::vec3 &c_r, glm::vec3 &c_t);
     void getChildrenBones(const aiNode* currentNode, std::vector<const aiNode*> &outChildrenBones);
     const aiNode* getParentBone(const aiNode* currentNode);
+    void loadAlbedoTexture(const std::string& meshPath);
 };

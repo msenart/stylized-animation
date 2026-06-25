@@ -2,10 +2,12 @@
 
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec3 normal;
+layout(location = 2) in vec2 uv;
 
 out vec3 normalO;
 out vec3 localPosO;
 out vec3 fragPos;
+out vec2 uvO;
 out float realZ;
 flat out uint vertexID;
 
@@ -41,6 +43,7 @@ void main() {
     gl_Position = projection*view*vec4(fragPos,1.0);
     normalO = vec3(transpose(inverse(boneTransform))*vec4(normal,0.0));
     localPosO = position;
+    uvO = uv;
     vertexID = gl_VertexID;
     realZ = (view*vec4(fragPos,1.0)).z; //before projection -> linear
 }

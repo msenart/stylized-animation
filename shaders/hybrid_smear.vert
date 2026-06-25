@@ -2,6 +2,7 @@
 
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec3 normal;
+layout(location = 2) in vec2 uv;
 
 uniform int currentFrame;
 uniform int totalVertices; // or just calculate it some other way
@@ -12,6 +13,7 @@ uniform float betaMax;
 out vec3 normalO;
 out vec3 localPosO;
 out vec3 fragPos;
+out vec2 uvO;
 out float realZ;
 out vec3 debugColor; // DEBUG
 flat out uint vertexID;
@@ -113,6 +115,7 @@ void main() {
     normalO = vec3(transpose(inverse(baseBoneTransform)) * vec4(normal, 0.0));
 
     localPosO = position;
+    uvO = uv;
     vertexID = gl_VertexID;
 
     float normBeta = (beta + 5.0) / 10.0;

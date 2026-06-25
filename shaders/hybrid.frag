@@ -10,6 +10,7 @@
 in vec3 normalO;
 in vec3 localPosO;
 in vec3 fragPos;
+in vec2 uvO;
 in float realZ;
 flat in uint vertexID;
 
@@ -39,6 +40,8 @@ layout(std430, binding = 2) readonly buffer BoneBuffer {
 
 uniform vec4 not_influenced_vertex_color = vec4(0.0, 0.0, 1.0, 1.0);
 uniform vec4 influenced_vertex_color = vec4(1.0, 0.0, 0.0, 1.0);
+uniform int       hasTexture   = 0;
+uniform sampler2D albedoTexture;
 
 float exp_smoothstep(in float x, in float speed){
     return x < 0 ? exp(speed*x)/(1+exp(speed*x)) : 1/(1+exp(-speed*x));
@@ -82,7 +85,9 @@ void main() {
             break;
         }
     }
-    vec3 baseColor = mix(not_influenced_vertex_color, influenced_vertex_color, weight).rgb;
+    vec3 baseColor = (hasTexture == 1)
+        ? texture(albedoTexture, uvO).rgb
+        : mix(not_influenced_vertex_color, influenced_vertex_color, weight).rgb;
     vec3 N = normalize(normalO);
     vec3 V = normalize(viewPos - fragPos);
     float k_ambient = 0.3;

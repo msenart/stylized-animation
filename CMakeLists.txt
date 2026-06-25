@@ -53,6 +53,7 @@ set(sources
     ${SOURCE_DIR}/renderer/Geometry.cpp
     ${SOURCE_DIR}/renderer/Renderer.cpp
     ${SOURCE_DIR}/renderer/ShaderManager.cpp
+    ${SOURCE_DIR}/renderer/TextureLoader.cpp
     ${SOURCE_DIR}/ui/DebugConsole.cpp
     ${SOURCE_DIR}/ui/RenderStats.cpp
     ${SOURCE_DIR}/renderer/AnimatedMesh.cpp
@@ -98,6 +99,9 @@ LinkGLM(stylize-animation PRIVATE)
 
 include(${CMAKE_DIR}/LinkCXXOPTS.cmake)
 LinkCXXOPTS(stylize-animation PRIVATE)
+
+include(${CMAKE_DIR}/LinkSTB.cmake)
+LinkSTB(stylize-animation PRIVATE)
 
 # Copy shaders to the output directory so the executable can find them at runtime
 add_custom_command(TARGET stylize-animation POST_BUILD

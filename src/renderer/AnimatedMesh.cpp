@@ -1,10 +1,7 @@
-#include "AnimatedMesh.h"
-#include "AnimatedMesh.h"
-#include "AnimatedMesh.h"
-#include "AnimatedMesh.h"
 #include "renderer/AnimatedMesh.h"
 #include "renderer/Shader.h"
 #include "renderer/ShaderManager.h"
+#include "renderer/TextureLoader.h"
 #include "core/Log.h"
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
@@ -37,12 +34,14 @@ AnimatedMesh::AnimatedMesh(const std::string& path) {
     parseMeshes();
     buildNodeMap(m_scene->mRootNode, 0);
     populateBuffers();
+    loadAlbedoTexture(path);
 }
 
 AnimatedMesh::~AnimatedMesh() {
     glDeleteBuffers(1, &m_ebo);
     glDeleteBuffers(1, &m_vbo);
     glDeleteVertexArrays(1, &m_vao);
+    if (m_textureID) glDeleteTextures(1, &m_textureID);
 }
 
 void AnimatedMesh::draw() const {
@@ -63,6 +62,13 @@ void AnimatedMesh::uploadUniforms(const Shader& shader, const RenderContext& ctx
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, bones_data_ssbo);
     for (int i = 0 ; i < m_bonesInfo.size(); ++i) {
         shader.set(("gBones["+std::to_string(i)+"]").c_str(), transforms[i]);
+    }
+
+    shader.set("hasTexture", m_textureID != 0 ? 1 : 0);
+    shader.set("albedoTexture", 0);
+    if (m_textureID != 0) {
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, m_textureID);
     }
 }
 
@@ -252,10 +258,14 @@ void AnimatedMesh::parseMeshes() {
             for (unsigned int j = 0; j < mesh->mNumVertices; j++) {
                 const aiVector3D& p = mesh->mVertices[j];
                 const aiVector3D& n = mesh->mNormals[j];
-                m_vertices.push_back(AnimatedVertex{
-                    glm::vec3(p.x,p.y,p.z),
-                    glm::vec3(n.x,n.y,n.z)
-                });
+                glm::vec2 uv{0.f};
+                if (mesh->HasTextureCoords(0))
+                    uv = {mesh->mTextureCoords[0][j].x, mesh->mTextureCoords[0][j].y};
+                AnimatedVertex v;
+                v.position = glm::vec3(p.x, p.y, p.z);
+                v.normal   = glm::vec3(n.x, n.y, n.z);
+                v.uv       = uv;
+                m_vertices.push_back(v);
             }
         }
         else {
@@ -319,6 +329,10 @@ void AnimatedMesh::populateBuffers() {
     glEnableVertexArrayAttrib (m_vao,NORMAL_LOCATION);
     glVertexArrayAttribFormat (m_vao,NORMAL_LOCATION,3,GL_FLOAT,GL_FALSE,offsetof(AnimatedVertex, normal));
     glVertexArrayAttribBinding(m_vao,NORMAL_LOCATION,0);
+
+    glEnableVertexArrayAttrib (m_vao, UV_LOCATION);
+    glVertexArrayAttribFormat (m_vao, UV_LOCATION, 2, GL_FLOAT, GL_FALSE, offsetof(AnimatedVertex, uv));
+    glVertexArrayAttribBinding(m_vao, UV_LOCATION, 0);
 
     struct VertexBoneData {
         unsigned int ids[MAX_NUM_BONES_PER_VERTEX];
@@ -470,4 +484,40 @@ const aiNode *AnimatedMesh::getParentBone(const aiNode *currentNode) {
     parent = parent->mParent;
   }
   return parent;
+}
+
+void AnimatedMesh::loadAlbedoTexture(const std::string& meshPath) {
+    if (!m_scene || m_scene->mNumMaterials == 0) return;
+
+    std::string dir = meshPath.substr(0, meshPath.find_last_of("/\\"));
+
+    for (unsigned int i = 0; i < m_scene->mNumMaterials && m_textureID == 0; i++) {
+        const aiMaterial* mat = m_scene->mMaterials[i];
+        aiString texPath;
+        if (mat->GetTexture(aiTextureType_DIFFUSE, 0, &texPath) != AI_SUCCESS) continue;
+
+        std::string texStr = texPath.C_Str();
+
+        if (!texStr.empty() && texStr[0] == '*') {
+            // Embedded texture — stored by index inside the FBX
+            int idx = std::stoi(texStr.substr(1));
+            if (idx < 0 || idx >= static_cast<int>(m_scene->mNumTextures)) continue;
+            const aiTexture* emb = m_scene->mTextures[idx];
+            if (emb->mHeight == 0) {
+                // Compressed blob (PNG/JPG/…) – mWidth is the byte count
+                m_textureID = TextureLoader::loadFromMemory(
+                    reinterpret_cast<const unsigned char*>(emb->pcData),
+                    static_cast<int>(emb->mWidth));
+            }
+        } else {
+            // External file relative to the mesh directory
+            std::string fullPath = dir + "/" + texStr;
+            m_textureID = TextureLoader::loadFromFile(fullPath);
+        }
+
+        if (m_textureID != 0)
+            Log::info("AnimatedMesh: loaded albedo texture from '" + texStr + "'");
+        else
+            Log::warn("AnimatedMesh: could not load texture '" + texStr + "'");
+    }
 }
