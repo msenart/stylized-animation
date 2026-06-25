@@ -201,7 +201,7 @@ public:
  */
 class FinalRenderPass final : public RenderPass {
     ShaderHandle m_finalPassShaderHandle = 0;
-    ShaderKey m_finalPassShaderKey = {"final.vert","final.frag"};
+    ShaderKey m_finalPassShaderKey = {"final.vert","final_cinematic.frag"};
 public:
     explicit FinalRenderPass(std::string suffix) : RenderPass(std::move(suffix)) {
         tag = PassTag::Final;

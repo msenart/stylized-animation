@@ -6,5 +6,5 @@
 #include "renderer/Shader.h"
 
 struct Cinematic {
-   void uploadUniforms(const Shader& shader);
+   void uploadUniforms(const Shader& shader, float time);
 };

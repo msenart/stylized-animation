@@ -49,9 +49,10 @@ void Renderer::render(Scene* scene,Window* window, Cinematic* cinematic, const A
     m_drawCalls = 0;
 
     //time
+    time_modulo = time_modulo + dt;
     time = time + dt;
-    while(time>max_time){
-        time -= max_time;
+    while(time_modulo>max_time){
+        time_modulo -= max_time;
     }
 
     // Hybrid pass
@@ -245,8 +246,9 @@ void Renderer::render(Scene* scene,Window* window, Cinematic* cinematic, const A
     shader.set("window_w", window_w);//for final_contours.frag
     shader.set("window_h", window_h);//for final_contours.frag
     //others uniforms
-    shader.set("time", time/max_time); //for final_perlin_background.frag
+    shader.set("time", time_modulo/max_time); //for final_perlin_background.frag
     //draw mesh
+    cinematic->uploadUniforms(shader, time);
     p_screen_mesh->uploadUniforms(shader, ctx);
     p_screen_mesh->draw();
 

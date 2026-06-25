@@ -45,8 +45,9 @@ public:
     int drawCalls() const;
 
 private:
-    const float max_time = 2.0; //toutes les duex secondes
-    float time=0; //time since the begining of the programm, modulo max_time
+    const float max_time = 2.0; //toutes les deux secondes
+    float time_modulo=0.0; //time since the begining of the programm, modulo max_time
+    float time = 0.0;      //time since the begining of the program
     std::unique_ptr<StaticMesh> p_screen_mesh; //used to render a rect on which to draw for the final render pass
     RenderPipeline m_renderPipeline;
     int m_drawCalls = 0;
