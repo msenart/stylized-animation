@@ -81,14 +81,14 @@ int main(int argc, char *argv[]) {
   Scene scene;
 
   // HACK test just to see if shader compiles correctly
-  ShaderKey testShaderKey = ShaderKey{ "hybrid_smear.vert", "hybrid_debug_deltas.frag"};
+  ShaderKey testShaderKey = ShaderKey{ "hybrid_smear.vert", "hybrid.frag"};
   ShaderManager::load(testShaderKey);
   ShaderKey debugBoneShaderKey = ShaderKey{ "debug_bone.vert", "debug_bone.frag"};
   ShaderManager::load(debugBoneShaderKey);
   // MeshHandle meshHandle = assets.add(std::make_unique<AnimatedMesh>("assets/meshes/Standing Death Left 01.fbx"));
   MeshHandle meshHandle = assets.add(std::make_unique<SmearMesh>("assets/meshes/Standing Death Left 01.fbx"));
   auto sk = assets.get(meshHandle).shaderKeysMap();
-  sk[PassTag::Hybrid] = ShaderKey{ "hybrid_smear.vert", "hybrid_debug_deltas.frag"};
+  sk[PassTag::Hybrid] = ShaderKey{ "hybrid_smear.vert", "hybrid.frag"};
   Object obj = Object{sk};
   obj.meshHandle =meshHandle;
   obj.material.color = {0.8f, 0.3f, 0.2f};
