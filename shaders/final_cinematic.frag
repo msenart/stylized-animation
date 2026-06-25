@@ -9,7 +9,7 @@ uniform usampler2D metadataTexture; //the metadata has been renderered in this t
                                     //notice the u before "sampler2D" that indicates that
                                     //sampler type is uvec
 
-uniform bool myUniform=false;
+uniform int effect=0; //tell which NPR effect to use (0 : use default texture)
 uniform float time;
 
 //window (for contour detection)
@@ -74,9 +74,13 @@ vec4 noise_effect_getFragColor(){
 
 
 void main() {
-    fragColor = vec4(texture(sceneTexture, texCoord).rgb, 1.0);
-    if(myUniform){
-        fragColor = vec4(1.0, 0.0, 0.0, 1.0);
+    if(effect==1){
+        fragColor = noisy_contours_getFragColor();
     }
-    //fragColor = noise_effect_getFragColor();
+    else if (effect==2){
+        fragColor = noise_effect_getFragColor();
+    }
+    else{
+        fragColor = vec4(texture(sceneTexture, texCoord).rgb, 1.0);
+    }
 }
