@@ -113,25 +113,26 @@ void Renderer::render(Scene* scene,Window* window, Cinematic* cinematic, const A
 
     glDisable(GL_DEPTH_TEST);
 
-    ShaderHandle debugHandle = ShaderManager::getShaderHandleWithKey(ShaderKey{"debug_bone.vert", "debug_bone.frag"});
-    if (debugHandle != 0) {
-      const Shader& debugShader = ShaderManager::get(debugHandle);
-      debugShader.bind();
-      debugShader.set("view", scene->main_camera.view());
-      debugShader.set("projection", scene->main_camera.projection(aspect));
+    //**************************draw debug for smear******************************
+    // ShaderHandle debugHandle = ShaderManager::getShaderHandleWithKey(ShaderKey{"debug_bone.vert", "debug_bone.frag"});
+    // if (debugHandle != 0) {
+    //   const Shader& debugShader = ShaderManager::get(debugHandle);
+    //   debugShader.bind();
+    //   debugShader.set("view", scene->main_camera.view());
+    //   debugShader.set("projection", scene->main_camera.projection(aspect));
 
-      for (unsigned int i = 0; i < scene->objects.size(); i++) {
-        auto& obj = scene->objects[i];
-        debugShader.set("model", obj.transform.matrix());
-        debugShader.set("meshId", static_cast<unsigned int>(i+1));
+    //   for (unsigned int i = 0; i < scene->objects.size(); i++) {
+    //     auto& obj = scene->objects[i];
+    //     debugShader.set("model", obj.transform.matrix());
+    //     debugShader.set("meshId", static_cast<unsigned int>(i+1));
 
-        const Mesh* mesh = assets.get(obj.meshHandle);
-        const auto* smearMesh = dynamic_cast<const SmearMesh*>(mesh);
-        if (smearMesh) {
-          smearMesh->drawDebugBones(debugShader, ctx);
-        }
-      }
-    }
+    //     const Mesh* mesh = assets.get(obj.meshHandle);
+    //     const auto* smearMesh = dynamic_cast<const SmearMesh*>(mesh);
+    //     if (smearMesh) {
+    //       smearMesh->drawDebugBones(debugShader, ctx);
+    //     }
+    //   }
+    // }
 
     glEnable(GL_DEPTH_TEST);
     // Mesh ID pass
