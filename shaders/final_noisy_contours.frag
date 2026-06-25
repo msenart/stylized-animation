@@ -15,10 +15,11 @@ uniform int window_w;
 uniform int window_h;
 
 //noise
+//for far view : 0.02, 50., 20.;
 //vener : 0.03, 30.0, 20.0
 //slower : 0.02, 20.0, 15.0
-uniform float deformation = 0.03; 
-uniform float space_noise_scale = 30.0; 
+uniform float deformation = 0.02; 
+uniform float space_noise_scale = 50.0; 
 uniform float time_noise_scale = 20.0; 
 uniform float time; //value between 0 and 1
 
