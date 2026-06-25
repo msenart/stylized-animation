@@ -12,6 +12,7 @@ uniform float betaMax;
 out vec3 normalO;
 out vec3 localPosO;
 out vec3 fragPos;
+out float realZ;
 out vec3 debugColor; // DEBUG
 flat out uint vertexID;
 
@@ -116,4 +117,5 @@ void main() {
 
     float normBeta = (beta + 5.0) / 10.0;
     debugColor = vec3(1.0 - normBeta, normBeta, 0.0);
+    realZ = (view*vec4(fragPos,1.0)).z; //before projection -> linear
 }
