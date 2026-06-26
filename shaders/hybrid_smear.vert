@@ -99,7 +99,7 @@ void main() {
     vec3 posCurrent = getSkinnedPosition(currentFrame);
     vec3 posNext = getSkinnedPosition(currentFrame + 1);
     float speed = length(posNext - posCurrent);
-    float beta = currentDelta * betaMax; // * 0.05 * speed;
+    float beta = currentDelta * betaMax * 0.5 * speed;
     beta = clamp(beta, -betaMax, betaMax);
     int baseFrame = currentFrame + int(floor(beta));
     float t = beta - floor(beta);
