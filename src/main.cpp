@@ -18,7 +18,6 @@
 #include "scene/Cinematic.h"
 #include "renderer/Geometry.h"
 #include "renderer/Renderer.h"
-#include "renderer/Shader.h"
 #include "renderer/ShaderManager.h"
 #include "ui/DebugConsole.h"
 #include "ui/RenderStats.h"

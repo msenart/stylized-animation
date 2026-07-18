@@ -8,3 +8,4 @@ personal/
 .clangd
 compile_commands.json
 *.mp4
+!assets/demo.mp4

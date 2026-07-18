@@ -218,7 +218,7 @@ void Renderer::render(Scene* scene,Window* window, Cinematic* cinematic, const A
     //others uniforms
     shader.set("time", time_modulo/max_time); //for final_perlin_background.frag
     //draw mesh
-    cinematic->uploadUniforms(shader, time);
+    // cinematic->uploadUniforms(shader, time);
     p_screen_mesh->uploadUniforms(shader, ctx);
     p_screen_mesh->draw();
 
