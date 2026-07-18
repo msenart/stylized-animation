@@ -1,5 +1,3 @@
-<div align="center">
-
 # Stylized Animation
 
 An OpenGL engine exploring three classic techniques for giving 3D animation a hand-drawn, non-photorealistic look.
@@ -118,7 +116,3 @@ A [tutorial on skeletal animation with Assimp](https://www.youtube.com/watch?v=r
 ## Acknowledgments
 
 Test/demo character rigs and animations under `assets/meshes/` (Mixamo-style FBX rigs, the "Tai Lung" model, and the Stanford Bunny) are third-party assets included for research and demonstration purposes only.
-
-## License
-
-This project is licensed under the [Apache License 2.0](./LICENSE).
