@@ -9,9 +9,7 @@ An OpenGL engine exploring three classic techniques for giving 3D animation a ha
 ![CMake](https://img.shields.io/badge/CMake-%E2%89%A5%203.11-064F8C?logo=cmake&logoColor=white)
 ![License](https://img.shields.io/badge/license-Apache%202.0-blue)
 
-<video src="./assets/demo.mp4" width="720" controls autoplay muted loop></video>
-
-</div>
+https://github.com/user-attachments/assets/9fec4cf3-4e31-4abf-ac50-2ad98e52ff2d
 
 ## Overview
 
