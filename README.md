@@ -52,3 +52,4 @@ The fragment shader will receive a vec2 texCoord and the first texture of the hy
 
 The fragment shader will receive a vec2 texCoord and the textures of the hybrid render pass' framebuffer will be bound to `sceneTexture`, `metadataTexture` and `normalTexture`. See final.frag for an example.
 
+
