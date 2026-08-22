@@ -26,6 +26,7 @@ A [technical report](Stylized-animation-report.pdf) and the [presentation slides
 - **Multiple render targets (MRT) pipeline** — a single "hybrid" pass writes scene color, per-mesh IDs and view-space normals/depth to three textures at once, which downstream passes consume for contours and mesh picking.
 - **Toon shading** with configurable diffuse/specular/ambient/rim terms and a Phong or GGX BSDF backend.
 - **Screen-space contour detection** from depth and normal discontinuities.
+- **Stylization of contours** using perlin noise for a sketchy effect (when the appropriate shader is used).
 - **SMEAR-based squash & stretch** — per-bone motion deltas are baked offline (and cached in `assets/deltas/`) then splined per-vertex at draw time for cartoon-style speed lines and follow-through.
 - **Optional Kuwahara anisotropic filter** post-process for a painterly look, toggled live from the UI.
 - **Live shader hot-reloading** and an in-app shader/status inspector.
